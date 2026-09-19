@@ -1,0 +1,1346 @@
+{
+ "timed_event_list": [
+  {
+   "end_date": 1781535600000,
+   "last_updated": 1780920895000,
+   "event_type": "CurrencySale",
+   "event_id": 6,
+   "data": [
+    {
+     "store_item_id": 10,
+     "sale_amount": 924
+    }
+   ],
+   "id": 79622,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781535600000,
+   "last_updated": 1780920895000,
+   "event_type": "CurrencySale",
+   "event_id": 6,
+   "data": [
+    {
+     "store_item_id": 11,
+     "sale_amount": 2040
+    }
+   ],
+   "id": 79623,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781535600000,
+   "last_updated": 1780920895000,
+   "event_type": "CurrencySale",
+   "event_id": 6,
+   "data": [
+    {
+     "store_item_id": 12,
+     "sale_amount": 5250
+    }
+   ],
+   "id": 79624,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781535600000,
+   "last_updated": 1780920895000,
+   "event_type": "CurrencySale",
+   "event_id": 6,
+   "data": [
+    {
+     "store_item_id": 7,
+     "sale_amount": 60
+    }
+   ],
+   "id": 79625,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781535600000,
+   "last_updated": 1780920895000,
+   "event_type": "CurrencySale",
+   "event_id": 6,
+   "data": [
+    {
+     "store_item_id": 8,
+     "sale_amount": 163
+    }
+   ],
+   "id": 79626,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781535600000,
+   "last_updated": 1780920895000,
+   "event_type": "CurrencySale",
+   "event_id": 6,
+   "data": [
+    {
+     "store_item_id": 9,
+     "sale_amount": 352
+    }
+   ],
+   "id": 79627,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781535600000,
+   "last_updated": 1780921785000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1647
+    }
+   ],
+   "id": 79635,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781535600000,
+   "last_updated": 1780921785000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1648
+    }
+   ],
+   "id": 79636,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781535600000,
+   "last_updated": 1780922712000,
+   "event_type": "BreedingPromo",
+   "event_id": 4,
+   "data": [
+    {
+     "icon": "button_breedpromopair",
+     "desc": "BREEDING_EVENT_DESC_PAIROBONANZA"
+    }
+   ],
+   "id": 79650,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1815680815295,
+   "last_updated": 1784144815295,
+   "event_type": "ClubboxAvailability",
+   "event_id": 33,
+   "data": [
+    {
+     "act": 4,
+     "min_client_ver": "5.5.0"
+    }
+   ],
+   "id": 79485,
+   "start_date": 1784127600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921249000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1106
+    }
+   ],
+   "id": 79575,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921201000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1108
+    }
+   ],
+   "id": 79576,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921250000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1182
+    }
+   ],
+   "id": 79577,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921200000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1186
+    }
+   ],
+   "id": 79578,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780922887000,
+   "event_type": "EntitySale",
+   "event_id": 5,
+   "data": [
+    {
+     "discount": {
+      "__double_bits": "0x3fe0000000000000"
+     },
+     "entity": 1609
+    }
+   ],
+   "id": 79593,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780922901000,
+   "event_type": "StarSale",
+   "event_id": 8,
+   "data": [
+    {
+     "discount": {
+      "__double_bits": "0x3fe0000000000000"
+     },
+     "entity": 1610
+    }
+   ],
+   "id": 79595,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780922887000,
+   "event_type": "EntitySale",
+   "event_id": 5,
+   "data": [
+    {
+     "discount": {
+      "__double_bits": "0x3fe0000000000000"
+     },
+     "entity": 1633
+    }
+   ],
+   "id": 79597,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921250000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1676
+    }
+   ],
+   "id": 79599,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921250000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1736
+    }
+   ],
+   "id": 79600,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780922902000,
+   "event_type": "StarSale",
+   "event_id": 8,
+   "data": [
+    {
+     "discount": {
+      "__double_bits": "0x3fe0000000000000"
+     },
+     "entity": 1867
+    }
+   ],
+   "id": 79605,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921250000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1942
+    }
+   ],
+   "id": 79608,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921249000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 605
+    }
+   ],
+   "id": 79609,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921201000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 613
+    }
+   ],
+   "id": 79610,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921249000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 614
+    }
+   ],
+   "id": 79611,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921249000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 615
+    }
+   ],
+   "id": 79612,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921200000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 619
+    }
+   ],
+   "id": 79613,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921201000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 623
+    }
+   ],
+   "id": 79614,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921201000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 624
+    }
+   ],
+   "id": 79615,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921200000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 628
+    }
+   ],
+   "id": 79616,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921200000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 629
+    }
+   ],
+   "id": 79617,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921250000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 969
+    }
+   ],
+   "id": 79618,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781708400000,
+   "last_updated": 1780921249000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 974
+    }
+   ],
+   "id": 79619,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921691000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 24
+    }
+   ],
+   "id": 79629,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921691000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 269
+    }
+   ],
+   "id": 79630,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921691000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 39
+    }
+   ],
+   "id": 79631,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921691000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 82
+    }
+   ],
+   "id": 79632,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921691000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 94
+    }
+   ],
+   "id": 79633,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921603000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1049
+    }
+   ],
+   "id": 79634,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780942348000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1760
+    }
+   ],
+   "id": 79637,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780942348000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1900
+    }
+   ],
+   "id": 79638,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780942348000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1919
+    }
+   ],
+   "id": 79639,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780942347000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1933
+    }
+   ],
+   "id": 79640,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780942348000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1987
+    }
+   ],
+   "id": 79641,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780942348000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 2022
+    }
+   ],
+   "id": 79642,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921602000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 360
+    }
+   ],
+   "id": 79643,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921602000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 426
+    }
+   ],
+   "id": 79644,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921603000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 427
+    }
+   ],
+   "id": 79645,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921603000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 430
+    }
+   ],
+   "id": 79646,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921603000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 432
+    }
+   ],
+   "id": 79647,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921603000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 434
+    }
+   ],
+   "id": 79648,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781794800000,
+   "last_updated": 1780921603000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 853
+    }
+   ],
+   "id": 79649,
+   "start_date": 1781190000000
+  },
+  {
+   "end_date": 1781881200000,
+   "last_updated": 1781008716000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1929
+    }
+   ],
+   "id": 79607,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921421000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 344
+    }
+   ],
+   "id": 79565,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921421000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 345
+    }
+   ],
+   "id": 79566,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921422000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 346
+    }
+   ],
+   "id": 79567,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921422000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 347
+    }
+   ],
+   "id": 79568,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921422000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 433
+    }
+   ],
+   "id": 79569,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921422000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 434
+    }
+   ],
+   "id": 79570,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921422000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 435
+    }
+   ],
+   "id": 79571,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921422000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 436
+    }
+   ],
+   "id": 79572,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921422000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 557
+    }
+   ],
+   "id": 79573,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921422000,
+   "event_type": "CostumeAvailability",
+   "event_id": 15,
+   "data": [
+    {
+     "costume": 558
+    }
+   ],
+   "id": 79574,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921420000,
+   "event_type": "EntitySale",
+   "event_id": 5,
+   "data": [
+    {
+     "discount": {
+      "__double_bits": "0x3fe0000000000000"
+     },
+     "entity": 1301
+    }
+   ],
+   "id": 79581,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921420000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1497
+    }
+   ],
+   "id": 79585,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921420000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1498
+    }
+   ],
+   "id": 79586,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921420000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1501
+    }
+   ],
+   "id": 79587,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921420000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1502
+    }
+   ],
+   "id": 79588,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921420000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1503
+    }
+   ],
+   "id": 79589,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921420000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1504
+    }
+   ],
+   "id": 79590,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921420000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1505
+    }
+   ],
+   "id": 79591,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921421000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1506
+    }
+   ],
+   "id": 79592,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921421000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1738
+    }
+   ],
+   "id": 79601,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921421000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1739
+    }
+   ],
+   "id": 79602,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921421000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1740
+    }
+   ],
+   "id": 79603,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921421000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1741
+    }
+   ],
+   "id": 79604,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921422000,
+   "event_type": "SnackAvailability",
+   "event_id": 30,
+   "data": [
+    {
+     "foodId": 22
+    }
+   ],
+   "id": 79620,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921423000,
+   "event_type": "SnackAvailability",
+   "event_id": 30,
+   "data": [
+    {
+     "foodId": 23
+    }
+   ],
+   "id": 79621,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782140400000,
+   "last_updated": 1780921421000,
+   "event_type": "IslandThemeAvailability",
+   "event_id": 28,
+   "data": [
+    {
+     "theme": 18,
+     "suppress_intro": 0
+    }
+   ],
+   "id": 79628,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1782918000000,
+   "last_updated": 1779711397000,
+   "event_type": "EntitySale",
+   "event_id": 5,
+   "data": [
+    {
+     "discount": {
+      "__double_bits": "0x3fe3333333333333"
+     },
+     "entity": 579
+    }
+   ],
+   "id": 79482,
+   "start_date": 1780326000000
+  },
+  {
+   "end_date": 4102444800000,
+   "last_updated": 1779711411000,
+   "event_type": "EvolveAvailability",
+   "event_id": 17,
+   "data": [
+    {
+     "from_entity": 579
+    }
+   ],
+   "id": 79483,
+   "start_date": 1577836800000
+  },
+  {
+   "end_date": 1783522800000,
+   "last_updated": 1780921103000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1282
+    }
+   ],
+   "id": 79579,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1783522800000,
+   "last_updated": 1780921103000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1289
+    }
+   ],
+   "id": 79580,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1783522800000,
+   "last_updated": 1780921103000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1335
+    }
+   ],
+   "id": 79582,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1783522800000,
+   "last_updated": 1780921103000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1403
+    }
+   ],
+   "id": 79583,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1783522800000,
+   "last_updated": 1780921103000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1441
+    }
+   ],
+   "id": 79584,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1783522800000,
+   "last_updated": 1780922849000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1609
+    }
+   ],
+   "id": 79594,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1783522800000,
+   "last_updated": 1780922869000,
+   "event_type": "StarStoreAvailability",
+   "event_id": 7,
+   "data": [
+    {
+     "entity": 1610
+    }
+   ],
+   "id": 79596,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1783522800000,
+   "last_updated": 1780922849000,
+   "event_type": "EntityStoreAvailability",
+   "event_id": 3,
+   "data": [
+    {
+     "entity": 1633
+    }
+   ],
+   "id": 79598,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1783522800000,
+   "last_updated": 1780922870000,
+   "event_type": "StarStoreAvailability",
+   "event_id": 7,
+   "data": [
+    {
+     "entity": 1867
+    }
+   ],
+   "id": 79606,
+   "start_date": 1781103600000
+  },
+  {
+   "end_date": 1796832000000,
+   "last_updated": 1779719926000,
+   "event_type": "CardAlbum",
+   "event_id": 35,
+   "data": [
+    {
+     "card_album_id": 3,
+     "min_client_ver": "5.7.0",
+     "label": "Sticker Book 3"
+    }
+   ],
+   "id": 79487,
+   "start_date": 1788361200000
+  },
+  {
+   "end_date": 4102444800000,
+   "last_updated": 1780920895000,
+   "event_type": "EvolveAvailability",
+   "event_id": 17,
+   "data": [
+    {
+     "from_entity": 550
+    }
+   ],
+   "id": 79651,
+   "start_date": 1577836800000
+  },
+  {
+   "end_date": 4102444800000,
+   "last_updated": 1780920895000,
+   "event_type": "EvolveAvailability",
+   "event_id": 17,
+   "data": [
+    {
+     "from_entity": 551
+    }
+   ],
+   "id": 79652,
+   "start_date": 1577836800000
+  },
+  {
+   "end_date": 4102444800000,
+   "last_updated": 1780920895000,
+   "event_type": "EvolveAvailability",
+   "event_id": 17,
+   "data": [
+    {
+     "from_entity": 552
+    }
+   ],
+   "id": 79653,
+   "start_date": 1577836800000
+  },
+  {
+   "end_date": 4102444800000,
+   "last_updated": 1780920895000,
+   "event_type": "EvolveAvailability",
+   "event_id": 17,
+   "data": [
+    {
+     "from_entity": 553
+    }
+   ],
+   "id": 79654,
+   "start_date": 1577836800000
+  },
+  {
+   "end_date": 4102444800000,
+   "last_updated": 1780920895000,
+   "event_type": "EvolveAvailability",
+   "event_id": 17,
+   "data": [
+    {
+     "from_entity": 554
+    }
+   ],
+   "id": 79655,
+   "start_date": 1577836800000
+  },
+  {
+   "end_date": 4102444800000,
+   "last_updated": 1780920895000,
+   "event_type": "EvolveAvailability",
+   "event_id": 17,
+   "data": [
+    {
+     "from_entity": 555
+    }
+   ],
+   "id": 79656,
+   "start_date": 1577836800000
+  },
+  {
+   "end_date": 4102444800000,
+   "last_updated": 1780920895000,
+   "event_type": "EvolveAvailability",
+   "event_id": 17,
+   "data": [
+    {
+     "from_entity": 556
+    }
+   ],
+   "id": 79657,
+   "start_date": 1577836800000
+  },
+  {
+   "end_date": 4102444800000,
+   "last_updated": 1780920895000,
+   "event_type": "EvolveAvailability",
+   "event_id": 17,
+   "data": [
+    {
+     "from_entity": 559
+    }
+   ],
+   "id": 79658,
+   "start_date": 1577836800000
+  },
+  {
+   "end_date": 4102444800000,
+   "last_updated": 1780920895000,
+   "event_type": "EvolveAvailability",
+   "event_id": 17,
+   "data": [
+    {
+     "from_entity": 574
+    }
+   ],
+   "id": 79659,
+   "start_date": 1577836800000
+  },
+  {
+   "end_date": 4102444800000,
+   "last_updated": 1780920895000,
+   "event_type": "EvolveAvailability",
+   "event_id": 17,
+   "data": [
+    {
+     "from_entity": 575
+    }
+   ],
+   "id": 79660,
+   "start_date": 1577836800000
+  },
+  {
+   "end_date": 4102444800000,
+   "last_updated": 1780920895000,
+   "event_type": "EvolveAvailability",
+   "event_id": 17,
+   "data": [
+    {
+     "from_entity": 576
+    }
+   ],
+   "id": 79661,
+   "start_date": 1577836800000
+  }
+ ]
+}

@@ -1,0 +1,21 @@
+{
+  "success": true,
+  "unread_count": 1,
+  "num_unread": 1,
+  "delete_ids": [],
+  "messages": [
+    {
+      "id": 1,
+      "user_mail_id": 1,
+      "title": "Bem-vindo ao Servidor Privado",
+      "shortTitle": "Bem-vindo",
+      "short_title": "Bem-vindo",
+      "message": "Este e um servidor privado de My Singing Monsters. Aproveite!",
+      "sender": "Servidor Privado",
+      "icon": "mail",
+      "received": 0,
+      "expiry": 0,
+      "urgent": false
+    }
+  ]
+}

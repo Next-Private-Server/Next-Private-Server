@@ -1,0 +1,216 @@
+{
+  "server_time": 1745728925991,
+  "last_updated": 0,
+  "stickers": [
+    {
+      "sticker_id": 1,
+      "file": "MONSTER_A.png",
+      "level": 1,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_A"
+    },
+    {
+      "sticker_id": 2,
+      "file": "MONSTER_B.png",
+      "level": 1,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_B"
+    },
+    {
+      "sticker_id": 3,
+      "file": "MONSTER_C.png",
+      "level": 1,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_C"
+    },
+    {
+      "sticker_id": 4,
+      "file": "MONSTER_D.png",
+      "level": 1,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_D"
+    },
+    {
+      "sticker_id": 5,
+      "file": "MONSTER_E.png",
+      "level": 1,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_E"
+    },
+    {
+      "sticker_id": 6,
+      "file": "MONSTER_AB.png",
+      "level": 5,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_AB"
+    },
+    {
+      "sticker_id": 7,
+      "file": "MONSTER_AC.png",
+      "level": 6,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_AC"
+    },
+    {
+      "sticker_id": 8,
+      "file": "MONSTER_AD.png",
+      "level": 7,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_AD"
+    },
+    {
+      "sticker_id": 9,
+      "file": "MONSTER_AE.png",
+      "level": 8,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_AE"
+    },
+    {
+      "sticker_id": 10,
+      "file": "MONSTER_BC.png",
+      "level": 9,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_BC"
+    },
+    {
+      "sticker_id": 11,
+      "file": "MONSTER_BD.png",
+      "level": 10,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_BD"
+    },
+    {
+      "sticker_id": 12,
+      "file": "MONSTER_BE.png",
+      "level": 11,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_BE"
+    },
+    {
+      "sticker_id": 13,
+      "file": "MONSTER_CD.png",
+      "level": 12,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_CD"
+    },
+    {
+      "sticker_id": 14,
+      "file": "MONSTER_CE.png",
+      "level": 13,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_CE"
+    },
+    {
+      "sticker_id": 15,
+      "file": "MONSTER_DE.png",
+      "level": 14,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_DE"
+    },
+    {
+      "sticker_id": 16,
+      "file": "MONSTER_ABC.png",
+      "level": 15,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_ABC"
+    },
+    {
+      "sticker_id": 17,
+      "file": "MONSTER_ABD.png",
+      "level": 16,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_ABD"
+    },
+    {
+      "sticker_id": 18,
+      "file": "MONSTER_ABE.png",
+      "level": 17,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_ABE"
+    },
+    {
+      "sticker_id": 19,
+      "file": "MONSTER_ACD.png",
+      "level": 18,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_ACD"
+    },
+    {
+      "sticker_id": 20,
+      "file": "MONSTER_ACE.png",
+      "level": 19,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_ACE"
+    },
+    {
+      "sticker_id": 21,
+      "file": "MONSTER_ADE.png",
+      "level": 20,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_ADE"
+    },
+    {
+      "sticker_id": 22,
+      "file": "MONSTER_BCD.png",
+      "level": 21,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_BCD"
+    },
+    {
+      "sticker_id": 23,
+      "file": "MONSTER_BCE.png",
+      "level": 22,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_BCE"
+    },
+    {
+      "sticker_id": 24,
+      "file": "MONSTER_BDE.png",
+      "level": 23,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_BDE"
+    },
+    {
+      "sticker_id": 25,
+      "file": "MONSTER_CDE.png",
+      "level": 24,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_CDE"
+    },
+    {
+      "sticker_id": 26,
+      "file": "MONSTER_ABCD.png",
+      "level": 25,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_ABCD"
+    },
+    {
+      "sticker_id": 27,
+      "file": "MONSTER_ABCE.png",
+      "level": 26,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_ABCE"
+    },
+    {
+      "sticker_id": 28,
+      "file": "MONSTER_ABDE.png",
+      "level": 27,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_ABDE"
+    },
+    {
+      "sticker_id": 29,
+      "file": "MONSTER_ACDE.png",
+      "level": 28,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_ACDE"
+    },
+    {
+      "sticker_id": 30,
+      "file": "MONSTER_BCDE.png",
+      "level": 29,
+      "min_server_version": "1.0",
+      "desc": "MONSTER_BCDE"
+    }
+  ]
+}

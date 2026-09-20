@@ -733,6 +733,8 @@ async def sfs_websocket (websocket :WebSocket ):
     try :
         while True :
             _a =await websocket .receive ()
+            if _a .get ('type')=='websocket.disconnect':
+                break
             _d =_a .get ('bytes')
             if _d is None :
                 continue

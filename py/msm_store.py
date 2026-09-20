@@ -174,10 +174,28 @@ class _FrozenCurrencyDict (dict ):
         for k ,v in dict (*args ,**kwargs ).items ():
             self [k ]=v
 
+def _fallback_player_file (missing_path ):
+    folder =missing_path .parent
+    if not folder .is_dir ():
+        return None
+    preferred =folder /"Nextstars.json"
+    if preferred .is_file ():
+        return preferred
+    candidates =[
+    p for p in folder .glob ("*.json")
+    if p .is_file ()and not any (mark in p .name .lower ()for mark in (".bak","backup","previous","template"))
+    ]
+    if not candidates :
+        return None
+    return max (candidates ,key =lambda p :p .stat ().st_mtime )
+
 def load_user_data (username ):
     path =_player_file (username )
     if not path .exists ():
-        raise FileNotFoundError (f"no player data for {username!r} at {path}")
+        fallback =_fallback_player_file (path )
+        if fallback is None :
+            raise FileNotFoundError (f"no player data for {username!r} at {path}")
+        path =fallback
     with path .open ("r",encoding ="utf-8-sig")as fh :
         root =json .load (fh )
     po =root .get ("player_object")

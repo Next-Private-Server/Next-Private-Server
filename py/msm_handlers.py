@@ -25,7 +25,7 @@ import random
 from msm_gamedata import get_battle_campaign_definition ,get_monster_definition ,get_user_game_setting_int ,get_structure_definition
 from msm_store import mod_db_names
 from msm_playerdata import (
-add_actual_currencies ,coerce_wire_types ,create_player_properties ,find_island_by_structure ,
+add_actual_currencies ,coerce_wire_types ,create_player_properties ,find_island ,find_island_by_structure ,get_active_island_id ,
 find_monster_with_island ,get_client_lang ,load_player ,
 next_daily_reset_timestamp ,recalculate_level ,save_player ,set_client_lang ,
 append_inventory_property ,grant_inventory_item ,
@@ -1802,7 +1802,7 @@ def _collect_daily_reward (username ,params ):
             player_object [key ]=_safe_int (player_object .get (key ))+bonus_amount
             actual_key =f"{key }_actual"
             if actual_key in player_object :
-                player_object [actual_key ]=player_object [key ]
+                player_object [actual_key ]=player_object .get (key ,0 )
     _clear_daily_bonus (player_object ,claimed =bool (granted ))
     save_player (username ,root )
     properties =create_player_properties (player_object )

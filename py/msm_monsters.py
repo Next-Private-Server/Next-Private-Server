@@ -1130,7 +1130,15 @@ def collect_multi_monster (username ,params ):
     "properties":create_player_properties (player_object ),
     }
     return result ,{"monster_updates":update_monster_list }
-def _find_nursery (island ,requested_structure_id ):
+def _synthesizer_is_free (island ,structure ,occupied_holder_ids ):
+    structure_id =structure .get ("user_structure_id")
+    if structure .get ("occupied")or structure .get ("has_egg")or structure_id in occupied_holder_ids :
+        return False
+    for entry in island .get ("synthesizing")or []:
+        if entry is not None and entry .get ("structure")==structure_id :
+            return False
+    return True
+def _find_nursery (island ,requested_structure_id ,allow_synthesizer =False ):
     structures =island .get ("structures")or []
     eggs =island .get ("eggs")or []
     occupied_holder_ids ={
@@ -1142,27 +1150,35 @@ def _find_nursery (island ,requested_structure_id ):
         for structure in structures :
             if structure is None or structure .get ("user_structure_id")!=requested_structure_id :
                 continue
-            if _is_synthesizer_structure (structure )or not is_egg_holder_structure (structure .get ("structure",0 )):
+            if not is_egg_holder_structure (structure .get ("structure",0 )):
+                return None
+            if _is_synthesizer_structure (structure ):
+                if allow_synthesizer and _synthesizer_is_free (island ,structure ,occupied_holder_ids ):
+                    return structure
                 return None
             if structure .get ("occupied")or structure .get ("has_egg")or structure .get ("user_structure_id")in occupied_holder_ids :
                 return None
             return structure
-    holders =[s for s in structures if s is not None and is_egg_holder_structure (s .get ("structure",0 ))and not _is_synthesizer_structure (s )]
+    holders =[s for s in structures if s is not None and is_egg_holder_structure (s .get ("structure",0 ))and (allow_synthesizer or not _is_synthesizer_structure (s ))]
     def _is_plain_nursery (holder ):
         definition =get_structure_definition (holder .get ("structure",0 ))
         return bool (definition )and definition .get ("structure_type")=="nursery"
     holders .sort (key =lambda h :0 if _is_plain_nursery (h )else 1 )
     for holder in holders :
         holder_id =holder .get ("user_structure_id",0 )
+        if _is_synthesizer_structure (holder ):
+            if _synthesizer_is_free (island ,holder ,occupied_holder_ids ):
+                return holder
+            continue
         if not holder .get ("occupied")and not holder .get ("has_egg")and holder_id not in occupied_holder_ids :
             return holder
     return None
 
 def place_egg (player_object ,island ,monster_id ,source ,preferred_holder_id =None ,modes =None ,
-previous_name =None ,ready =False ):
+previous_name =None ,ready =False ,allow_synthesizer =False ):
     if island is None or not monster_id :
         return None ,None
-    nursery =_find_nursery (island ,preferred_holder_id or 0 )
+    nursery =_find_nursery (island ,preferred_holder_id or 0 ,allow_synthesizer )
     if nursery is None :
         return None ,None
     next_egg_id =int (player_object .get ("last_user_egg_id",0 )or 0 )+1
@@ -1319,7 +1335,7 @@ def buy_egg (username ,params ):
         return result ,{}
 
     requested_structure_id =params .get ("nursery_id")or params .get ("structure_id")or 0
-    nursery =_find_nursery (island ,requested_structure_id )
+    nursery =_find_nursery (island ,requested_structure_id ,True )
     if nursery is None :
         if process_refs_repaired :
             save_player (username ,root )
@@ -1347,7 +1363,7 @@ def buy_egg (username ,params ):
         {"a":0 if minor_bought else 1 ,"level":1 },
         {"a":1 if minor_bought else 0 ,"level":1 },
         ]
-    user_egg ,nursery =place_egg (player_object ,island ,monster_id ,"buy_egg",requested_structure_id ,modes =egg_modes )
+    user_egg ,nursery =place_egg (player_object ,island ,monster_id ,"buy_egg",requested_structure_id ,modes =egg_modes ,allow_synthesizer =True )
     if user_egg is not None and buy_paironormal_mode is not None :
         user_egg ["requested_paironormal_mode"]=buy_paironormal_mode
     if user_egg is None or nursery is None :

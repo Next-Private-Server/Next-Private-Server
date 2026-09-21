@@ -728,6 +728,37 @@ async def bluebox (request :Request ):
     logger .info ('bluebox probe path=%s method=%s',request .scope .get ('path'),request .method )
     return Response ('<msg t="sys"><body action="apiOK" r="0"><ver v="2.13.0"/></body></msg>\x00',media_type ='text/xml')
 
+_PROCESS_LOCK =threading .Lock ()
+
+def _safe_error_frame (command ,message ):
+    return (command ,msm_protocol .build_raw_frame (command ,{'success':False ,'error':message ,'notificationOnFail':False }))
+
+def _encode_results (command ,results ):
+    encoded =[]
+    for _resp_cmd ,_resp_payload in results :
+        try :
+            _raw =msm_protocol .build_raw_frame (_resp_cmd ,_resp_payload )
+        except Exception as _err :
+            logger .exception ('%s -> %s could not be encoded',command ,_resp_cmd )
+            encoded .append (_safe_error_frame (_resp_cmd ,str (_err )))
+            continue
+        encoded .append ((_resp_cmd ,_raw ))
+        logger .info ('%s -> %s bytes=%d',command ,_resp_cmd ,len (_raw ))
+    return encoded
+
+def _process_frame (command ,params ):
+    with _PROCESS_LOCK :
+        try :
+            _results =msm_handlers .handle_command (command ,params )
+        except Exception as _err :
+            logger .exception ('%s failed',command )
+            _results =[(command ,{'success':False ,'error':str (_err ),'notificationOnFail':False })]
+        return _encode_results (command ,_results )
+
+def _process_bootstrap ():
+    with _PROCESS_LOCK :
+        return _encode_results ('login',msm_handlers .login_bootstrap_frames ())
+
 async def sfs_websocket (websocket :WebSocket ):
     await websocket .accept ()
     try :
@@ -747,17 +778,15 @@ async def sfs_websocket (websocket :WebSocket ):
                 continue
             logger .info ('IN %s params=%.500r',_frame .command ,_frame .params )
             try :
-                _results =msm_handlers .handle_command (_frame .command ,_frame .params )
+                _encoded =await asyncio .to_thread (_process_frame ,_frame .command ,_frame .params )
             except Exception as _err :
                 logger .exception ('%s failed',_frame .command )
-                _results =[(_frame .command ,{'success':False ,'error':str (_err ),'notificationOnFail':False })]
-            for _resp_cmd ,_resp_payload in _results :
-                await websocket .send_bytes (msm_protocol .build_raw_frame (_resp_cmd ,_resp_payload ))
-                logger .info ('%s -> %s payload=%.800r',_frame .command ,_resp_cmd ,_resp_payload )
+                _encoded =[_safe_error_frame (_frame .command ,str (_err ))]
+            for _name ,_raw in _encoded :
+                await websocket .send_bytes (_raw )
             if _frame .command =='USER_LOGIN':
-                for _boot_cmd ,_boot_payload in msm_handlers .login_bootstrap_frames ():
-                    await websocket .send_bytes (msm_protocol .build_raw_frame (_boot_cmd ,_boot_payload ))
-                    logger .info ('login -> %s',_boot_cmd )
+                for _name ,_raw in await asyncio .to_thread (_process_bootstrap ):
+                    await websocket .send_bytes (_raw )
     except WebSocketDisconnect :
         pass
     except Exception as _f :

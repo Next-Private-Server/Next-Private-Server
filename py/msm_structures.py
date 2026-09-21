@@ -574,6 +574,9 @@ def finish_upgrade_structure (username ,params ):
     result ["properties"]=create_player_properties (player_object )
     if success :
         result ["user_structure"]=_flat_structure_snapshot (structure )
+        import msm_islands
+        if msm_islands ._is_crucible_structure (structure ):
+            result ["user_crucible"]=msm_islands ._crucible_wire_object (island ,structure )
     return result ,{}
 def _fugue_target_mode (player_object ,monster_id ,fallback_island ):
     _isl ,mon =find_monster_with_island (player_object ,monster_id )

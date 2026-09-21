@@ -847,20 +847,24 @@ def _battle_training_levels (monster_id ):
     levels =_battle_training_cache ["data"].get (monster_id )
     if levels :
         return levels
-    template =_battle_training_cache ["data"].get (1 )or []
-    if not template :
-        return []
     definition =get_monster_definition (monster_id )or {}
     monster_cost =max (1 ,definition .get ("cost_coins",0 )or 0 )
-    template_cost =max (1 ,(get_monster_definition (1 )or {}).get ("cost_coins",300 )or 300 )
-    scale =monster_cost /template_cost
+    import math
+    best =None
+    for known_id ,known_levels in _battle_training_cache ["data"].items ():
+        known_cost =max (1 ,(get_monster_definition (known_id )or {}).get ("cost_coins",0 )or 0 )
+        distance =abs (math .log (known_cost )-math .log (monster_cost ))
+        if known_levels and (best is None or distance <best [0 ]):
+            best =(distance ,known_levels )
+    if best is None :
+        return []
     return [
     {
     "level":lv .get ("level"),
-    "training_cost":max (0 ,int (round ((lv .get ("training_cost",0 )or 0 )*scale ))),
+    "training_cost":max (0 ,int (lv .get ("training_cost",0 )or 0 )),
     "training_time":max (0 ,lv .get ("training_time",0 )or 0 ),
     }
-    for lv in template
+    for lv in best [1 ]
     ]
 
 def battle_start_training (username ,params ):
@@ -1130,6 +1134,66 @@ def collect_multi_monster (username ,params ):
     "properties":create_player_properties (player_object ),
     }
     return result ,{"monster_updates":update_monster_list }
+def _register_bought_synthesis (island ,synthesizer ,user_egg ):
+    structure_id =synthesizer .get ("user_structure_id",0 )
+    ready_at =SFSLong (int (time .time ()*1000 ))
+    user_egg ["hatches_on"]=ready_at
+    entry ={
+    "used_critters":[],
+    "started_on":user_egg .get ("laid_on"),"success":True ,
+    "complete_on":ready_at ,"structure":SFSLong (structure_id ),
+    "monster":user_egg .get ("monster"),
+    }
+    island ["synthesizing"]=[e for e in island .get ("synthesizing")or [] if e is not None and e .get ("structure")!=structure_id ]
+    island ["synthesizing"].append (entry )
+    return entry
+def repair_workshop_evolve_flags (island ):
+    if island is None :
+        return
+    for monster in island .get ("monsters")or []:
+        if monster is None or monster .get ("evolve_unlocked")or monster .get ("awakened")or monster .get ("ascend_pending"):
+            continue
+        definition =get_monster_definition (monster .get ("monster",0 ))or {}
+        if is_box_monster_entity (definition ):
+            continue
+        has_reqs =monster .get ("has_evolve_reqs")
+        if not has_reqs :
+            continue
+        if not definition .get ("evolve_into"):
+            if has_reqs =="[]"and monster .get ("has_evolve_flexeggs")=="[]":
+                monster .pop ("has_evolve_reqs",None )
+                monster .pop ("has_evolve_flexeggs",None )
+            continue
+        requirements =definition .get ("evolve_requirements")
+        if requirements and has_reqs ==requirements :
+            monster ["has_evolve_reqs"]="[]"
+            monster ["has_evolve_flexeggs"]="[]"
+def repair_synthesizer_eggs (island ):
+    if island is None :
+        return
+    structures =island .get ("structures")or []
+    synthesizers =[s for s in structures if s is not None and _is_synthesizer_structure (s )]
+    if not synthesizers :
+        return
+    synth_ids ={s .get ("user_structure_id")for s in synthesizers }
+    entries =island .setdefault ("synthesizing",[])
+    covered ={e .get ("structure")for e in entries if e is not None }
+    for egg in island .get ("eggs")or []:
+        if egg is None or egg .get ("structure")not in synth_ids or egg .get ("structure")in covered :
+            continue
+        synthesizer =next (s for s in synthesizers if s .get ("user_structure_id")==egg .get ("structure"))
+        entries .append (_register_bought_synthesis_entry (synthesizer ,egg ))
+        covered .add (egg .get ("structure"))
+    for synthesizer in synthesizers :
+        if synthesizer .get ("occupied")or synthesizer .get ("has_egg")or synthesizer .get ("obj_data")or synthesizer .get ("obj_end"):
+            _clear_egg_holder_state (synthesizer )
+def _register_bought_synthesis_entry (synthesizer ,user_egg ):
+    return {
+    "used_critters":[],
+    "started_on":user_egg .get ("laid_on"),"success":True ,
+    "complete_on":user_egg .get ("hatches_on"),"structure":SFSLong (synthesizer .get ("user_structure_id",0 )),
+    "monster":user_egg .get ("monster"),
+    }
 def _synthesizer_is_free (island ,structure ,occupied_holder_ids ):
     structure_id =structure .get ("user_structure_id")
     if structure .get ("occupied")or structure .get ("has_egg")or structure_id in occupied_holder_ids :
@@ -1205,13 +1269,14 @@ previous_name =None ,ready =False ,allow_synthesizer =False ):
     if source :
         user_egg ["source"]=source
     island .setdefault ("eggs",[]).append (user_egg )
-    nursery ["occupied"]=True
-    nursery ["has_egg"]=True
-    nursery ["viewed"]=False
-    nursery ["obj_data"]=1
-    nursery ["obj_end"]=hatches_on
-    nursery ["finishing_time"]=hatches_on
-    nursery ["building_completed"]=hatches_on
+    if not _is_synthesizer_structure (nursery ):
+        nursery ["occupied"]=True
+        nursery ["has_egg"]=True
+        nursery ["viewed"]=False
+        nursery ["obj_data"]=1
+        nursery ["obj_end"]=hatches_on
+        nursery ["finishing_time"]=hatches_on
+        nursery ["building_completed"]=hatches_on
     return user_egg ,nursery
 def _find_fallback_egg (eggs ):
     return eggs [-1 ]if eggs else None
@@ -1370,6 +1435,7 @@ def buy_egg (username ,params ):
         if process_refs_repaired :
             save_player (username ,root )
         return {"success":False ,"error":"NO_AVAILABLE_EGG_HOLDER"},{}
+    synthesis_data =_register_bought_synthesis (island ,nursery ,user_egg )if _is_synthesizer_structure (nursery )else None
     _deduct_egg_purchase_cost (player_object ,monster_id )
     properties =create_player_properties (player_object )
     append_inventory_property (properties ,player_object )
@@ -1379,6 +1445,8 @@ def buy_egg (username ,params ):
     "properties":properties ,
     "user_egg":user_egg ,
     }
+    if synthesis_data is not None :
+        result ["user_synthesizing_data"]=synthesis_data
     nursery_update =_nursery_touch_payload (nursery ,player_object )
     return result ,nursery_update
 def _is_titansoul_definition (definition ):
@@ -1441,15 +1509,9 @@ def _build_hatched_monster (monster_id ,island ,island_type ,user_monster_id ,po
         "book_value":definition .get ("cost_coins",0 )or 0 ,
         }
 
-        evolve_reqs =definition .get ("evolve_requirements")
-        evolve_flexeggs =definition .get ("evolve_req_flexeggs")
-        if evolve_reqs :
-            monster ["has_evolve_reqs"]=evolve_reqs
-        if evolve_flexeggs :
-            monster ["has_evolve_flexeggs"]=evolve_flexeggs
-        if island_type ==24 :
-            monster .setdefault ("has_evolve_reqs","[]")
-            monster .setdefault ("has_evolve_flexeggs","[]")
+        if definition .get ("evolve_into")or definition .get ("evolve_requirements")or definition .get ("evolve_req_flexeggs"):
+            monster ["has_evolve_reqs"]="[]"
+            monster ["has_evolve_flexeggs"]="[]"
         if _is_titansoul_definition (definition ):
             monster ["titansoul"]=_default_titansoul_state ()
 
@@ -1582,6 +1644,7 @@ def hatch_egg (username ,params ):
     if not reawakened_name and matched_egg is not None and matched_egg .get ("source")=="wake_wubbox":
         reawakened_name =(get_monster_definition (matched_egg .get ("monster",0 ))or {}).get ("common_name")or "?"
     cleared_nursery =None
+    synthesizer_id =None
     consumed_egg_id =0
     if matched_egg is None :
         direct_monster_id =(params .get ("monster_id")or params .get ("monsterId")or params .get ("monster")
@@ -1639,6 +1702,8 @@ def hatch_egg (username ,params ):
                         del island ["monsters"][i ]
                         break
             cleared_nursery =_clear_egg_holder_state (nursery )
+            if nursery is not None and _is_synthesizer_structure (nursery ):
+                synthesizer_id =nursery .get ("user_structure_id",nursery_id )
         eggs .remove (matched_egg )
     monster_id =resolve_monster_for_island (monster_id ,island_type )
     definition =get_monster_definition (monster_id )
@@ -1686,7 +1751,9 @@ def hatch_egg (username ,params ):
         composer_song =msm_composer .find_song (player_object ,island_uid )
         if composer_song is not None :
             result ["song_data"]=msm_composer .wire_song (composer_song )
-    if cleared_nursery is not None :
+    if synthesizer_id is not None :
+        result ["synthesizer_collected"]=SFSLong (synthesizer_id )
+    elif cleared_nursery is not None :
         result ["nursery_update"]=_nursery_touch_payload (cleared_nursery ,player_object )
     return result
 def sell_egg (username ,params ):
@@ -2136,6 +2203,12 @@ def send_monster_to_home_island (username ,params ):
         return teleport_monster_to_island (username ,forwarded )
 
     home_type =_home_island_type_for (definition )
+    if island_type_of (_source )in (7 ,24 ):
+        islet_types =[
+        island_type for island_type in (26 ,27 ,28 ,29 )
+        if monster_allowed_on_island (definition ,island_type )]
+        if len (islet_types )==1 :
+            home_type =islet_types [0 ]
     if home_type :
         forwarded ["destination_island"]=home_type
         return teleport_monster_to_island (username ,forwarded )
@@ -2150,7 +2223,7 @@ SEASONAL_ISLAND_TYPE =21
 MYTHICAL_ISLAND_TYPE =23
 SHUGABUSH_ISLAND_TYPE =8
 ETHEREAL_ISLAND_TYPE =7
-ETHEREAL_WORKSHOP_ISLAND_TYPE =24
+MAGICAL_SANCTUM_ISLAND_TYPE =19
 
 def _home_island_type_for (definition ):
     family =f"{definition .get ('fam','')} {definition .get ('class','')}".upper ()
@@ -2158,7 +2231,7 @@ def _home_island_type_for (definition ):
     if levelup_island =="ethereal":
         return ETHEREAL_ISLAND_TYPE
     if levelup_island =="magical_ethereal":
-        return ETHEREAL_WORKSHOP_ISLAND_TYPE
+        return MAGICAL_SANCTUM_ISLAND_TYPE
     if "shugga"in levelup_island or "shugabush"in levelup_island :
         return SHUGABUSH_ISLAND_TYPE
     if "seasonal"in levelup_island :
@@ -2168,7 +2241,7 @@ def _home_island_type_for (definition ):
     if "CLASS_ETHEREAL"in family :
         return ETHEREAL_ISLAND_TYPE
     if "MAGICAL_ETHEREAL"in family :
-        return ETHEREAL_WORKSHOP_ISLAND_TYPE
+        return MAGICAL_SANCTUM_ISLAND_TYPE
     if "SEASON"in family :
         return SEASONAL_ISLAND_TYPE
     if "SHUGA"in family or "SHUGABUSH"in family :

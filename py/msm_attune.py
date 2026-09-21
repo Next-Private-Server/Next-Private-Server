@@ -24,6 +24,16 @@ def _grant_attuned_critter (island ,gene ):
         match .clear ()
         match ["gene"]=gene
         match ["num"]=num
+def _consume_attuned_critter (island ,gene ):
+    if island is None or not gene :
+        return
+    for entry in island .get ("attuned_critters")or []:
+        if entry is not None and entry .get ("gene")==gene :
+            have =max (entry .get ("num",0 )or 0 ,entry .get ("count",0 )or 0 ,entry .get ("amount",0 )or 0 )
+            entry .clear ()
+            entry ["gene"]=gene
+            entry ["num"]=max (0 ,have -1 )
+            return
 def start_attuning (username ,params ):
     structure_id =_attune_structure_id (params )
     root ,player_object =load_player (username )
@@ -34,8 +44,11 @@ def start_attuning (username ,params ):
     complete_on =now +_ATTUNING_DURATION_MS
     end_gene =_requested_gene (params ,"end_gene")or "G"
     start_gene =_requested_gene (params ,"start_gene")
+    reattuning =_find_reattuning_entry (island ,structure_id )
+    reattuned_monster =int ((reattuning or {}).get ("monster",0 )or 0 )
+    _consume_attuned_critter (island ,start_gene )
     attuning_data ={
-    "reattuned_monster":0 ,"started_on":SFSLong (now ),"start_gene":start_gene ,
+    "reattuned_monster":SFSLong (reattuned_monster ),"started_on":SFSLong (now ),"start_gene":start_gene ,
     "complete_on":SFSLong (complete_on ),"end_gene":end_gene ,"structure":SFSLong (structure_id ),
     }
     entries =island .setdefault ("attuning",[])
@@ -86,16 +99,24 @@ def finish_attuning (username ,params ):
     root ,player_object =load_player (username )
     island ,structure =find_island_by_structure (player_object ,structure_id )if structure_id else (None ,None )
     end_gene =""
+    reattuned_monster =0
+    tuned_update =None
     if island is not None :
         entries =island .setdefault ("attuning",[])
         for i in range (len (entries )-1 ,-1 ,-1 ):
             entry =entries [i ]
             if entry is not None and entry .get ("structure")==structure_id :
                 end_gene =(entry .get ("end_gene")or "").strip ().upper ()[:1 ]
+                reattuned_monster =int (entry .get ("reattuned_monster",0 )or 0 )
                 del entries [i ]
                 break
         if end_gene :
             _grant_attuned_critter (island ,end_gene )
+        if end_gene and reattuned_monster :
+            _ ,tuned =find_monster_with_island (player_object ,reattuned_monster )
+            if tuned is not None :
+                tuned ["reattuned_genes"]=(tuned .get ("reattuned_genes")or "")+end_gene
+                tuned_update ={"user_monster_id":SFSLong (reattuned_monster ),"reattuned_genes":tuned ["reattuned_genes"]}
         if structure is not None :
             structure .update ({
             "active":False ,"is_active":False ,"in_use":False ,"is_processing":False ,"is_attuning":False ,
@@ -108,7 +129,10 @@ def finish_attuning (username ,params ):
             "attuner_gene_granted":True ,
             })
         save_player (username ,root )
-    return {"user_structure_id":SFSLong (structure_id ),"success":True ,"end_gene":end_gene }
+    result ={"user_structure_id":SFSLong (structure_id ),"success":True ,"end_gene":end_gene }
+    if tuned_update is not None :
+        result ["tuned_monster_update"]=tuned_update
+    return result
 
 RARITY_RARE =1
 RARITY_EPIC =2
@@ -130,17 +154,13 @@ def update_reattune_monster (username ,params ):
         return action_result (False ,"user_structure_id",structure_id ,with_properties =True )
     now =int (time .time ()*1000 )
     complete_on =now +_ATTUNING_DURATION_MS
-    reattuning_data ={
-    "structure":SFSLong (structure_id ),"user_monster_id":SFSLong (user_monster_id ),
-    "rarity":rarity ,"started_on":SFSLong (now ),"complete_on":SFSLong (complete_on ),
-    }
+    reattuning_data ={"structure":SFSLong (structure_id ),"monster":SFSLong (user_monster_id )}
     entries =island .setdefault ("reattuning",[])
     island ["reattuning"]=[e for e in entries if e is not None and e .get ("structure")!=structure_id ]
     island ["reattuning"].append (reattuning_data )
     save_player (username ,root )
     result =action_result (True ,"user_structure_id",structure_id )
     result ["user_reattuning_data"]=reattuning_data
-    result ["properties"]=create_player_properties (player_object )
     return result
 
 def collect_reattune_monster (username ,params ):
@@ -148,6 +168,10 @@ def collect_reattune_monster (username ,params ):
     root ,player_object =load_player (username )
     island ,structure =find_island_by_structure (player_object ,structure_id )if structure_id else (None ,None )
     tuned_up =False
+    user_monster_id =0
+    new_monster =0
+    sold_update =None
+    attuning_data ={"structure":SFSLong (structure_id )}
     if island is not None :
         entries =island .setdefault ("reattuning",[])
         entry =None
@@ -156,16 +180,23 @@ def collect_reattune_monster (username ,params ):
                 entry =entries .pop (i )
                 break
         if entry is not None :
-            user_monster_id =entry .get ("user_monster_id",0 )or 0
-            rarity =entry .get ("rarity",0 )or 0
+            user_monster_id =int (entry .get ("monster",entry .get ("user_monster_id",0 ))or 0 )
+            rarity =params .get ("rarity",entry .get ("rarity",0 ))or 0
             import random
-            if random .random ()<_REATTUNE_SUCCESS_CHANCE :
-                _ ,monster =find_monster_with_island (player_object ,user_monster_id )
-                if monster is not None :
+            _ ,monster =find_monster_with_island (player_object ,user_monster_id )
+            if monster is not None :
+                monster .pop ("reattuned_genes",None )
+                new_monster =int (monster .get ("monster",0 )or 0 )
+                if random .random ()<_REATTUNE_SUCCESS_CHANCE :
+                    if not rarity :
+                        rarity =RARITY_RARE
                     tuned_up =_apply_tune_up (monster ,rarity )
+                    new_monster =int (monster .get ("monster",0 )or 0 )
+                    if tuned_up :
+                        sold_update =_record_new_species (island ,new_monster )
         now =int (time .time ()*1000 )
         attuning_data ={
-        "reattuned_monster":0 ,"started_on":SFSLong (now ),"start_gene":"",
+        "reattuned_monster":SFSLong (0 ),"started_on":SFSLong (now ),"start_gene":"",
         "complete_on":SFSLong (now +_ATTUNING_DURATION_MS ),"end_gene":"G",
         "structure":SFSLong (structure_id ),
         }
@@ -175,16 +206,28 @@ def collect_reattune_monster (username ,params ):
         save_player (username ,root )
     return {
     "success":True ,"user_structure_id":SFSLong (structure_id ),"tuned_up":tuned_up ,
+    "user_monster_id":SFSLong (user_monster_id ),"new_monst":new_monster ,
+    "user_attuning_data":attuning_data ,
+    "user_reattuning_data":{"structure":SFSLong (structure_id ),"monster":SFSLong (0 )},
+    "sold_monsters_update":sold_update ,
     }
+
+def _record_new_species (island ,monster_type ):
+    import msm_monsters
+    msm_monsters ._mark_monster_collected_in_book (island ,monster_type )
+    return msm_monsters ._mark_monster_viewed_in_sold (island ,monster_type )
 
 def _apply_tune_up (monster ,rarity ):
     import msm_gamedata
     species_id =monster .get ("monster",0 )
     common_id =msm_gamedata .common_id_for_rare (species_id )or species_id
-    if rarity ==RARITY_EPIC :
-        next_id =msm_gamedata .epic_id_for_common (common_id )
-    else :
-        next_id =msm_gamedata .rare_id_for_common (common_id )
+    evolves_into =(msm_gamedata .get_monster_definition (species_id )or {}).get ("evolve_into")or 0
+    next_id =msm_gamedata .get_monster_id_for_entity_id (evolves_into )if evolves_into else 0
+    if not next_id :
+        if rarity ==RARITY_EPIC :
+            next_id =msm_gamedata .epic_id_for_common (common_id )
+        else :
+            next_id =msm_gamedata .rare_id_for_common (common_id )
     if not next_id or next_id ==species_id :
         return False
     next_definition =msm_gamedata .get_monster_definition (next_id )
@@ -196,4 +239,11 @@ def _apply_tune_up (monster ,rarity ):
     return True
 
 def viewed_reattuned_monster (username ,params ):
-    return {"success":True }
+    user_monster_id =params .get ("user_monster_id",0 )or 0
+    root ,player_object =load_player (username )
+    island ,monster =find_monster_with_island (player_object ,user_monster_id )if user_monster_id else (None ,None )
+    result ={"success":True }
+    if island is not None and monster is not None :
+        result ["sold_monsters_update"]=_record_new_species (island ,monster .get ("monster",0 )or 0 )
+        save_player (username ,root )
+    return result

@@ -154,7 +154,7 @@ def viewed_crucible_unlock (username ,params ):
     save_player (username ,root )
     return {
     "success":True ,
-    "user_crucible":_crucible_wire_object (island ,structure ),
+    "user_crucible":{"struct":SFSLong (structure .get ("user_structure_id",0 )),"u":requested_stage },
     }
 
 def viewed_crucible_monster (username ,params ):

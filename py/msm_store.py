@@ -1,3 +1,4 @@
+import shutil
 import json
 import os
 import tempfile
@@ -189,10 +190,28 @@ def _fallback_player_file (missing_path ):
         return None
     return max (candidates ,key =lambda p :p .stat ().st_mtime )
 
+def _create_default_save (missing_path ):
+    roots =[missing_path .parent ,missing_path .parent .parent /"save_templates"]
+    if db_dir is not None :
+        roots .append (Path (db_dir ).parent /"players")
+    for root in roots :
+        for name in ("MaxedDefault.json","Starter.json"):
+            template =root /name
+            if template .is_file ():
+                try :
+                    missing_path .parent .mkdir (parents =True ,exist_ok =True )
+                    shutil .copyfile (template ,missing_path )
+                    return missing_path
+                except OSError :
+                    return template
+    return None
+
 def load_user_data (username ):
     path =_player_file (username )
     if not path .exists ():
         fallback =_fallback_player_file (path )
+        if fallback is None :
+            fallback =_create_default_save (path )
         if fallback is None :
             raise FileNotFoundError (f"no player data for {username!r} at {path}")
         path =fallback

@@ -412,9 +412,12 @@ def _repair (player_object ,username =None ):
         msm_islands .repair_ethereal_workshop_state (player_object ,island )
         msm_islands .repair_dish_harmonizer_state (island )
         msm_islands .backfill_ethereal_eggcups (island )
+        msm_monsters .repair_synthesizer_eggs (island )
+        msm_monsters .repair_workshop_evolve_flags (island )
         msm_islands .backfill_nps_test_structure (island )
         msm_monsters .repair_magical_nexus_layout (island )
         msm_box .repair_underling_box_state (island )
+        msm_box .repair_gold_box_requirements (island )
         msm_islands .repair_crucible_structure (island )
         msm_islands .repair_structure_build_timestamps (island )
         msm_monsters .recompute_island_happiness (island )
@@ -1430,7 +1433,6 @@ def _finish_breeding (force_complete ):
     return handler
 _BATTLE_ISLAND_TYPE =20
 _ISLAND_32_TYPE =32
-_DIRECT_TELEPORT_ISLAND_TYPES =(_BATTLE_ISLAND_TYPE ,_ISLAND_32_TYPE )
 
 def _teleport_destination_type (player_object ,params ):
     for key in ("destination_island","target_island","dest_island","sent_to_island",
@@ -1458,36 +1460,27 @@ def _teleport_monster (send_home ,default_destination =None ):
     def handler (username ,params ):
         root ,player_object =load_player (username )
         destination =_teleport_destination_type (player_object ,params )or default_destination or _BATTLE_ISLAND_TYPE
-        if not send_home and destination in _DIRECT_TELEPORT_ISLAND_TYPES :
-            _monster_id ,source_island_id ,_monster_type =_teleport_source (username ,params )
-            result =msm_monsters .move_battle_monster (username ,params ,send_home )
-            if not result .get ("success"):
-                return result
-            _root ,player_object =load_player (username )
-            source_island =_find_island (player_object .get ("islands")or [],source_island_id )
-            happy_effects =[]
-            if source_island is not None :
-                for monster in source_island .get ("monsters")or []:
-                    if monster is not None and monster .get ("user_monster_id"):
-                        happy_effects .append ({
-                        "user_monster_id":SFSLong (monster .get ("user_monster_id",0 )),
-                        "happiness":monster .get ("happiness",0 )or 0 ,
-                        })
-            frames =[
-            ("battle_teleport",result ),
-            ("gs_multi_update_monster",{"success":True ,"monster_happy_effects":happy_effects }),
-            ]
-            return frames
+        forwarded =dict (params )
+        if not send_home and not _teleport_destination_type (player_object ,params ):
+            forwarded ["destination_island"]=destination
         monster_id ,source_island_id ,monster_type =_teleport_source (username ,params )
         if send_home :
             result ,_nursery =msm_monsters .send_monster_to_home_island (username ,params )
         else :
-            result ,_nursery =msm_monsters .teleport_monster_to_island (username ,params )
+            result ,_nursery =msm_monsters .teleport_monster_to_island (username ,forwarded )
         if not result .get ("success"):
             return result
-        return _egg_teleport_frames (username ,
+        frames =_egg_teleport_frames (username ,
         "gs_send_monster_home"if send_home else "battle_teleport",
         params ,result ,monster_id ,source_island_id ,monster_type )
+        if not send_home and destination in (_BATTLE_ISLAND_TYPE ,_ISLAND_32_TYPE ):
+            _root ,saved =load_player (username )
+            source =_find_island (saved .get ("islands")or [],source_island_id )
+            happy_effects =[
+            {"user_monster_id":SFSLong (m ["user_monster_id"]),"happiness":m .get ("happiness",0 )or 0 }
+            for m in (source or {}).get ("monsters")or []if m and m .get ("user_monster_id")]
+            frames .append (("gs_multi_update_monster",{"success":True ,"monster_happy_effects":happy_effects }))
+        return frames
     return handler
 def _egg_teleport_frames (username ,command ,params ,result ,monster_id ,source_island_id ,monster_type ):
     user_egg =result .pop ("user_egg",None )
@@ -1558,7 +1551,17 @@ def _buy_egg_handler (username ,params ):
         player_object =player_object ,egg =egg )
         if commands :
             save_player (username ,root )
-    return result
+    started =result .pop ("user_synthesizing_data",None )
+    frames =[("gs_buy_egg",result )]
+    if started is not None :
+        frames .append (("gs_start_synthesizing",{
+        "last_synthesis":{"genes":"","structure":started ["structure"]},
+        "user_structure_id":started ["structure"],
+        "user_egg":{k :v for k ,v in (result .get ("user_egg")or {}).items ()if k in ("hatches_on","laid_on","island","user_egg_id","costume","structure","monster")},
+        "success":True ,"user_synthesizing_data":started ,
+        "properties":result .get ("properties")or [],
+        }))
+    return _append_mod_frames (username ,frames )
 def _costume_action (command ):
     def handler (username ,params ):
         return msm_monsters .costume_action (username ,params ,command )
@@ -1590,9 +1593,12 @@ def _hatch_egg_handler (username ,params ):
         return result
     happy_effects =result .pop ("monster_happy_effects",None )
     nursery_update =result .pop ("nursery_update",None )
+    synthesizer_collected =result .pop ("synthesizer_collected",None )
     workshop_monster_updates =result .pop ("workshop_monster_updates",None )
     workshop_update_user_monster_id =result .pop ("workshop_update_user_monster_id",None )
     frames =[("gs_hatch_egg",result )]
+    if synthesizer_collected is not None :
+        frames .insert (0 ,("gs_collect_synthesizing_success",{"structure":synthesizer_collected }))
     if nursery_update :
         frames .append (("gs_update_structure",nursery_update ))
     if workshop_monster_updates :
@@ -1609,6 +1615,35 @@ def _hatch_egg_handler (username ,params ):
         _root ,player_object =load_player (username )
     except Exception :
         player_object =None
+    return _append_mod_frames (username ,frames )
+def _reattune_frames_handler (command ,fn ):
+    def handler (username ,params ):
+        result =fn (username ,params )
+        sold =result .pop ("sold_monsters_update",None )if isinstance (result ,dict )else None
+        frames =[(command ,result )]
+        if sold :
+            frames .append (("gs_update_sold_monsters",sold ))
+        return frames
+    return handler
+def _finish_attuning_handler (username ,params ):
+    result =msm_attune .finish_attuning (username ,params )
+    frames =[]
+    tuned =result .pop ("tuned_monster_update",None )if isinstance (result ,dict )else None
+    frames .append (("gs_finish_attuning",result ))
+    if tuned is not None :
+        frames .append (("gs_multi_update_monster",{"success":True ,"update_monster_list":[tuned ]}))
+    return frames
+def _reattune_handler (username ,params ):
+    result =msm_attune .update_reattune_monster (username ,params )
+    frames =[]
+    monster_id =params .get ("user_monster_id",0 )or 0
+    if isinstance (result ,dict )and result .get ("success")and monster_id :
+        frames .append (("gs_collect_monster",{
+        "ethereal_currency":0 ,"success":False ,
+        "message":"Normal monster: nothing to collect",
+        "user_monster_id":SFSLong (monster_id ),
+        }))
+    frames .append (("gs_update_reattune_monster",result ))
     return _append_mod_frames (username ,frames )
 def _viewed_egg_handler (username ,params ):
     result ,sold_update =msm_monsters .viewed_egg (username ,params )
@@ -2211,10 +2246,10 @@ GAMEPLAY_HANDLERS ={
 "gs_start_dish_harmonizing":_with_structure_update ("gs_start_dish_harmonizing",msm_structures .start_dish_harmonizing ,always =True ),
 "gs_start_attuning":_simple (msm_attune .start_attuning ),
 "gs_speedup_attuning":_simple (msm_attune .speedup_attuning ),
-"gs_finish_attuning":_simple (msm_attune .finish_attuning ),
-"gs_update_reattune_monster":_simple (msm_attune .update_reattune_monster ),
-"gs_collect_reattune_monster":_simple (msm_attune .collect_reattune_monster ),
-"gs_viewed_reattuned_monster":_simple (msm_attune .viewed_reattuned_monster ),
+"gs_finish_attuning":_finish_attuning_handler ,
+"gs_update_reattune_monster":_reattune_handler ,
+"gs_collect_reattune_monster":_reattune_frames_handler ("gs_collect_reattune_monster",msm_attune .collect_reattune_monster ),
+"gs_viewed_reattuned_monster":_reattune_frames_handler ("gs_viewed_reattuned_monster",msm_attune .viewed_reattuned_monster ),
 "gs_start_synthesizing":_simple (msm_synthesis .start_synthesizing ),
 "gs_speedup_synthesizing":_simple (msm_synthesis .speedup_synthesizing ),
 "gs_collect_synthesizing_success":_simple (msm_synthesis .collect_synthesizing_success ),

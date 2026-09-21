@@ -57,6 +57,8 @@ def _gold_island_box_requirements (definition ,island_type ):
     if island_type !=GOLD_ISLAND_TYPE or not is_box_monster_entity (definition ):
         return []
     monster_id =definition .get ("monster_id",0 )or 0
+    if monster_id !=82 and _ints_from_raw (definition .get ("box_monster_requirements")):
+        return []
     want_rare =monster_id ==82 or _is_rare_monster_definition (definition )
     requirements =[]
     for candidate_id in monster_ids_allowed_on_island (GOLD_ISLAND_TYPE ):
@@ -280,6 +282,26 @@ def apply_underling_box_state (monster ,definition ,island_type ):
     "evolve_flex_boxed_eggs",
     ):
         monster .pop (key ,None )
+def repair_gold_box_requirements (island ):
+    if island is None or island_type_of (island )!=GOLD_ISLAND_TYPE :
+        return
+    for monster in island .get ("monsters")or []:
+        if monster is None or monster .get ("awakened")or monster .get ("ascend_pending"):
+            continue
+        definition =get_monster_definition (monster .get ("monster",0 ))
+        if not is_box_monster_entity (definition )or "box_requirements"not in monster :
+            continue
+        wanted =box_requirements (definition ,GOLD_ISLAND_TYPE )
+        if not wanted or _ints_from_raw (monster .get ("box_requirements"))==wanted :
+            continue
+        remaining =list (wanted )
+        kept =[]
+        for egg in boxed_eggs (monster ):
+            if egg in remaining :
+                remaining .remove (egg )
+                kept .append (egg )
+        monster ["box_requirements"]=_ints_to_json_array (wanted )
+        monster ["boxed_eggs"]=_ints_to_json_array (kept )
 def clear_underling_box_state (monster ):
     for key in ("box_requirements","boxed_eggs","has_evolve_reqs","has_evolve_flexeggs","evolve_flex_boxed_eggs"):
         monster .pop (key ,None )
@@ -666,9 +688,15 @@ def box_purchase_fill (username ,params ):
         return result ,{}
     island =target_island or island
     definition =get_monster_definition (box_monster .get ("monster",0 ))
+    can_evolve =((definition or {}).get ("evolve_into",0 )or 0 )>0
     if not is_box_monster_entity (definition )and not box_monster .get ("ascend_pending"):
-        result ["error"]="not_box_monster"
-        return result ,{}
+        if can_evolve :
+            _start_evolve_round (box_monster ,definition ,island_type_of (island ))
+        else :
+            result ["error"]="not_box_monster"
+            return result ,{}
+    elif is_awakened_box_monster (box_monster )and can_evolve and not box_monster .get ("ascend_pending"):
+        _start_evolve_round (box_monster ,definition ,island_type_of (island ))
 
     if is_awakened_box_monster (box_monster )and not box_monster .get ("ascend_pending"):
         client_result ={
@@ -705,6 +733,14 @@ def box_purchase_fill (username ,params ):
                 boxed .append (wanted )
                 flex_boxed .append (wanted )
     else :
+        pool =list (requirements )
+        matched =[]
+        for egg in boxed :
+            if egg in pool :
+                pool .remove (egg )
+                matched .append (egg )
+        boxed [:]=matched
+        before =len (boxed )
         for i ,wanted in enumerate (requirements ):
             required_through_slot =_count (requirements [:i +1 ],wanted )
             if _count (boxed ,wanted )<required_through_slot :
@@ -731,6 +767,13 @@ def box_purchase_fill (username ,params ):
             if island_type_of (island )in (10 ,12 )
             else "USER_BOX_INVENTORY_DIAMOND_PRICE_PER_MONSTER"
             )
+            if island_type_of (island )==GOLD_ISLAND_TYPE :
+                class_name =((definition or {}).get ("class")or "").upper ()
+                per_monster_key =(
+                "USER_GOLD_EPIC_BOX_INVENTORY_DIAMOND_PRICE_PER_MONSTER"if "EPIC"in class_name
+                else "USER_GOLD_RARE_BOX_INVENTORY_DIAMOND_PRICE_PER_MONSTER"if "RARE"in class_name
+                else "USER_GOLD_BOX_INVENTORY_DIAMOND_PRICE_PER_MONSTER"
+                )
             per_monster_cost =get_user_game_setting_int (per_monster_key ,30 )
             diamonds_spent =remaining *per_monster_cost
             diamonds =player_object .get ("diamonds",0 )or 0
@@ -910,6 +953,25 @@ def wake_wubbox (username ,params ):
 def box_activate_monster (username ,params ):
     return wake_wubbox (username ,params )
 
+def _start_evolve_round (monster ,definition ,island_type =0 ):
+    if not is_awakened_box_monster (monster ):
+        apply_awakened_box_state (monster ,definition ,island_type )
+    evolve_into =(definition or {}).get ("evolve_into",0 )or 0
+    monster ["evolve_unlocked"]=1
+    monster ["evolve_enabled"]=1
+    monster ["evolve_into"]=evolve_into
+    if not monster .get ("ascend_pending"):
+        evolve_reqs =_ints_from_raw (definition .get ("evolve_requirements"))
+        evolve_flexeggs =_ints_from_raw (definition .get ("evolve_req_flexeggs"))
+        monster ["has_evolve_reqs"]=_ints_to_json_array (evolve_reqs )
+        monster ["has_evolve_flexeggs"]=_ints_to_json_array (evolve_flexeggs )
+        monster ["evolve_boxed_eggs"]="[]"
+        monster ["evolve_flex_boxed_eggs"]="[]"
+        monster ["ascend_pending"]=True
+    elif not _ints_from_raw (monster .get ("has_evolve_flexeggs")):
+        evolve_flexeggs =_ints_from_raw (definition .get ("evolve_req_flexeggs"))
+        if evolve_flexeggs :
+            monster ["has_evolve_flexeggs"]=_ints_to_json_array (evolve_flexeggs )
 def purchase_evolve_unlock (username ,params ):
     user_monster_id =params .get ("user_monster_id",0 )or 0
     root ,player_object =load_player (username )
@@ -926,24 +988,11 @@ def purchase_evolve_unlock (username ,params ):
     if evolve_into <=0 :
         result ["error"]="evolve_not_available"
         return result ,{}
-    if not is_awakened_box_monster (monster ):
+    if is_box_monster_entity (definition )and not is_awakened_box_monster (monster ):
         result ["error"]="evolve_monster_not_awakened"
         return result ,{}
-    monster ["evolve_unlocked"]=1
-    monster ["evolve_enabled"]=1
-    monster ["evolve_into"]=evolve_into
-    if not monster .get ("ascend_pending"):
-        evolve_reqs =_ints_from_raw (definition .get ("evolve_requirements"))
-        evolve_flexeggs =_ints_from_raw (definition .get ("evolve_req_flexeggs"))
-        monster ["has_evolve_reqs"]=_ints_to_json_array (evolve_reqs )
-        monster ["has_evolve_flexeggs"]=_ints_to_json_array (evolve_flexeggs )
-        monster ["evolve_boxed_eggs"]="[]"
-        monster ["evolve_flex_boxed_eggs"]="[]"
-        monster ["ascend_pending"]=True
-    elif not _ints_from_raw (monster .get ("has_evolve_flexeggs")):
-        evolve_flexeggs =_ints_from_raw (definition .get ("evolve_req_flexeggs"))
-        if evolve_flexeggs :
-            monster ["has_evolve_flexeggs"]=_ints_to_json_array (evolve_flexeggs )
+    unlock_island ,_unused =find_monster_with_island (player_object ,user_monster_id )
+    _start_evolve_round (monster ,definition ,island_type_of (unlock_island )if unlock_island else 0 )
     save_player (username ,root )
     result ={"success":True ,"user_monster_id":SFSLong (user_monster_id ),"properties":create_player_properties (player_object )}
     update =_box_activate_update (monster )

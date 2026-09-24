@@ -1,0 +1,2 @@
+local SoulLinkSelectEntry = {}
+return SoulLinkSelectEntry

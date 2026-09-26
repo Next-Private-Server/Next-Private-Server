@@ -10,8 +10,10 @@ import bridge_core
 import msm_protocol
 from fastapi.responses import JSONResponse
 
+
 async def _nps_health():
     return JSONResponse({"nps_server": True})
+
 
 bridge_core.app.add_api_route("/nps_health", _nps_health, methods=["GET"])
 bridge_core.app.router.routes.insert(0, bridge_core.app.router.routes.pop())
@@ -39,10 +41,16 @@ def _build_raw_frame(command, payload):
 
 msm_protocol.build_raw_frame = _build_raw_frame
 
+
 def _account_entry(account):
     return {
-        "type": "email", "username": account["username"], "userName": account["username"],
-        "email": account["email"], "can_bind_to": True, "can_create": True, "auto_create": False,
+        "type": "email",
+        "username": account["username"],
+        "userName": account["username"],
+        "email": account["email"],
+        "can_bind_to": True,
+        "can_create": True,
+        "auto_create": False,
     }
 
 
@@ -59,19 +67,33 @@ async def _existing_accounts():
     _sync_active_save()
     account = bridge_core.forced_account()
     entry = _account_entry(account)
-    return JSONResponse({
-        "ok": True, "success": True, "status": "ok",
-        "found": True, "existing_account": True, "account_exists": True, "create_account": False,
-        "connectionError": False, "can_create": True, "auto_create": False,
-        "can_bind_to": ["email"], "isAvailable": True,
-        "existing_accounts": [entry], "accounts": [entry], "login_types": ["email"],
-    })
+    return JSONResponse(
+        {
+            "ok": True,
+            "success": True,
+            "status": "ok",
+            "found": True,
+            "existing_account": True,
+            "account_exists": True,
+            "create_account": False,
+            "connectionError": False,
+            "can_create": True,
+            "auto_create": False,
+            "can_bind_to": ["email"],
+            "isAvailable": True,
+            "existing_accounts": [entry],
+            "accounts": [entry],
+            "login_types": ["email"],
+        }
+    )
 
 
 def install_existing_accounts():
     paths = ("/auth/api/existing_accounts", "/auth/api/existing_accounts/")
     app = bridge_core.app
-    app.router.routes = [r for r in app.router.routes if getattr(r, "path", None) not in paths]
+    app.router.routes = [
+        r for r in app.router.routes if getattr(r, "path", None) not in paths
+    ]
     before = len(app.router.routes)
     for p in paths:
         app.add_api_route(p, _existing_accounts, methods=["GET", "POST"])

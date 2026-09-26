@@ -12,34 +12,30 @@ _DEFAULTS = {
     "unlock_all_bakery_foods": False,
     "unlock_all_celestial_ascension": False,
     "random_monster_names": False,
-
     "functioning_currencies": False,
-
     "sell_percentage": 75,
-
     "breeding_luck": False,
     "breeding_rate_normal": 100,
     "breeding_rate_rare": 0,
     "breeding_rate_epic": 0,
-
     "minigame_theme": "anniversary",
-
     "clubbox_enabled": True,
     "clubbox_hours_enabled": False,
     "clubbox_start_hour": 0,
     "clubbox_end_hour": 24,
-
     "dipster_dig_enabled": True,
     "dipster_dig_hours_enabled": False,
     "dipster_dig_start_hour": 0,
     "dipster_dig_end_hour": 24,
 }
 
+
 def _path():
     base = os.environ.get("NPS_BASE_DIR")
     if not base:
         return None
     return Path(base) / "nps_toggles.json"
+
 
 def get_toggles():
     path = _path()
@@ -65,8 +61,10 @@ def get_toggles():
                         pass
     return merged
 
+
 def is_enabled(name):
     return bool(get_toggles().get(name, False))
+
 
 def get_int(name, default=0, minimum=None, maximum=None):
     try:
@@ -78,6 +76,7 @@ def get_int(name, default=0, minimum=None, maximum=None):
     if maximum is not None:
         value = min(maximum, value)
     return value
+
 
 def is_time_window_active(enabled_key, hours_enabled_key, start_hour_key, end_hour_key):
     if not is_enabled(enabled_key):

@@ -17,7 +17,9 @@ _CERT_HASH = ""
 _SSL_CONTEXT = None
 
 
-def set_nps_online_config(server_url, account_id, session_token, device_id, friend_code="", cert_hash=""):
+def set_nps_online_config(
+    server_url, account_id, session_token, device_id, friend_code="", cert_hash=""
+):
     global _SERVER_URL, _ACCOUNT_ID, _SESSION_TOKEN, _DEVICE_ID, _FRIEND_CODE, _CERT_HASH
     _SERVER_URL = (server_url or "").rstrip("/")
     _ACCOUNT_ID = int(account_id or 0)
@@ -41,8 +43,11 @@ def active_friend_code():
 
 def _sign(method, path_with_query, body_bytes, ts):
     from java import jclass
+
     native = jclass("com.nextstars.nps.NpsAuthNative")
-    return str(native.sign(method, path_with_query, _DEVICE_ID, _CERT_HASH, ts, body_bytes))
+    return str(
+        native.sign(method, path_with_query, _DEVICE_ID, _CERT_HASH, ts, body_bytes)
+    )
 
 
 def _ssl_context():
@@ -56,6 +61,7 @@ def _refresh_session():
     global _SESSION_TOKEN
     try:
         from java import jclass
+
         token = str(jclass("com.nextstars.nps.NpsOnlineSession").refresh() or "")
     except Exception:
         return False
@@ -102,13 +108,17 @@ def _request(method, path, body_obj=None, _retrying=False):
             body = e.read().decode("utf-8")
         except Exception:
             body = ""
-        logger.warning("nps_online %s %s -> HTTP %s: %s", method, path, e.code, body[:300])
+        logger.warning(
+            "nps_online %s %s -> HTTP %s: %s", method, path, e.code, body[:300]
+        )
         try:
             return json.loads(body)
         except Exception:
             return None
     except Exception as e:
-        logger.warning("nps_online %s %s failed: %s: %s", method, path, e.__class__.__name__, e)
+        logger.warning(
+            "nps_online %s %s failed: %s: %s", method, path, e.__class__.__name__, e
+        )
         return None
 
 
@@ -126,7 +136,11 @@ def _cached_list(name, path, ok_code):
     if hit is not None and now - hit[0] < _LIST_CACHE_TTL:
         return hit[1]
     result = _request("GET", path)
-    value = (result.get("requests") or result.get("friends") or [])         if (result and result.get("code") == ok_code) else []
+    value = (
+        (result.get("requests") or result.get("friends") or [])
+        if (result and result.get("code") == ok_code)
+        else []
+    )
     _LIST_CACHE[name] = (now, value)
     return value
 

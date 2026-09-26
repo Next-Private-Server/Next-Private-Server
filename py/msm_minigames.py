@@ -6,8 +6,11 @@ import time
 import zlib
 
 from msm_playerdata import (
-    append_inventory_property, create_player_properties, grant_inventory_item,
-    load_player, save_player,
+    append_inventory_property,
+    create_player_properties,
+    grant_inventory_item,
+    load_player,
+    save_player,
 )
 from msm_gamedata import get_monster_id_for_entity_id
 from msm_store import load_db_json
@@ -32,6 +35,7 @@ def _minigame_theme():
         return value
     return DEFAULT_MINIGAME_THEME
 
+
 _CURRENCY_REWARD_KEYS = {
     "COINS": "coins",
     "FOOD": "food",
@@ -54,9 +58,14 @@ def _safe_int(value, default=0):
 
 
 def _minigame_tokens(player_object):
-    return max(0, _safe_int(
-        player_object.get("minigame_tokens_actual", player_object.get("minigame_tokens", 0))
-    ))
+    return max(
+        0,
+        _safe_int(
+            player_object.get(
+                "minigame_tokens_actual", player_object.get("minigame_tokens", 0)
+            )
+        ),
+    )
 
 
 def _set_minigame_tokens(player_object, value):
@@ -90,7 +99,9 @@ def _level_tiers(minigame_id):
 
 
 def _defined_level_keys(minigame_id):
-    return sorted({tier_level for tier_level, _ in _level_tiers(minigame_id) if tier_level > 0})
+    return sorted(
+        {tier_level for tier_level, _ in _level_tiers(minigame_id) if tier_level > 0}
+    )
 
 
 def _safe_defined_level(minigame_id, level):
@@ -151,7 +162,7 @@ def _decode_cell_blob(blob, cell_count):
     except (TypeError, ValueError, zlib.error):
         return [0] * cell_count
     n = len(raw) // 4
-    cells = list(struct.unpack(">%di" % n, raw[:n * 4])) if n else []
+    cells = list(struct.unpack(">%di" % n, raw[: n * 4])) if n else []
     if len(cells) < cell_count:
         cells.extend([0] * (cell_count - len(cells)))
     return cells[:cell_count]
@@ -170,7 +181,7 @@ def _decode_cell_blob_auto(blob):
     except (TypeError, ValueError, zlib.error):
         return []
     n = len(raw) // 4
-    return list(struct.unpack(">%di" % n, raw[:n * 4])) if n else []
+    return list(struct.unpack(">%di" % n, raw[: n * 4])) if n else []
 
 
 def _empty_grid_blob(cell_count):
@@ -201,39 +212,50 @@ def _empty_minigame_data(minigame_id):
     width, height = _grid_dims_for_level(minigame_id, 1)
     slots = _slots_for_level(minigame_id, 1)
     loot_blob = _populated_grid_blob(minigame_id, width * height, slots, width, height)
-    return json.dumps({
-        "gridState": _empty_grid_blob(width * height),
-        "lootState": loot_blob,
-        "level": 1,
-        "version": 1,
-        "seed": random.randint(-2147483648, 2147483647),
-    })
+    return json.dumps(
+        {
+            "gridState": _empty_grid_blob(width * height),
+            "lootState": loot_blob,
+            "level": 1,
+            "version": 1,
+            "seed": random.randint(-2147483648, 2147483647),
+        }
+    )
 
 
 def _empty_minigame_stats():
-    return json.dumps({
-        "levels_complete": 0,
-        "top_levels_complete": 0,
-        "timed_event_id": TIMED_EVENT_ID,
-        "bonus_timings": [],
-        "entities_obtained": {},
-        "celestial_mercy": 0,
-        "rare_mercy": 0,
-        "epic_mercy": 0,
-    })
+    return json.dumps(
+        {
+            "levels_complete": 0,
+            "top_levels_complete": 0,
+            "timed_event_id": TIMED_EVENT_ID,
+            "bonus_timings": [],
+            "entities_obtained": {},
+            "celestial_mercy": 0,
+            "rare_mercy": 0,
+            "epic_mercy": 0,
+        }
+    )
 
 
 def _repair_legacy_minigame_entry(entry):
-    minigame_id = _safe_int(entry.get("minigame_id"), DEFAULT_MINIGAME_ID) or DEFAULT_MINIGAME_ID
+    minigame_id = (
+        _safe_int(entry.get("minigame_id"), DEFAULT_MINIGAME_ID) or DEFAULT_MINIGAME_ID
+    )
     try:
         data = json.loads(entry.get("data") or "{}")
     except (TypeError, ValueError):
         data = {}
-    if not isinstance(data, dict) or not data.get("gridState") or not data.get("lootState"):
+    if (
+        not isinstance(data, dict)
+        or not data.get("gridState")
+        or not data.get("lootState")
+    ):
         entry["data"] = _empty_minigame_data(minigame_id)
         data = json.loads(entry["data"])
-    elif (data.get("gridState") == data.get("lootState")
-    and -1 not in _decode_cell_blob_auto(data.get("gridState") or "")):
+    elif data.get("gridState") == data.get(
+        "lootState"
+    ) and -1 not in _decode_cell_blob_auto(data.get("gridState") or ""):
         cell_count = len(zlib.decompress(base64.b64decode(data["lootState"]))) // 4
         data["gridState"] = _empty_grid_blob(cell_count)
         entry["data"] = json.dumps(data)
@@ -244,11 +266,17 @@ def _repair_legacy_minigame_entry(entry):
         expected_cells = width * height
         grid_cells = _decode_cell_blob_auto(data.get("gridState") or "")
         loot_cells = _decode_cell_blob_auto(data.get("lootState") or "")
-        if level != safe_level or len(grid_cells) != expected_cells or len(loot_cells) != expected_cells:
+        if (
+            level != safe_level
+            or len(grid_cells) != expected_cells
+            or len(loot_cells) != expected_cells
+        ):
             slots = _slots_for_level(minigame_id, safe_level)
             data["level"] = safe_level
             data["gridState"] = _empty_grid_blob(expected_cells)
-            data["lootState"] = _populated_grid_blob(minigame_id, expected_cells, slots, width, height)
+            data["lootState"] = _populated_grid_blob(
+                minigame_id, expected_cells, slots, width, height
+            )
             data["seed"] = random.randint(-2147483648, 2147483647)
             entry["data"] = json.dumps(data)
     try:
@@ -268,7 +296,10 @@ def _find_or_create_minigame(player_object, minigame_id):
         minigames = []
         player_object["minigames"] = minigames
     for entry in minigames:
-        if isinstance(entry, dict) and _safe_int(entry.get("minigame_id")) == minigame_id:
+        if (
+            isinstance(entry, dict)
+            and _safe_int(entry.get("minigame_id")) == minigame_id
+        ):
             _repair_legacy_minigame_entry(entry)
             return entry
     entry = {
@@ -323,10 +354,7 @@ def _catalog(minigame_id):
 
 def _single_cell_ids(catalog, ids):
     info = catalog.get("entityInfo") or {}
-    return [
-        i for i in ids
-        if _safe_int((info.get(str(i)) or {}).get("size"), 1) <= 1
-    ]
+    return [i for i in ids if _safe_int((info.get(str(i)) or {}).get("size"), 1) <= 1]
 
 
 def _roll_entity(catalog):
@@ -343,14 +371,21 @@ def _roll_entity(catalog):
 
 
 _CURRENCY_TYPE_CODES = {
-    "COINS": 4, "ETHEREAL_CURRENCY": 5, "FOOD": 7, "RELICS": 8,
-    "DIAMONDS": 9, "STARPOWER": 20, "XP": 21,
+    "COINS": 4,
+    "ETHEREAL_CURRENCY": 5,
+    "FOOD": 7,
+    "RELICS": 8,
+    "DIAMONDS": 9,
+    "STARPOWER": 20,
+    "XP": 21,
 }
 _ENTITY_REF_TYPE_CODE = 11
 _CARD_PACK_TYPE_CODE = 18
 
 
-def _apply_currency_effect(player_object, reward, level, resolve_packs_immediately=False):
+def _apply_currency_effect(
+    player_object, reward, level, resolve_packs_immediately=False
+):
     reward_type = str(reward.get("type", "")).upper()
     amount = _safe_int(reward.get("amount"), 0)
     if reward.get("scale"):
@@ -358,7 +393,9 @@ def _apply_currency_effect(player_object, reward, level, resolve_packs_immediate
 
     currency_key = _CURRENCY_REWARD_KEYS.get(reward_type)
     if currency_key is not None:
-        player_object[currency_key] = _safe_int(player_object.get(currency_key)) + amount
+        player_object[currency_key] = (
+            _safe_int(player_object.get(currency_key)) + amount
+        )
         return reward_type, amount, 0
 
     if reward_type == "MINIGAME_TOKENS":
@@ -367,19 +404,27 @@ def _apply_currency_effect(player_object, reward, level, resolve_packs_immediate
 
     if reward_type == "CARD_PACK":
         from msm_cardalbum import _grant_packs
+
         pack_type = _safe_int(reward.get("id"), 1) or 1
         count = max(1, amount or 1)
         new_pack_ids = _grant_packs(player_object, count, pack_type)
         if resolve_packs_immediately:
             from msm_cardalbum import _open_pending_packs, _target_album_id
-            _open_pending_packs(player_object, _target_album_id(player_object), new_pack_ids)
+
+            _open_pending_packs(
+                player_object, _target_album_id(player_object), new_pack_ids
+            )
         return reward_type, count, pack_type
 
     return None, 0, 0
 
 
 def _direct_wire_reward(reward_type, amount, wire_id, scale):
-    type_code = _CARD_PACK_TYPE_CODE if reward_type == "CARD_PACK" else _CURRENCY_TYPE_CODES.get(reward_type)
+    type_code = (
+        _CARD_PACK_TYPE_CODE
+        if reward_type == "CARD_PACK"
+        else _CURRENCY_TYPE_CODES.get(reward_type)
+    )
     if type_code is None:
         return None
     return {
@@ -394,10 +439,22 @@ def _direct_wire_reward(reward_type, amount, wire_id, scale):
 
 def _entity_ref_wire_reward(entity_id, reward_type, wire_id):
     if reward_type == "CARD_PACK":
-        return {"amount": 1, "premium": False, "scaled": False, "scale": False,
-                "id": _safe_int(wire_id), "type": _CARD_PACK_TYPE_CODE}
-    return {"amount": 1, "premium": False, "scaled": False, "scale": False,
-            "id": _safe_int(entity_id), "type": _ENTITY_REF_TYPE_CODE}
+        return {
+            "amount": 1,
+            "premium": False,
+            "scaled": False,
+            "scale": False,
+            "id": _safe_int(wire_id),
+            "type": _CARD_PACK_TYPE_CODE,
+        }
+    return {
+        "amount": 1,
+        "premium": False,
+        "scaled": False,
+        "scale": False,
+        "id": _safe_int(entity_id),
+        "type": _ENTITY_REF_TYPE_CODE,
+    }
 
 
 def _grant_monster_entity_inventory(player_object, entity_id):
@@ -432,6 +489,7 @@ def _timed_event_start_date():
 def _timed_event_end_date():
     return _timed_event_start_date() + _TIMED_EVENT_WINDOW_MS
 
+
 def _minigame_event_data():
     entry = {
         "min_client_ver": MINIGAME_MIN_CLIENT_VER,
@@ -446,23 +504,28 @@ def _minigame_event_data():
 
 def gs_timed_events(username, params):
     import msm_clubbox
+
     data = msm_clubbox.gs_timed_events(username, params)
     events = list(data.get("timed_event_list") or [])
     events = [e for e in events if e.get("event_type") != TIMED_EVENT_TYPE]
     start_date = _timed_event_start_date()
     if msm_toggles.is_time_window_active(
-        "dipster_dig_enabled", "dipster_dig_hours_enabled",
-        "dipster_dig_start_hour", "dipster_dig_end_hour",
+        "dipster_dig_enabled",
+        "dipster_dig_hours_enabled",
+        "dipster_dig_start_hour",
+        "dipster_dig_end_hour",
     ):
-        events.append({
-            "end_date": _timed_event_end_date(),
-            "last_updated": start_date,
-            "event_type": TIMED_EVENT_TYPE,
-            "event_id": 39,
-            "data": [_minigame_event_data()],
-            "id": TIMED_EVENT_ID,
-            "start_date": start_date,
-        })
+        events.append(
+            {
+                "end_date": _timed_event_end_date(),
+                "last_updated": start_date,
+                "event_type": TIMED_EVENT_TYPE,
+                "event_id": 39,
+                "data": [_minigame_event_data()],
+                "id": TIMED_EVENT_ID,
+                "start_date": start_date,
+            }
+        )
 
     events = [e for e in events if e.get("event_type") != "Encore"]
 
@@ -483,8 +546,10 @@ def _board_is_complete(entry):
 def minigame_create(username, params):
     minigame_id = params.get("minigame_id", DEFAULT_MINIGAME_ID)
     if minigame_id == DEFAULT_MINIGAME_ID and not msm_toggles.is_time_window_active(
-        "dipster_dig_enabled", "dipster_dig_hours_enabled",
-        "dipster_dig_start_hour", "dipster_dig_end_hour",
+        "dipster_dig_enabled",
+        "dipster_dig_hours_enabled",
+        "dipster_dig_start_hour",
+        "dipster_dig_end_hour",
     ):
         return {"success": False, "message": "Dipster Dig is currently closed."}
     root, player_object = load_player(username)
@@ -520,14 +585,18 @@ def _advance_minigame_level(minigame_id, entry):
     entry_data["level"] = level
     width, height = _grid_dims_for_level(minigame_id, level)
     slots = _slots_for_level(minigame_id, level)
-    entry_data["lootState"] = _populated_grid_blob(minigame_id, width * height, slots, width, height)
+    entry_data["lootState"] = _populated_grid_blob(
+        minigame_id, width * height, slots, width, height
+    )
     entry_data["gridState"] = _empty_grid_blob(width * height)
     entry_data["seed"] = random.randint(-2147483648, 2147483647)
     entry["data"] = json.dumps(entry_data)
 
     levels_complete = _safe_int(stats.get("levels_complete"), 0) + 1
     stats["levels_complete"] = levels_complete
-    stats["top_levels_complete"] = max(_safe_int(stats.get("top_levels_complete"), 0), levels_complete)
+    stats["top_levels_complete"] = max(
+        _safe_int(stats.get("top_levels_complete"), 0), levels_complete
+    )
     entry["stats"] = json.dumps(stats)
     return level
 
@@ -556,15 +625,21 @@ def _roll_entity_rewards(catalog, player_object, level=1, entry=None):
     entity_id = _roll_entity(catalog)
     granted = []
     if entity_id is not None:
-        if _grant_monster_entity_inventory(player_object, entity_id) and entry is not None:
+        if (
+            _grant_monster_entity_inventory(player_object, entity_id)
+            and entry is not None
+        ):
             _record_obtained_entity(entry, entity_id)
         entity_info = (catalog.get("entityInfo") or {}).get(str(entity_id)) or {}
         for reward in entity_info.get("rewards") or []:
             reward_type, amount, wire_id = _apply_currency_effect(
-                player_object, reward, level, resolve_packs_immediately=False)
+                player_object, reward, level, resolve_packs_immediately=False
+            )
             if reward_type is None:
                 continue
-            wire = _direct_wire_reward(reward_type, amount, wire_id, bool(reward.get("scale")))
+            wire = _direct_wire_reward(
+                reward_type, amount, wire_id, bool(reward.get("scale"))
+            )
             if wire:
                 granted.append(wire)
     return granted
@@ -611,7 +686,8 @@ def _level_complete_rewards(minigame_id, entry, player_object):
         info = entity_info.get(str(loot_val)) or {}
         for reward in info.get("rewards") or []:
             reward_type, amount, wire_id = _apply_currency_effect(
-                player_object, reward, 1, resolve_packs_immediately=False)
+                player_object, reward, 1, resolve_packs_immediately=False
+            )
             if reward_type is None:
                 continue
             wire = _entity_ref_wire_reward(loot_val, reward_type, wire_id)
@@ -641,7 +717,7 @@ def minigame_verify_session(username, params):
             try:
                 raw = zlib.decompress(base64.b64decode(move_state["moves"]))
                 n = len(raw) // 4
-                dug_indices = struct.unpack(">%di" % n, raw[:n * 4]) if n else ()
+                dug_indices = struct.unpack(">%di" % n, raw[: n * 4]) if n else ()
             except (TypeError, ValueError, zlib.error, struct.error):
                 dug_indices = ()
             if dug_indices:
@@ -675,21 +751,29 @@ def minigame_verify_session(username, params):
     requested_next = (params.get("extra") or "") == "next_level"
     level_complete_rewards = []
     if requested_next and not entry.get("nps_pending_next_level"):
-        level_complete_rewards = _level_complete_rewards(minigame_id, entry, player_object)
+        level_complete_rewards = _level_complete_rewards(
+            minigame_id, entry, player_object
+        )
         entry["nps_pending_next_level"] = True
     mid_level_rewards = []
     if tokens_used > 0 and dig_happened and random.random() < 0.235:
-        mid_level_rewards = _roll_entity_rewards(_catalog(minigame_id), player_object, level_now, entry)
+        mid_level_rewards = _roll_entity_rewards(
+            _catalog(minigame_id), player_object, level_now, entry
+        )
     tokens = _minigame_tokens(player_object)
     if tokens_used > 0 and msm_toggles.is_enabled("functioning_currencies"):
         tokens = _set_minigame_tokens(player_object, tokens - tokens_used)
     save_player(username, root)
     from msm_playerdata import create_player_properties
+
     props = list(create_player_properties(player_object) or [])
     granted_pack = any(
-        r.get("type") == _CARD_PACK_TYPE_CODE for r in level_complete_rewards + mid_level_rewards)
+        r.get("type") == _CARD_PACK_TYPE_CODE
+        for r in level_complete_rewards + mid_level_rewards
+    )
     if granted_pack:
         from msm_cardalbum import _card_albums_properties
+
         props.extend(_card_albums_properties(player_object))
     append_inventory_property(props, player_object)
     props.append({"minigame_tokens_actual": tokens})
@@ -711,7 +795,9 @@ def minigame_verify_session(username, params):
 
 
 def minigame_handle_bonus(username, params):
-    minigame_id = _safe_int(params.get("minigame_id"), DEFAULT_MINIGAME_ID) or DEFAULT_MINIGAME_ID
+    minigame_id = (
+        _safe_int(params.get("minigame_id"), DEFAULT_MINIGAME_ID) or DEFAULT_MINIGAME_ID
+    )
     mode = _safe_int(params.get("mode"))
     root, player_object = load_player(username)
     entry = _find_or_create_minigame(player_object, minigame_id)
@@ -729,16 +815,21 @@ def minigame_handle_bonus(username, params):
     granted = []
     if mode == VIDEO_AD_BONUS_MODE:
         diamonds_gain = random.randint(400, 900)
-        player_object["diamonds"] = _safe_int(player_object.get("diamonds")) + diamonds_gain
+        player_object["diamonds"] = (
+            _safe_int(player_object.get("diamonds")) + diamonds_gain
+        )
         granted.append(_direct_wire_reward("DIAMONDS", diamonds_gain, 0, False))
 
     entry["stats"] = json.dumps(stats)
 
     tokens_gain = _BONUS_MODE_TOKENS.get(mode, 1)
-    tokens = _set_minigame_tokens(player_object, _minigame_tokens(player_object) + tokens_gain)
+    tokens = _set_minigame_tokens(
+        player_object, _minigame_tokens(player_object) + tokens_gain
+    )
     save_player(username, root)
 
     from msm_playerdata import create_player_properties
+
     properties = list(create_player_properties(player_object) or [])
     append_inventory_property(properties, player_object)
     properties.append({"minigame_tokens_actual": tokens})

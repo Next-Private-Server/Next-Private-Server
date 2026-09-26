@@ -17,7 +17,6 @@ import websockets
 
 from msm_protocol import SFSLong, decode_sfsobject, encode_sfsobject
 
-
 AUTH_URL = "https://auth.bbbgame.net/auth/api/token"
 WS_URL = "wss://msm-mobile-prod-v2.bbbgame.net:443/msm/socket"
 CLIENT_VERSION = "5.7.0"
@@ -44,10 +43,17 @@ def _server_access_key() -> str:
     return _env_str("NPS_MSM_ACCESS_KEY", "25010558-d92f-4b26-87cd-30aa7751c377")
 
 
-def _frame(request_id: int, command: str, params: dict[str, Any] | None = None) -> bytes:
+def _frame(
+    request_id: int, command: str, params: dict[str, Any] | None = None
+) -> bytes:
     command_bytes = command.encode("ascii")
     payload = encode_sfsobject(params or {})
-    return request_id.to_bytes(8, "big", signed=False) + len(command_bytes).to_bytes(2, "big") + command_bytes + payload
+    return (
+        request_id.to_bytes(8, "big", signed=False)
+        + len(command_bytes).to_bytes(2, "big")
+        + command_bytes
+        + payload
+    )
 
 
 def _cbor_write_len(major: int, length: int) -> bytes:
@@ -80,7 +86,9 @@ def _encode_cbor(value: Any) -> bytes:
         data = value.encode("utf-8")
         return _cbor_write_len(3, len(data)) + data
     if isinstance(value, (list, tuple)):
-        return _cbor_write_len(4, len(value)) + b"".join(_encode_cbor(child) for child in value)
+        return _cbor_write_len(4, len(value)) + b"".join(
+            _encode_cbor(child) for child in value
+        )
     if isinstance(value, dict):
         items = sorted(value.items(), key=lambda item: str(item[0]))
         out = _cbor_write_len(5, len(items))
@@ -134,7 +142,10 @@ def _decode_cbor_value(reader: _CborReader) -> Any:
     if major == 4:
         return [_decode_cbor_value(reader) for _ in range(reader.read_len(addl))]
     if major == 5:
-        return {_decode_cbor_value(reader): _decode_cbor_value(reader) for _ in range(reader.read_len(addl))}
+        return {
+            _decode_cbor_value(reader): _decode_cbor_value(reader)
+            for _ in range(reader.read_len(addl))
+        }
     if major == 7:
         if addl == 20:
             return False
@@ -195,7 +206,9 @@ def _parse_server_frame(data: bytes) -> tuple[str, dict[str, Any]]:
             or payload.get("cmd")
             or "CBOR"
         )
-        params = payload.get("response", payload.get("request", payload.get("data", payload)))
+        params = payload.get(
+            "response", payload.get("request", payload.get("data", payload))
+        )
         return command, params if isinstance(params, dict) else {"value": params}
     if len(data) < 2:
         raise ValueError("short server frame")
@@ -273,7 +286,10 @@ def _auth(email: str, password: str, device_id: str) -> dict[str, Any]:
     if not doc.get("ok"):
         message = doc.get("message") or doc.get("error") or "login failed"
         raise RuntimeError(str(message))
-    if not (_first_scalar(_find_key(doc, "access_token")) and _first_scalar(_find_key(doc, "user_game_id"))):
+    if not (
+        _first_scalar(_find_key(doc, "access_token"))
+        and _first_scalar(_find_key(doc, "user_game_id"))
+    ):
         raise RuntimeError("auth response did not include token/user")
     return doc
 
@@ -292,7 +308,11 @@ def _error_kind(message: str) -> str:
         return "timeout"
     if "client version" in lowered:
         return "client_version"
-    if "did not include token" in lowered or "login token" in lowered or "user_login failed" in lowered:
+    if (
+        "did not include token" in lowered
+        or "login token" in lowered
+        or "user_login failed" in lowered
+    ):
         return "login_rejected"
     if "player_object" in lowered or "save json" in lowered:
         return "bad_save"
@@ -304,16 +324,34 @@ def _error_kind(message: str) -> str:
 def _public_error(exc: Exception) -> tuple[str, str]:
     if isinstance(exc, urllib.error.HTTPError):
         if exc.code == 403:
-            return "blocked", "The official auth server blocked the request. Try again later or use a normal network connection."
+            return (
+                "blocked",
+                "The official auth server blocked the request. Try again later or use a normal network connection.",
+            )
         if exc.code in (401, 404):
-            return "bad_credentials", "Email or password was rejected by the official auth server."
-        return "network", f"The official auth server returned HTTP {exc.code}. Try again later."
+            return (
+                "bad_credentials",
+                "Email or password was rejected by the official auth server.",
+            )
+        return (
+            "network",
+            f"The official auth server returned HTTP {exc.code}. Try again later.",
+        )
     if isinstance(exc, urllib.error.URLError):
-        return "network", "Could not reach the official auth server. Check your internet connection."
+        return (
+            "network",
+            "Could not reach the official auth server. Check your internet connection.",
+        )
     if isinstance(exc, (TimeoutError, asyncio.TimeoutError, socket.timeout)):
-        return "timeout", "The official server took too long to respond. Try again with a stable connection."
+        return (
+            "timeout",
+            "The official server took too long to respond. Try again with a stable connection.",
+        )
     if isinstance(exc, (ssl.SSLError, ConnectionError, OSError)):
-        return "network", "The connection to the official server failed. Check your internet connection and try again."
+        return (
+            "network",
+            "The connection to the official server failed. Check your internet connection and try again.",
+        )
 
     message = str(exc).strip() or exc.__class__.__name__
     kind = _error_kind(message)
@@ -322,21 +360,35 @@ def _public_error(exc: Exception) -> tuple[str, str]:
     if kind == "bad_credentials":
         return kind, "Email or password was rejected by the official auth server."
     if kind == "blocked":
-        return kind, "The official auth server blocked the request. Try again later or use a normal network connection."
+        return (
+            kind,
+            "The official auth server blocked the request. Try again later or use a normal network connection.",
+        )
     if kind == "timeout":
         return kind, "The official server took too long to respond. Try again."
     if kind == "client_version":
-        return kind, "The official server rejected this MSM client version. Update NPS and try again."
+        return (
+            kind,
+            "The official server rejected this MSM client version. Update NPS and try again.",
+        )
     if kind == "login_rejected":
-        return kind, "The official server accepted auth but refused the game login. Try again."
+        return (
+            kind,
+            "The official server accepted auth but refused the game login. Try again.",
+        )
     if kind == "bad_save":
         return kind, "The official server responded, but the save data was not valid."
     if kind == "network":
-        return kind, "The connection to the official server failed. Check your internet connection and try again."
+        return (
+            kind,
+            "The connection to the official server failed. Check your internet connection and try again.",
+        )
     return kind, "Import failed. Try again later."
 
 
-def _normalize_player_json(payload: Any, quest_payload: dict[str, Any] | None = None) -> str:
+def _normalize_player_json(
+    payload: Any, quest_payload: dict[str, Any] | None = None
+) -> str:
     player = _find_key(payload, "player_object")
     if not isinstance(player, dict):
         raise RuntimeError("gs_player did not include player_object")
@@ -460,4 +512,6 @@ def export_save_json(email: str, password: str) -> str:
         return json.dumps(asyncio.run(_export(email, password)), ensure_ascii=False)
     except Exception as exc:
         kind, message = _public_error(exc)
-        return json.dumps({"ok": False, "error": message, "kind": kind}, ensure_ascii=False)
+        return json.dumps(
+            {"ok": False, "error": message, "kind": kind}, ensure_ascii=False
+        )

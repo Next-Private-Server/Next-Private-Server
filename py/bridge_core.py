@@ -743,7 +743,7 @@ def _encode_results (command ,results ):
             encoded .append (_safe_error_frame (_resp_cmd ,str (_err )))
             continue
         encoded .append ((_resp_cmd ,_raw ))
-        logger .info ('%s -> %s bytes=%d',command ,_resp_cmd ,len (_raw ))
+        logger .info ('%s -> %s payload=%.800r',command ,_resp_cmd ,_resp_payload )
     return encoded
 
 def _process_frame (command ,params ):

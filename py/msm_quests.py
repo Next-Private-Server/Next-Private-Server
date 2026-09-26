@@ -204,6 +204,24 @@ def _titansoul_has_reward (state ,reward_type ):
             return True
     return False
 
+_OBJECT_INDEX =None
+
+def _build_object_index (player_object ):
+    everything =set ()
+    by_type ={}
+    for isl in (player_object .get ("islands")or []):
+        if not isinstance (isl ,dict ):
+            continue
+        found =set ()
+        for monster in (isl .get ("monsters")or []):
+            if monster is not None and _monster_is_placed_and_ready (monster ):
+                found |=_monster_entity_ids (monster )
+        for structure in (isl .get ("structures")or []):
+            found |=_structure_ids (structure )
+        everything |=found
+        by_type .setdefault (island_type_of (isl ),set ()).update (found )
+    return player_object ,everything ,by_type
+
 def _goal_satisfied (player_object ,goal ):
     if not isinstance (goal ,dict ):
         return False
@@ -222,6 +240,9 @@ def _goal_satisfied (player_object ,goal ):
 
     if "object"in goal :
         wanted =_object_ids (goal .get ("object"))
+        if _OBJECT_INDEX is not None and _OBJECT_INDEX [0 ]is player_object :
+            found =_OBJECT_INDEX [1 ]if on_island is None else _OBJECT_INDEX [2 ].get (_safe_int (on_island ),set ())
+            return bool (found &wanted )
         for isl in islands :
             for monster in (isl .get ("monsters")or []):
                 if (monster is not None and _monster_entity_ids (monster )&wanted
@@ -269,6 +290,9 @@ def _goal_satisfied (player_object ,goal ):
 
     if "move_object"in goal :
         wanted =_object_ids (goal .get ("move_object"))
+        if _OBJECT_INDEX is not None and _OBJECT_INDEX [0 ]is player_object :
+            found =_OBJECT_INDEX [1 ]if on_island is None else _OBJECT_INDEX [2 ].get (_safe_int (on_island ),set ())
+            return bool (found &wanted )
         for isl in islands :
             for monster in (isl .get ("monsters")or []):
                 if (monster is not None and _monster_entity_ids (monster )&wanted
@@ -337,10 +361,18 @@ def _quest_progress (player_object ,definition ):
     return flags ,completed
 
 def advance_quests (username ):
+    global _OBJECT_INDEX
     root ,player_object =load_player (username )
     defs ,_by_name =_catalog ()
     if not defs :
         return []
+    _OBJECT_INDEX =_build_object_index (player_object )
+    try :
+        return _advance_quests_indexed (username ,root ,player_object ,defs )
+    finally :
+        _OBJECT_INDEX =None
+
+def _advance_quests_indexed (username ,root ,player_object ,defs ):
     parents =_prereq_map (defs )
     state =_quest_state (player_object )
     meta =_quest_meta (player_object )

@@ -140,8 +140,9 @@ def _atomic_write_json (path ,data ):
     fd ,tmp_name =tempfile .mkstemp (prefix =f".{path .name }.",suffix =".tmp",dir =str (path .parent ))
     tmp_path =Path (tmp_name )
     try :
+        encoded =json .dumps (data )
         with os .fdopen (fd ,"w",encoding ="utf-8")as fh :
-            json .dump (data ,fh )
+            fh .write (encoded )
         os .replace (tmp_path ,path )
     finally :
         if tmp_path .exists ():

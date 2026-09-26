@@ -1,0 +1,7 @@
+# .gitignore
+__pycache__/
+Accounts.json
+Config.json
+Files/
+nps_debug.log
+Whitelist.json

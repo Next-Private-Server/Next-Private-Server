@@ -100,13 +100,83 @@ STATIC_COUPON_LIST, STATIC_SERVER_TEXT, STATIC_SCHEDULE_INSTANCES = (
 )
 
 
+def _static_auth_data():
+    global STATIC_COUPON_LIST, STATIC_SERVER_TEXT, STATIC_SCHEDULE_INSTANCES
+    if not (STATIC_COUPON_LIST or {}).get("coupons"):
+        STATIC_COUPON_LIST, STATIC_SERVER_TEXT, STATIC_SCHEDULE_INSTANCES = (
+            _load_static_auth_data()
+        )
+    return STATIC_COUPON_LIST, STATIC_SERVER_TEXT, STATIC_SCHEDULE_INSTANCES
+
+
+ISLAND_GRIDS = {
+    0: [0],
+    1: [0, 1, 2, 3, 4, 5, 6, 100],
+    2: [0, 99],
+    3: [0, 1, 2, 3, 99, 4, 5, 6, 7, 8, 9],
+    37: [0, 1],
+    70: [5, 6, 4, 3, 1, 2, 0, 99, 7],
+    95: [0, 1, 2, 3, 99, 4, 5, 6],
+    96: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+}
+
+
+def repair_islands(save):
+    changed = False
+    islands = ((save.get("sync_data") or {}).get("islands") or {}).get("islands") or []
+    for island in islands:
+        if not isinstance(island, dict):
+            continue
+        if not isinstance(island.get("decorations"), list):
+            island["decorations"] = []
+            changed = True
+        if not isinstance(island.get("collection"), dict):
+            island["collection"] = {"contents": [], "timestamps": []}
+            changed = True
+        valid = ISLAND_GRIDS.get(island.get("id"))
+        if valid is None:
+            continue
+        if not isinstance(island.get("grids"), list):
+            continue
+        kept = [g for g in island["grids"] if g in valid]
+        if kept != island["grids"]:
+            island["grids"] = kept
+            changed = True
+        fallback = kept[0] if kept else None
+        for key in ("monsters", "structures", "decorations"):
+            for entity in island.get(key) or []:
+                if (
+                    isinstance(entity, dict)
+                    and "grid_id" in entity
+                    and entity["grid_id"] not in kept
+                    and fallback is not None
+                ):
+                    entity["grid_id"] = fallback
+                    changed = True
+    return changed
+
+
 def set_active_device(device_id):
     global _active_device_id
     _active_device_id = device_id or None
 
 
+def _manifest_active_device():
+    try:
+        manifest = json.loads(
+            (_base_dir() / "saves_manifest.json").read_text(encoding="utf-8")
+        )
+    except (OSError, ValueError):
+        return None
+    active = manifest.get("activeSlotId")
+    for slot in manifest.get("slots") or []:
+        if slot.get("id") == active and slot.get("occupied") and slot.get("deviceId"):
+            return slot["deviceId"]
+    return None
+
+
 def _resolve_device_id(client_supplied):
-    return _active_device_id or client_supplied
+    return _manifest_active_device() or _active_device_id or client_supplied
 
 
 def _rand_id(n=12, alphabet=string.ascii_lowercase + string.digits):
@@ -571,6 +641,8 @@ def handle_submit_command(save, batch_item):
 
 
 def handle_player_sync(save):
+    if repair_islands(save):
+        write_save(save)
     return [{"type": 100, "state": save["sync_data"]}]
 
 
@@ -588,6 +660,8 @@ def handle_check_dlc():
 
 def handle_auth_login(device_id, bbb_device_id):
     save = load_or_create_save(device_id, bbb_device_id)
+    repair_islands(save)
+    coupons, server_text, schedule = _static_auth_data()
     save["login_index"] += 1
     save["sync_data"]["player_info"]["last_login"] = int(time.time() * 1000)
     write_save(save)
@@ -602,12 +676,12 @@ def handle_auth_login(device_id, bbb_device_id):
             "date_created": int(time.time() * 1000),
             "sync_data": save["sync_data"],
         },
-        {"type": 1003, "coupon_list": STATIC_COUPON_LIST},
-        {"type": 1004, "server_text": STATIC_SERVER_TEXT},
+        {"type": 1003, "coupon_list": coupons},
+        {"type": 1004, "server_text": server_text},
         {
             "type": 1005,
             "last_updated_timestamp": int(time.time()),
-            "schedule_instances": STATIC_SCHEDULE_INSTANCES,
+            "schedule_instances": schedule,
             "next_schedule_refresh": int(time.time()) + 3600,
         },
         {"type": 104, "clock": int(time.time() * 1000)},

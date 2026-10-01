@@ -11,3 +11,4 @@ NPS is a private server and launcher for My Singing Monsters. It runs the game's
 
 ## Installation
 To install NPS, go to [Releases](https://github.com/Next-Private-Server/Next-Private-Server/releases), and get the appropriate file for your platform (.apk for Android, .exe installer for PC) and install it. Then, just run the launcher and enjoy or whatever.
+make miticals on composter island pack 

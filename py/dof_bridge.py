@@ -20,8 +20,8 @@ logger.propagate = False
 
 PORT = 8090
 
-CURRENCY_COINS = 4
-CURRENCY_DIAMONDS = 5
+CURRENCY_COINS = 1000000000000
+CURRENCY_DIAMONDS = 10000000000
 
 _server = None
 _active_device_id = None
@@ -251,7 +251,7 @@ def _fresh_save(device_id, bbb_device_id):
                     },
                     "queue": [],
                 },
-                "level": 1,
+                "level": 100000,
             },
         ],
         "decorations": [],
@@ -523,9 +523,9 @@ def _cmd_entity_buy(save, cmd):
         entity.update(
             {
                 "name": "",
-                "xp": 0,
+                "xp": 1000000
                 "request": 0,
-                "costume": 0,
+                "costume": 1000
                 "cave": False,
                 "costume_equipped": False,
                 "favorite": False,

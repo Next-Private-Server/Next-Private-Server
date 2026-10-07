@@ -1,6 +1,6 @@
 # Next Private Server
 
-![Static Badge](https://img.shields.io/badge/chat-discord-blue?logo=Discord&label=news&link=https%3A%2F%2Fdiscord.gg%2Fe5BkVyChjQ) ![Static Badge](https://img.shields.io/badge/chat-telegram-blue?logo=Telegram&label=news&link=https%3A%2F%2Ft.me%2FNPSAnnoucements)
+![Static Badge](https://img.shields.io/badge/chat-discord-blue?logo=Discord&label=news&link=https%3A%2F%2Fdiscord.gg%2Fe5BkVyChjQ) ![Static Badge](https://img.shields.io/badge/chat-telegram-blue?logo=Telegram&label=news&link=https%3A%2F%2Ft.me%2FNPSAnnoucements) ![Static Badge](https://img.shields.io/badge/site-nextps.lol-blue?logo=googlechrome&label=site&link=https%3A%2F%2Fnextps.lol)
 
 NPS is a private server and launcher for My Singing Monsters. It runs the game's server logic itself, so you can play offline or against a server you control, keep multiple save slots, and install community-made mods - all from one app on your phone.
 

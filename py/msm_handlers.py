@@ -2,6 +2,8 @@ import json
 import logging
 import time
 import traceback
+from concurrent.futures import ThreadPoolExecutor
+from threading import BoundedSemaphore
 import urllib.request
 import msm_attune
 import msm_battle
@@ -52,7 +54,6 @@ from msm_store import load_db_json, load_user_data, normalize_db_payload, save_u
 
 logger = logging.getLogger("msm.handlers")
 DEFAULT_USERNAME = "Nextstars"
-
 _active_username = DEFAULT_USERNAME
 
 
@@ -86,7 +87,7 @@ def db_precheck(username, params):
         if (
             isinstance(name, str)
             and name.startswith("db_")
-            and name not in need_updates
+            and (name not in need_updates)
         ):
             need_updates.append(name)
     return {
@@ -119,7 +120,7 @@ def db_bakery_foods(username, params):
     patched = dict(data)
     patched["bakery_data"] = [
         {**food, "always_avail": 1} if isinstance(food, dict) else food
-        for food in (data.get("bakery_data") or [])
+        for food in data.get("bakery_data") or []
     ]
     return patched
 
@@ -130,7 +131,7 @@ def db_island_themes(username, params):
     patched = dict(data)
     patched["island_theme_data"] = [
         {**theme, "level": 0} if isinstance(theme, dict) else theme
-        for theme in (data.get("island_theme_data") or [])
+        for theme in data.get("island_theme_data") or []
     ]
     return patched
 
@@ -175,7 +176,6 @@ def _mark_tutorials_complete(player_object):
     player_object["tut_stage"] = max(_safe_int(player_object.get("tut_stage")), 999)
     player_object.setdefault("client_tutorial_setup", "breedingAddOn")
     player_object.setdefault("guided_progress_setup", "")
-
     player_object["clubbox_tutorial_popup"] = True
 
 
@@ -263,7 +263,7 @@ def _ensure_friend_code(player_object):
         code = "NOT LOGGED"
     else:
         code = (
-            nps_online.active_friend_code() or f"{nps_online .active_account_id ():06d}"
+            nps_online.active_friend_code() or f"{nps_online.active_account_id():06d}"
         )
     player_object["friend_code"] = code
     profile = player_object.get("profile")
@@ -287,9 +287,7 @@ _SCALED_DAILY_REWARD = [
 
 
 def _ensure_daily_calendar_structures(player_object):
-
     if not isinstance(player_object.get("daily_cumulative_login"), dict):
-
         calendar_id = 6
         player_object["daily_cumulative_login"] = {
             "total": 0,
@@ -315,21 +313,18 @@ def _ensure_daily_calendar_structures(player_object):
 
 
 def _repair_stale_daily_calendar_id(player_object):
-
     calendar = player_object.get("daily_cumulative_login")
     if isinstance(calendar, dict) and calendar.get("calendar_id") in (1, 2, 3, 4, 5):
         calendar["calendar_id"] = 6
-
-    if player_object.get("last_daily_bonus_claimed") and not player_object.get(
-        "nextDailyLogin"
+    if player_object.get("last_daily_bonus_claimed") and (
+        not player_object.get("nextDailyLogin")
     ):
         player_object["nextDailyLogin"] = next_daily_reset_timestamp()
-
     current_type = player_object.get("daily_bonus_type")
     if (
         current_type
         and current_type not in ("none", "dailyReward")
-        and not player_object.get("reward_day")
+        and (not player_object.get("reward_day"))
     ):
         rewards = player_object.get("scaled_daily_reward") or _SCALED_DAILY_REWARD
         idx = _safe_int(player_object.get("_daily_bonus_fallback_idx"))
@@ -338,7 +333,6 @@ def _repair_stale_daily_calendar_id(player_object):
 
 def _backfill_daily_reward_state(player_object):
     _ensure_daily_calendar_structures(player_object)
-
     current_bonus_type = player_object.get("daily_bonus_type")
     has_real_bonus = bool(current_bonus_type) and current_bonus_type not in (
         "none",
@@ -361,7 +355,7 @@ def _daily_reward_entry(player_object, day):
     days = max(1, len(rewards) - 1)
     if day < 1 or day > days:
         day = 1
-    return day, rewards[day]
+    return (day, rewards[day])
 
 
 def _advance_fallback_daily_bonus(player_object):
@@ -374,11 +368,10 @@ def _advance_fallback_daily_bonus(player_object):
     player_object["reward_day"] = day
     player_object["cachedRewardDay"] = day
     player_object["_daily_bonus_fallback_idx"] = day
-    return bonus_type, bonus_amount
+    return (bonus_type, bonus_amount)
 
 
 def _advance_daily_calendar_reward(player_object):
-
     calendar = player_object["daily_cumulative_login"]
     days = _daily_reward_days()
     reward_idx = _safe_int(calendar.get("reward_idx")) % days
@@ -390,18 +383,17 @@ def _advance_daily_calendar_reward(player_object):
     calendar["reward_idx"] = (reward_idx + 1) % days
     calendar["total"] = _safe_int(calendar.get("total")) + 1
     calendar["next_collect"] = next_daily_reset_timestamp()
-    return reward_idx + 1, bonus_type, bonus_amount
+    return (reward_idx + 1, bonus_type, bonus_amount)
 
 
 def _next_daily_calendar_reward(player_object):
     calendar = player_object["daily_cumulative_login"]
     reward_idx = _safe_int(calendar.get("reward_idx")) % _daily_reward_days()
     day, entry = _daily_reward_entry(player_object, reward_idx + 1)
-    return day, entry.get("type", "coins"), _safe_int(entry.get("amt"))
+    return (day, entry.get("type", "coins"), _safe_int(entry.get("amt")))
 
 
 def _clear_daily_bonus(player_object, claimed=False):
-
     just_collected_day = _safe_int(player_object.get("reward_day"))
     player_object["daily_bonus_type"] = "none"
     player_object["daily_bonus_amount"] = 0
@@ -413,7 +405,6 @@ def _clear_daily_bonus(player_object, claimed=False):
     if claimed:
         now = int(time.time() * 1000)
         player_object["last_daily_bonus_claimed"] = now
-
         player_object["nextDailyLogin"] = next_daily_reset_timestamp(now)
         player_object["cachedRewardDay"] = just_collected_day
         _ensure_daily_calendar_structures(player_object)
@@ -479,10 +470,7 @@ def handle_gs_change_island(username, params):
         msm_islands.repair_dish_harmonizer_state(target_island)
         msm_islands.backfill_ethereal_eggcups(target_island)
         save_user_data(username, root)
-    result = {
-        "success": True,
-        "user_island_id": SFSLong(resolved_user_island_id),
-    }
+    result = {"success": True, "user_island_id": SFSLong(resolved_user_island_id)}
     if params.get("user_structure_focus") is not None:
         result["user_structure_focus"] = params.get("user_structure_focus")
     return result
@@ -505,7 +493,6 @@ def _repair(player_object, username=None):
     _mark_tutorials_complete(player_object)
     _backfill_daily_reward_state(player_object)
     _repair_stale_daily_calendar_id(player_object)
-
     if player_object.get("client_platform") != "android":
         player_object["client_platform"] = "android"
     if player_object.get("daily_bonus_type") in ("", None):
@@ -535,6 +522,7 @@ def _repair(player_object, username=None):
         msm_monsters.repair_workshop_evolve_flags(island)
         msm_islands.backfill_nps_test_structure(island)
         msm_monsters.repair_magical_nexus_layout(island)
+        msm_monsters.repair_magical_paironormal_ghosts(island)
         msm_box.repair_underling_box_state(island)
         msm_box.repair_gold_box_requirements(island)
         msm_islands.repair_crucible_structure(island)
@@ -542,6 +530,7 @@ def _repair(player_object, username=None):
         msm_monsters.recompute_island_happiness(island)
     msm_islands.migrate_legacy_mirror_ids(player_object)
     msm_islands.repair_collapsed_catalog_islands(player_object)
+    msm_islands.repair_swapped_mirror_islands(player_object)
     msm_islands.repair_duplicate_structure_ids(player_object)
     msm_islands.repair_orphaned_process_refs(player_object)
     msm_islands.repair_parked_fuzer_buddies(player_object)
@@ -584,7 +573,6 @@ def handle_gs_player(username, params):
     )
     save_user_data(username, root)
     msm_box.apply_round2_wire_progress_for_sync(player_object)
-
     import msm_friends
 
     friends = msm_friends.friends_wire_list(player_object)
@@ -635,6 +623,7 @@ def handle_gs_player(username, params):
     wired_player["card_albums"] = msm_cardalbum.card_albums_wire(player_object)
     wired_player["sticker_stars"] = player_object.get("sticker_stars", 0)
     wired_player["sticker_stars_actual"] = player_object.get("sticker_stars_actual", 0)
+    wired_player["minigames"] = msm_minigames.wire_minigames_for_sync(player_object)
     msm_cardalbum.strip_internal_album_fields(wired_player)
     msm_cardalbum.align_cards_viewed(wired_player)
     _apply_missing_official_fields(wired_player)
@@ -643,10 +632,7 @@ def handle_gs_player(username, params):
         ("gs_get_friends", friends_push),
         (
             "gs_update_properties",
-            {
-                "silent": True,
-                "properties": create_player_properties(player_object),
-            },
+            {"silent": True, "properties": create_player_properties(player_object)},
         ),
     ]
     frames += _crucible_seed_frames(player_object)
@@ -669,6 +655,7 @@ def _crucible_seed_frames(player_object):
 
 
 def _simple(fn):
+
     def handler(username, params):
         return fn(username, params)
 
@@ -676,7 +663,6 @@ def _simple(fn):
 
 
 def _happy_effects_frames(happy_effects):
-
     if not happy_effects:
         return []
     return [
@@ -693,6 +679,7 @@ def _happy_effects_frames(happy_effects):
 
 
 def _move_with_happiness(command, fn, structure=True):
+
     def handler(username, params):
         result, update = fn(username, params)
         happy_effects = (
@@ -711,7 +698,13 @@ def _move_with_happiness(command, fn, structure=True):
     return handler
 
 
+def _multi_neighbors_handler(username, params):
+    result = msm_monsters.process_multi_neighbor_change(username, params)
+    return [("gs_multi_update_monster", result)]
+
+
 def _with_happy_effects(command, fn):
+
     def handler(username, params):
         result = fn(username, params)
         happy_effects = (
@@ -725,6 +718,7 @@ def _with_happy_effects(command, fn):
 
 
 def _with_structure_update(command, fn, always=False):
+
     def handler(username, params):
         result, update = fn(username, params)
         frames = [(command, result)]
@@ -749,6 +743,7 @@ def _structure_update_only(fn):
 
 
 def _second_only(fn):
+
     def wrapped(username, params):
         _first, second = fn(username, params)
         return second
@@ -757,6 +752,7 @@ def _second_only(fn):
 
 
 def _with_structure_update_first(command, fn, always=False):
+
     def handler(username, params):
         result, update = fn(username, params)
         frames = []
@@ -769,6 +765,7 @@ def _with_structure_update_first(command, fn, always=False):
 
 
 def _with_structure_update_event(event_name, command, fn, always=False):
+
     def handler(username, params):
         result, update = fn(username, params)
         if isinstance(result, dict) and result.get("success"):
@@ -792,6 +789,7 @@ def _with_structure_update_event(event_name, command, fn, always=False):
 
 
 def _discard_structure_update(fn):
+
     def handler(username, params):
         result, _update = fn(username, params)
         return result
@@ -800,7 +798,6 @@ def _discard_structure_update(fn):
 
 
 def _finish_fuguing_handler(username, params):
-
     result, update, extra_frames = msm_structures.finish_fuguing(username, params)
     frames = list(extra_frames or [])
     if update:
@@ -810,6 +807,7 @@ def _finish_fuguing_handler(username, params):
 
 
 def _with_monster_update(command, fn):
+
     def handler(username, params):
         result, update = fn(username, params)
         frames = [(command, result)]
@@ -821,9 +819,9 @@ def _with_monster_update(command, fn):
 
 
 def _with_monster_update_event(event_name, command, fn):
+
     def handler(username, params):
         result, update = fn(username, params)
-
         if isinstance(result, dict) and result.get("success"):
             root, player_object = load_player(username)
             commands = mod_api.fire_event(
@@ -845,6 +843,7 @@ def _with_monster_update_event(event_name, command, fn):
 
 
 def _with_monster_update_first(command, fn):
+
     def handler(username, params):
         result, update = fn(username, params)
         frames = []
@@ -857,6 +856,7 @@ def _with_monster_update_first(command, fn):
 
 
 def _box_add_handler(command):
+
     def handler(username, params):
         result = msm_box.box_monster_command(username, params)
         frames = [(command, result)]
@@ -893,9 +893,9 @@ def _box_add_handler(command):
 
 
 def _box_activate_handler(command, fn):
+
     def handler(username, params):
         result, update = fn(username, params)
-
         if isinstance(update, list):
             return update
         frames = [(command, result)]
@@ -937,7 +937,6 @@ def handle_player_save_profile(username, params):
 
     root, player_object = load_player(username)
     profile = player_object.setdefault("profile", {})
-
     for name_key in ("display_name", "player_name", "name"):
         if name_key in params:
             new_name = str(params.get(name_key) or "").strip()
@@ -988,7 +987,6 @@ def handle_player_save_profile(username, params):
     profile["level"] = player_object.get("level", profile.get("level", 0))
     profile.setdefault("friend_code", player_object.get("friend_code", ""))
     save_user_data(username, root)
-
     return {
         "success": True,
         "profile": profile,
@@ -1008,10 +1006,7 @@ def _player_save_profile_handler(username, params):
         frames.append(
             (
                 "gs_update_properties",
-                {
-                    "success": True,
-                    "properties": result.get("properties") or [],
-                },
+                {"success": True, "properties": result.get("properties") or []},
             )
         )
     return frames
@@ -1054,16 +1049,7 @@ def _set_displayname_handler(username, params):
     player_object["player_name"] = new_name
     player_object["user_alias"] = new_name
     save_user_data(username, root)
-
-    return [
-        (
-            "gs_set_displayname",
-            {
-                "success": True,
-                "displayName": new_name,
-            },
-        ),
-    ]
+    return [("gs_set_displayname", {"success": True, "displayName": new_name})]
 
 
 def _quest_handler(username, params):
@@ -1073,10 +1059,7 @@ def _quest_handler(username, params):
         frames.append(
             (
                 "gs_update_properties",
-                {
-                    "success": True,
-                    "properties": result.get("properties") or [],
-                },
+                {"success": True, "properties": result.get("properties") or []},
             )
         )
     return frames
@@ -1106,6 +1089,7 @@ def _quest_collect_handler(username, params):
 
 
 def _echo_success(*keys):
+
     def handler(username, params):
         result = {"success": True}
         for key in keys:
@@ -1117,6 +1101,7 @@ def _echo_success(*keys):
 
 
 def _set_island_field_handler(field, param_keys):
+
     def handler(username, params):
         value = _first_param(params, param_keys, None)
         root, player_object = load_player(username)
@@ -1133,6 +1118,7 @@ def _set_island_field_handler(field, param_keys):
 
 
 def _set_player_field_handler(field, param_keys):
+
     def handler(username, params):
         value = _first_param(params, param_keys, None)
         root, player_object = load_player(username)
@@ -1148,6 +1134,7 @@ def _set_player_field_handler(field, param_keys):
 
 
 def _generic_success(extra_array_keys=()):
+
     def handler(username, params):
         result = {"success": True}
         for key in extra_array_keys:
@@ -1249,7 +1236,6 @@ def _light_torch(username, params):
     target_id = _safe_int(
         _first_param(params, ("user_id", "userId", "target_user_id"), 0)
     )
-
     if target_id and target_id != own_id:
         import msm_friends
 
@@ -1291,7 +1277,6 @@ def _light_torch(username, params):
     island, structure = find_island_by_structure(player_object, structure_id)
     if island is None or structure is None:
         return {"success": False, "user_structure": SFSLong(structure_id)}
-
     if msm_toggles.is_enabled("functioning_currencies"):
         cost = get_user_game_setting_int(
             (
@@ -1395,14 +1380,7 @@ def _get_friends(username, params):
 def _send_friend_request(username, params):
     import msm_friends
 
-    """Send a friend request and always tell the player what happened.
-
-    This used to answer a bare success:false for every failure - unknown code,
-    already friends, not signed in - and the client shows nothing at all for
-    that, so adding a friend looked like a dead button. Push a
-    gs_display_generic_message alongside the ack the way the rest of the
-    handlers do.
-    """
+    "Send a friend request and always tell the player what happened.\n\n    This used to answer a bare success:false for every failure - unknown code,\n    already friends, not signed in - and the client shows nothing at all for\n    that, so adding a friend looked like a dead button. Push a\n    gs_display_generic_message alongside the ack the way the rest of the\n    handlers do.\n    "
     import nps_online
 
     code = str(_first_param(params, ("friend_code", "code"), "") or "").strip()
@@ -1412,10 +1390,7 @@ def _send_friend_request(username, params):
             ("gs_friend_request", {"success": success, "notificationOnFail": False}),
             (
                 "gs_display_generic_message",
-                {
-                    "force_logout": False,
-                    "msg": _generic_message(key, username),
-                },
+                {"force_logout": False, "msg": _generic_message(key, username)},
             ),
         ]
 
@@ -1423,7 +1398,6 @@ def _send_friend_request(username, params):
         return notice("friend_code_missing", False)
     if not nps_online.is_configured():
         return notice("friend_offline", False)
-
     status = nps_online.send_friend_request(code)
     if status in (251, 388):
         entry = None
@@ -1441,11 +1415,7 @@ def _send_friend_request(username, params):
         )
         frames[0] = (
             "gs_friend_request",
-            {
-                "success": True,
-                "type": "follow",
-                "request": [entry] if entry else [],
-            },
+            {"success": True, "type": "follow", "request": [entry] if entry else []},
         )
         return frames
     if status == 917:
@@ -1471,7 +1441,6 @@ def _remove_friend(username, params):
     )
     if not friend_id:
         return {"success": False}
-
     root, player_object = load_player(username)
     removed = msm_friends.remove_local_friend(player_object, friend_id)
     if removed:
@@ -1482,7 +1451,6 @@ def _remove_friend(username, params):
         removed = nps_online.remove_friend(
             friend_id - msm_friends.REAL_FRIEND_ID_OFFSET
         )
-
     frames = [
         (
             "gs_remove_friend",
@@ -1510,7 +1478,7 @@ def _friend_request_manage(username, params):
     for key in ("pending", "ids", "request_ids", "user_ids"):
         raw = params.get(key)
         if isinstance(raw, (list, tuple)):
-            ids.extend(_safe_int(v) for v in raw)
+            ids.extend((_safe_int(v) for v in raw))
     if not ids:
         single = _safe_int(_first_param(params, ("id", "request_id", "user_id"), 0))
         if single:
@@ -1518,7 +1486,6 @@ def _friend_request_manage(username, params):
     ids = [i for i in ids if i]
     if not ids or action not in ("accept", "remove", "deny", "decline"):
         return {"success": False}
-
     root, player_object = load_player(username)
     results = []
     changed = False
@@ -1562,11 +1529,10 @@ def _friend_request_manage(username, params):
             removed = msm_friends.deny_request(player_object, request_id)
             changed = changed or removed
             results.append({"success": bool(removed), "id": request_id})
-
     if changed:
         save_player(username, root)
     return {
-        "success": any(r.get("success") for r in results),
+        "success": any((r.get("success") for r in results)),
         "action": "accept" if action == "accept" else "remove",
         "results": results,
     }
@@ -1619,7 +1585,6 @@ def _visit_island_type(friend_object):
 
 
 _VISIT_DEBUG_NAME = "visit_debug.json"
-
 _OFFICIAL_PLAYER_DEFAULTS = {
     "currency_level_scale": {
         "keys_daily_amt": 1,
@@ -1738,7 +1703,6 @@ def _get_friend_visit_data_real(username, params):
     target_id = _safe_int(
         _first_param(params, ("user_id", "userId", "target_user_id"), 0)
     )
-
     root, player_object = load_player(username)
     if msm_friends.find_friend(
         player_object, target_id
@@ -1747,11 +1711,9 @@ def _get_friend_visit_data_real(username, params):
         if friend_object is None:
             return {"success": False}
         return _visit_reply(friend_object)
-
     friend_object = msm_friends.friend_visit_object(player_object, target_id)
     if friend_object is None:
         return {"success": False}
-
     save_player(username, root)
     return _visit_reply(friend_object)
 
@@ -1842,10 +1804,11 @@ def _append_mod_frames(username, frames):
         frames = [frames]
     mod_api.consume_lua_logs()
     try:
-        _root, player_object = load_player(username)
-        property_update = mod_api.consume_property_update(player_object, username)
-        if property_update:
-            frames.append(("gs_update_properties", property_update))
+        if mod_api.has_pending_property_update(username):
+            _root, player_object = load_player(username)
+            property_update = mod_api.consume_property_update(player_object, username)
+            if property_update:
+                frames.append(("gs_update_properties", property_update))
     except Exception:
         pass
     frames.extend(mod_api.consume_outgoing_frames(username))
@@ -1887,6 +1850,18 @@ def _handled_frames(username, command, params, frames):
 _BUG_REPORT_URL = "https://nextps.lol/api/bugs"
 _BUG_REPORT_COOLDOWN_S = 300
 _last_bug_report_at = {}
+_report_worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="msm-report")
+_report_slots = BoundedSemaphore(4)
+
+
+def _post_handler_report(command, request):
+    try:
+        with urllib.request.urlopen(request, timeout=10):
+            pass
+    except Exception:
+        logger.exception("auto bug report failed for %s", command)
+    finally:
+        _report_slots.release()
 
 
 def _auto_report_handler_error(command, exc, username):
@@ -1894,12 +1869,13 @@ def _auto_report_handler_error(command, exc, username):
     last = _last_bug_report_at.get(command, 0)
     if now - last < _BUG_REPORT_COOLDOWN_S:
         return False
-    _last_bug_report_at[command] = now
+    if not _report_slots.acquire(blocking=False):
+        return
     try:
         payload = json.dumps(
             {
-                "title": f"Handler error: {command }",
-                "message": f"command={command } username={username }\n\n{traceback .format_exc ()}",
+                "title": f"Handler error: {command}",
+                "message": f"command={command} username={username}\n\n{traceback.format_exc()}",
                 "logs": "",
                 "source": "launcher-server",
             }
@@ -1910,15 +1886,15 @@ def _auto_report_handler_error(command, exc, username):
             method="POST",
             headers={"Content-Type": "application/json"},
         )
-        urllib.request.urlopen(request, timeout=10).close()
-        return True
+        _report_worker.submit(_post_handler_report, command, request)
+        _last_bug_report_at[command] = now
     except Exception:
+        _report_slots.release()
         logger.exception("auto bug report failed for %s", command)
-        return False
 
 
 def _failure_frame(command, message, username=None):
-    sent = _auto_report_handler_error(command, message, username)
+    _auto_report_handler_error(command, message, username)
     return [
         (
             command,
@@ -1932,17 +1908,14 @@ def _failure_frame(command, message, username=None):
             "gs_display_generic_message",
             {
                 "force_logout": False,
-                "msg": _generic_message(
-                    "handler_error_reported" if sent else "handler_error",
-                    username,
-                    command=command,
-                ),
+                "msg": _generic_message("handler_error", username, command=command),
             },
         ),
     ]
 
 
 def _finish_breeding(force_complete):
+
     def handler(username, params):
         result = msm_monsters.finish_breeding(username, params, force_complete)
         if isinstance(result, dict) and result.get("success"):
@@ -2000,6 +1973,7 @@ def _teleport_destination_type(player_object, params):
 
 
 def _teleport_monster(send_home, default_destination=None):
+
     def handler(username, params):
         root, player_object = load_player(username)
         destination = (
@@ -2008,7 +1982,7 @@ def _teleport_monster(send_home, default_destination=None):
             or _BATTLE_ISLAND_TYPE
         )
         forwarded = dict(params)
-        if not send_home and not _teleport_destination_type(player_object, params):
+        if not send_home and (not _teleport_destination_type(player_object, params)):
             forwarded["destination_island"] = destination
         monster_id, source_island_id, monster_type = _teleport_source(username, params)
         if send_home:
@@ -2100,7 +2074,7 @@ def _egg_teleport_frames(
             sold = msm_monsters._parse_sold_monsters(source_island)
             sold_update = {
                 "island_id": SFSLong(source_island.get("user_island_id", 0)),
-                "monsters_sold": "[" + ",".join(str(v) for v in sold) + "]",
+                "monsters_sold": "[" + ",".join((str(v) for v in sold)) + "]",
             }
         else:
             save_player(username, root)
@@ -2128,7 +2102,7 @@ def _teleport_source(username, params):
                     island.get("user_island_id", 0),
                     candidate.get("monster", 0),
                 )
-    return monster_id, 0, 0
+    return (monster_id, 0, 0)
 
 
 def _send_to_magical_nexus_handler(username, params):
@@ -2223,6 +2197,7 @@ def _buy_egg_handler(username, params):
 
 
 def _costume_action(command):
+
     def handler(username, params):
         result = msm_monsters.costume_action(username, params, command)
         push = (
@@ -2238,6 +2213,7 @@ def _costume_action(command):
 
 
 def _collect_monster(command, fn=msm_monsters.collect_monster):
+
     def handler(username, params):
         outcome = fn(username, params)
         response_command = command
@@ -2302,6 +2278,7 @@ def _hatch_egg_handler(username, params):
 
 
 def _reattune_frames_handler(command, fn):
+
     def handler(username, params):
         result = fn(username, params)
         sold = (
@@ -2381,7 +2358,7 @@ def _purchase_buyback_handler(username, params):
     if isinstance(outcome, tuple):
         result, sold_update = outcome
     else:
-        result, sold_update = outcome, None
+        result, sold_update = (outcome, None)
     happy_effects = (
         result.get("monster_happy_effects") if isinstance(result, dict) else None
     )
@@ -2523,15 +2500,14 @@ def _battle_claim_versus_rewards(username, params):
     tier = params.get("tier", 1) or 1
     campaign_id = params.get("campaign_id", 1000) or 1000
     reward = {"coins": 500 * tier, "food": 200 * tier}
-
     claimed = player_object.setdefault("versus_rewards_claimed", [])
-    claim_key = f"{campaign_id }:{tier }"
+    claim_key = f"{campaign_id}:{tier}"
     if claim_key not in claimed:
         claimed.append(claim_key)
         for key, amount in reward.items():
             new_value = (player_object.get(key, 0) or 0) + amount
             player_object[key] = new_value
-            player_object[f"{key }_actual"] = new_value
+            player_object[f"{key}_actual"] = new_value
     now_ms = int(time.time() * 1000)
     versus_list = player_object.get("battle_versus")
     if isinstance(versus_list, list):
@@ -2624,7 +2600,7 @@ def _collect_daily_reward(username, params):
     granted = (
         bonus_type
         and bonus_type not in ("none", "dailyReward", "deferred")
-        and bonus_amount > 0
+        and (bonus_amount > 0)
     )
     if not granted:
         _backfill_daily_reward_state(player_object)
@@ -2633,7 +2609,7 @@ def _collect_daily_reward(username, params):
         granted = (
             bonus_type
             and bonus_type not in ("none", "dailyReward", "deferred")
-            and bonus_amount > 0
+            and (bonus_amount > 0)
         )
     logger.info(
         "DAILY_REWARD_DEBUG granted=%r type=%r amount=%r day=%r",
@@ -2664,7 +2640,7 @@ def _collect_daily_reward(username, params):
         key = currency_map.get(str(bonus_type))
         if key:
             player_object[key] = _safe_int(player_object.get(key)) + bonus_amount
-            actual_key = f"{key }_actual"
+            actual_key = f"{key}_actual"
             if actual_key in player_object:
                 player_object[actual_key] = player_object.get(key, 0)
     _clear_daily_bonus(player_object, claimed=bool(granted))
@@ -2674,10 +2650,8 @@ def _collect_daily_reward(username, params):
 
 
 def _daily_login_buyback(username, params):
-
     root, player_object = load_player(username)
     _ensure_daily_calendar_structures(player_object)
-
     reward_day, bonus_type, bonus_amount = _advance_daily_calendar_reward(player_object)
     save_player(username, root)
     return {
@@ -2703,7 +2677,6 @@ _DAILY_CALENDAR_BUFF_TYPE_CODE = 14
 
 
 def _collect_daily_cumulative_login_rewards(username, params):
-
     root, player_object = load_player(username)
     _ensure_daily_calendar_structures(player_object)
     calendar = player_object["daily_cumulative_login"]
@@ -2713,7 +2686,7 @@ def _collect_daily_cumulative_login_rewards(username, params):
         player_object[bonus_type] = (
             _safe_int(player_object.get(bonus_type)) + bonus_amount
         )
-        actual_key = f"{bonus_type }_actual"
+        actual_key = f"{bonus_type}_actual"
         if actual_key in player_object:
             player_object[actual_key] = (
                 _safe_int(player_object.get(actual_key)) + bonus_amount
@@ -2754,6 +2727,8 @@ def _collect_daily_cumulative_login_rewards(username, params):
 def _welcome_mail(now, username):
     sender_name = DEFAULT_USERNAME
     title = _generic_message("welcome_mail_title", username)
+    body = _generic_message("welcome_mail_body", username)
+    never_expires = now + 100 * 365 * 24 * 60 * 60 * 1000
     return {
         "id": 1,
         "user_mail_id": 1,
@@ -2761,7 +2736,9 @@ def _welcome_mail(now, username):
         "title": title,
         "shortTitle": "Welcome",
         "short_title": "Welcome",
-        "message": title,
+        "message": body,
+        "description": body,
+        "body": body,
         "sender": sender_name,
         "from": sender_name,
         "from_name": sender_name,
@@ -2771,7 +2748,7 @@ def _welcome_mail(now, username):
         "icon": "mail",
         "received": SFSLong(now),
         "received_on": SFSLong(now),
-        "expiry": 0,
+        "expiry": SFSLong(never_expires),
         "urgent": False,
         "read": False,
     }
@@ -2781,18 +2758,43 @@ def _ensure_mailbox(player_object, username=None):
     mailbox = player_object.get("mailbox")
     if not isinstance(mailbox, list):
         mailbox = []
-    if not any(
-        (m or {}).get("message_id") == 1 and (m or {}).get("user_mail_id") == 1
-        for m in mailbox
-        if isinstance(m, dict)
-    ):
+    existing_welcome = next(
+        (
+            m
+            for m in mailbox
+            if isinstance(m, dict)
+            and m.get("message_id") == 1
+            and (m.get("user_mail_id") == 1)
+        ),
+        None,
+    )
+    if existing_welcome is None:
         mailbox.insert(0, _welcome_mail(int(time.time() * 1000), username))
-    unread = sum(1 for m in mailbox if isinstance(m, dict) and not m.get("read", False))
+    else:
+        fresh = _welcome_mail(
+            _safe_int(
+                existing_welcome.get("received"), existing_welcome.get("received_on")
+            ),
+            username,
+        )
+        for key in (
+            "title",
+            "shortTitle",
+            "short_title",
+            "message",
+            "description",
+            "body",
+            "expiry",
+        ):
+            existing_welcome[key] = fresh[key]
+    unread = sum(
+        (1 for m in mailbox if isinstance(m, dict) and (not m.get("read", False)))
+    )
     player_object["mailbox"] = mailbox
     player_object["num_unread_mail"] = unread
     player_object["unread_mail_count"] = unread
     player_object["new_mail"] = unread > 0
-    return mailbox, unread
+    return (mailbox, unread)
 
 
 def _get_messages(username, params):
@@ -2834,7 +2836,7 @@ def _delete_mail(username, params):
         mailbox[:] = [m for m in mailbox if m is not entry]
         player_object["mailbox"] = mailbox
         unread = sum(
-            1 for m in mailbox if isinstance(m, dict) and not m.get("read", False)
+            (1 for m in mailbox if isinstance(m, dict) and (not m.get("read", False)))
         )
         player_object["num_unread_mail"] = unread
         player_object["unread_mail_count"] = unread
@@ -3053,12 +3055,11 @@ GAMEPLAY_HANDLERS = {
     "gs_unstore_buddy": _with_structure_update(
         "gs_unstore_buddy", msm_monsters.unstore_buddy
     ),
-    "gs_start_amber_evolve": _simple(msm_monsters.start_amber_evolve),
-    "gs_speedup_amber_evolve": _simple(msm_monsters.speed_up_amber_evolve),
-    "gs_speed_up_amber_evolve": _simple(msm_monsters.speed_up_amber_evolve),
+    "gs_start_amber_evolve": _simple(msm_islands.start_amber_evolve),
+    "gs_speedup_amber_evolve": _simple(msm_islands.speed_up_amber_evolve),
+    "gs_speed_up_amber_evolve": _simple(msm_islands.speed_up_amber_evolve),
     "gs_finish_amber_evolve": _with_monster_update(
-        "gs_finish_amber_evolve",
-        lambda u, p: msm_monsters.finish_amber_evolve(u, p, True),
+        "gs_finish_amber_evolve", msm_islands.finish_amber_evolve
     ),
     "gs_viewed_cruc_unlock": _simple(msm_islands.viewed_crucible_unlock),
     "gs_viewed_cruc_monst": _simple(msm_islands.viewed_crucible_monster),
@@ -3317,12 +3318,11 @@ GAMEPLAY_HANDLERS = {
         msm_cardalbum.collect_card_album_page_rewards
     ),
     "gs_collect_rewards": _simple(msm_rewardtracks.collect_rewards),
-    "gs_multi_neighbors": _generic_success(["neighbors"]),
+    "gs_multi_neighbors": _multi_neighbors_handler,
 }
 
 
 def handle_login(params):
-
     resolved = get_active_username()
     set_client_lang(resolved, params.get("client_lang"))
     try:
@@ -3347,12 +3347,20 @@ _GENERIC_MESSAGES = {
         "ru": "Добро пожаловать в NPS!",
     },
     "welcome_mail_title": {
-        "en": "Welcome to Next Private Server v12!",
-        "de": "Willkommen beim Next Private Server v12!",
-        "es": "¡Bienvenido a Next Private Server v12!",
-        "fr": "Bienvenue sur Next Private Server v12 !",
-        "pt": "Bem-vindo ao Next Private Server v12!",
-        "ru": "Добро пожаловать на Next Private Server v12!",
+        "en": "Welcome to Next Private Server!",
+        "de": "Willkommen beim Next Private Server!",
+        "es": "¡Bienvenido a Next Private Server!",
+        "fr": "Bienvenue sur Next Private Server !",
+        "pt": "Bem-vindo ao Next Private Server!",
+        "ru": "Добро пожаловать на Next Private Server!",
+    },
+    "welcome_mail_body": {
+        "en": "Thank you for playing!\n\nMade by: Nextstars (known as Nextstars1)\nSite: https://nextps.lol/",
+        "de": "Danke fürs Spielen!\n\nGemacht von: Nextstars (bekannt als Nextstars1)\nSeite: https://nextps.lol/",
+        "es": "¡Gracias por jugar!\n\nHecho por: Nextstars (conocido como Nextstars1)\nSitio: https://nextps.lol/",
+        "fr": "Merci d'avoir joué !\n\nRéalisé par : Nextstars (connu sous le nom de Nextstars1)\nSite : https://nextps.lol/",
+        "pt": "Obrigado por jogar!\n\nFeito por: Nextstars (conhecido como Nextstars1)\nSite: https://nextps.lol/",
+        "ru": "Спасибо за игру!\n\nСоздано: Nextstars (известен как Nextstars1)\nСайт: https://nextps.lol/",
     },
     "unhandled_command": {
         "en": "Command {command} is unhandled, please wait while we add support for it, for more info, check our site nextps.lol",
@@ -3494,7 +3502,7 @@ def handle_command(command, params):
         return _append_mod_frames(active_username, [])
     if command == "USER_LOGOUT":
         return _handled_frames(active_username, command, params, [(command, {})])
-    logger.info("handling command %s params=%r", command, params)
+    logger.info("handling command %s", command)
     try:
         mod_api.fire_event(
             "command_received", username=active_username, command=command, params=params
@@ -3538,7 +3546,10 @@ def handle_command(command, params):
             frames = [(command, result)]
         if not command.startswith("gs_quest"):
             try:
-                frames = frames + msm_quests.advance_quests(active_username)
+                frames = frames + msm_quests.advance_quests(
+                    active_username,
+                    heartbeat=command in ("client_keep_alive", "keep_alive"),
+                )
             except Exception:
                 logger.exception("quest progress check failed after %s", command)
         return _handled_frames(active_username, command, params, frames)
@@ -3568,13 +3579,12 @@ def handle_command(command, params):
                 len(mod_frames),
             )
             return _handled_frames(active_username, command, params, mod_frames)
-        logger.info("UNHANDLED command %s params=%r", command, params)
+        logger.info("UNHANDLED command %s", command)
         if "card" in command.lower():
             logger.info("command %s using card fallback success response", command)
             return _handled_frames(
                 active_username, command, params, [(command, {"success": True})]
             )
-
         notice = {
             "force_logout": False,
             "msg": _generic_message(
@@ -3587,7 +3597,7 @@ def handle_command(command, params):
     logger.info("command %s handled by db capture", command)
     payloads = [dict(data)]
     for i in range(2, 10):
-        chained = load_db_json(f"{command }_{i }")
+        chained = load_db_json(f"{command}_{i}")
         if chained is None:
             break
         payloads.append(dict(chained))

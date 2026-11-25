@@ -1,4 +1,5 @@
 import time
+import msm_toggles
 from msm_playerdata import (
     SFSLong,
     action_result,
@@ -8,7 +9,7 @@ from msm_playerdata import (
     load_player,
     save_player,
 )
-from msm_structures import _charge_speedup
+from msm_structures import INSTANT_TIMER_FLOOR_MS, _charge_speedup
 
 _ATTUNING_DURATION_MS = 18000000
 
@@ -84,7 +85,12 @@ def start_attuning(username, params):
             False, "user_structure_id", structure_id, with_properties=True
         )
     now = int(time.time() * 1000)
-    complete_on = now + _ATTUNING_DURATION_MS
+    attuning_duration_ms = (
+        INSTANT_TIMER_FLOOR_MS
+        if msm_toggles.is_enabled("instant_timers")
+        else _ATTUNING_DURATION_MS
+    )
+    complete_on = now + attuning_duration_ms
     end_gene = _requested_gene(params, "end_gene") or "G"
     start_gene = _requested_gene(params, "start_gene")
     reattuning = _find_reattuning_entry(island, structure_id)
@@ -121,8 +127,8 @@ def start_attuning(username, params):
                 "building_completed": complete_on,
                 "finishing_time": complete_on,
                 "finished_at": complete_on,
-                "seconds_remaining": _ATTUNING_DURATION_MS // 1000,
-                "time_remaining": _ATTUNING_DURATION_MS,
+                "seconds_remaining": attuning_duration_ms // 1000,
+                "time_remaining": attuning_duration_ms,
                 "end_gene": end_gene,
                 "genes": end_gene,
                 "user_attuning_data": attuning_data,
@@ -325,11 +331,16 @@ def collect_reattune_monster(username, params):
                     if tuned_up:
                         sold_update = _record_new_species(island, new_monster)
         now = int(time.time() * 1000)
+        reattune_duration_ms = (
+            INSTANT_TIMER_FLOOR_MS
+            if msm_toggles.is_enabled("instant_timers")
+            else _ATTUNING_DURATION_MS
+        )
         attuning_data = {
             "reattuned_monster": SFSLong(0),
             "started_on": SFSLong(now),
             "start_gene": "",
-            "complete_on": SFSLong(now + _ATTUNING_DURATION_MS),
+            "complete_on": SFSLong(now + reattune_duration_ms),
             "end_gene": "G",
             "structure": SFSLong(structure_id),
         }

@@ -23,7 +23,6 @@ from msm_protocol import SFSFloat
 from msm_store import load_db_json
 
 logger = logging.getLogger("msm.box")
-
 SPECIAL_BOX_PLACEMENT_ISLANDS = (10, 12, 22)
 GOLD_ISLAND_TYPE = 6
 
@@ -53,7 +52,6 @@ def requires_direct_placement(definition, island_type):
         return True
     if definition and definition.get("class") in _DIRECT_PLACEMENT_CLASSES:
         return True
-
     return False
 
 
@@ -116,12 +114,11 @@ def box_requirements(definition, island_type=0):
     values = _ints_from_raw(definition.get("box_monster_requirements"))
     if values:
         return values
-
     return _ints_from_raw(definition.get("evolve_requirements"))
 
 
 def _ints_to_json_array(values):
-    return "[" + ",".join(str(v) for v in values) + "]"
+    return "[" + ",".join((str(v) for v in values)) + "]"
 
 
 def boxed_eggs(monster):
@@ -216,7 +213,7 @@ def evolve_flex_requirements(monster):
 
 
 def _count(values, wanted):
-    return sum(1 for v in values if v == wanted)
+    return sum((1 for v in values if v == wanted))
 
 
 def _flexegg_definition(flexegg_id):
@@ -282,10 +279,10 @@ def _flexegg_matches_monster(flexegg_id, monster_id):
     if exact_genes and gene_set != set(exact_genes):
         return False
     contains_genes = _gene_list(flex_def.get("ContainsGenes"))
-    if contains_genes and not set(contains_genes).issubset(gene_set):
+    if contains_genes and (not set(contains_genes).issubset(gene_set)):
         return False
     contains_any = _gene_list(flex_def.get("ContainsAnyGenes"))
-    if contains_any and not gene_set.intersection(contains_any):
+    if contains_any and (not gene_set.intersection(contains_any)):
         return False
     return True
 
@@ -295,13 +292,13 @@ def _evolve_requirement_slot_for_monster(monster, boxed_monster_id):
     flex_values = evolve_flex_boxed_eggs(monster)
     exact_requirements = evolve_exact_requirements(monster)
     if _count(values, boxed_monster_id) < _count(exact_requirements, boxed_monster_id):
-        return boxed_monster_id, False
+        return (boxed_monster_id, False)
     flex_requirements = evolve_flex_requirements(monster)
     for flexegg_id in flex_requirements:
         if _count(flex_values, flexegg_id) >= _count(flex_requirements, flexegg_id):
             continue
         if _flexegg_matches_monster(flexegg_id, boxed_monster_id):
-            return flexegg_id, True
+            return (flexegg_id, True)
     return None
 
 
@@ -405,18 +402,22 @@ def repair_underling_box_state(island):
             continue
         definition = get_monster_definition(monster.get("monster", 0))
         has_any_box_field = any(
-            key in monster
-            for key in (
-                "awakened",
-                "box_monster",
-                "inactive_box_monster",
-                "is_box_monster",
-                "is_inactive_box_monster",
-                "box_requirements",
+            (
+                key in monster
+                for key in (
+                    "awakened",
+                    "box_monster",
+                    "inactive_box_monster",
+                    "is_box_monster",
+                    "is_inactive_box_monster",
+                    "box_requirements",
+                )
             )
         )
-        if is_box_monster_entity(definition) and not has_any_box_field:
-            if island_type in BOX_SIMPLE_ISLAND_TYPES:
+        if is_box_monster_entity(definition) and (not has_any_box_field):
+            if msm_toggles.is_enabled("wubbox_auto_awaken"):
+                apply_awakened_box_state(monster, definition, island_type)
+            elif island_type in BOX_SIMPLE_ISLAND_TYPES:
                 apply_underling_box_state(monster, definition, island_type)
             else:
                 apply_inactive_box_state(monster, definition, island_type)
@@ -439,7 +440,7 @@ def repair_underling_box_state(island):
             if (
                 island_type in UNDERLING_ISLAND_TYPES
                 and (definition or {}).get("evolve_into", 0)
-                and not monster.get("evolve_unlocked")
+                and (not monster.get("evolve_unlocked"))
             ):
                 monster["evolve_unlocked"] = 1
             if (
@@ -455,7 +456,7 @@ def repair_underling_box_state(island):
             if (
                 island_type in UNDERLING_ISLAND_TYPES
                 and (definition or {}).get("evolve_into", 0)
-                and not monster.get("ascend_pending")
+                and (not monster.get("ascend_pending"))
             ):
                 evolve_reqs = _ints_from_raw(definition.get("evolve_requirements"))
                 evolve_flexeggs = _ints_from_raw(definition.get("evolve_req_flexeggs"))
@@ -470,13 +471,15 @@ def repair_underling_box_state(island):
             if (
                 island_type in UNDERLING_ISLAND_TYPES
                 and monster.get("ascend_pending")
-                and not _ints_from_raw(monster.get("has_evolve_flexeggs"))
+                and (not _ints_from_raw(monster.get("has_evolve_flexeggs")))
             ):
                 evolve_flexeggs = _ints_from_raw(definition.get("evolve_req_flexeggs"))
                 if evolve_flexeggs:
                     monster["has_evolve_flexeggs"] = _ints_to_json_array(
                         evolve_flexeggs
                     )
+        elif msm_toggles.is_enabled("wubbox_auto_awaken"):
+            apply_awakened_box_state(monster, definition, island_type)
         else:
             apply_underling_box_state(monster, definition, island_type)
 
@@ -516,6 +519,10 @@ def apply_inactive_box_state(monster, definition, island_type=0):
 
 def normalize_box_state_for_island(monster, definition, island_type):
     if monster.get("ascend_pending") or not is_box_monster_entity(definition):
+        return
+    if msm_toggles.is_enabled("wubbox_auto_awaken"):
+        if not is_awakened_box_monster(monster):
+            apply_awakened_box_state(monster, definition, island_type)
         return
     if island_type in BOX_SIMPLE_ISLAND_TYPES:
         apply_underling_box_state(monster, definition, island_type)
@@ -694,7 +701,6 @@ def box_add_egg(username, params):
     if not user_egg_id or not user_monster_id:
         result["error"] = "zap_target_or_egg_not_found"
         return result
-
     target_island, target_box = find_monster_with_island(player_object, user_monster_id)
     target_definition = (
         get_monster_definition(target_box.get("monster", 0))
@@ -704,16 +710,18 @@ def box_add_egg(username, params):
     if (
         target_island is None
         or target_box is None
-        or not (
-            is_box_monster_entity(target_definition) or target_box.get("ascend_pending")
+        or (
+            not (
+                is_box_monster_entity(target_definition)
+                or target_box.get("ascend_pending")
+            )
         )
     ):
         result["error"] = "zap_target_or_egg_not_found"
         return result
-    if is_awakened_box_monster(target_box) and not target_box.get("ascend_pending"):
+    if is_awakened_box_monster(target_box) and (not target_box.get("ascend_pending")):
         result["error"] = "zap_target_or_egg_not_found"
         return result
-
     source_island = None
     egg = None
     for island in player_object.get("islands") or []:
@@ -726,7 +734,6 @@ def box_add_egg(username, params):
                 break
         if egg is not None:
             break
-
     egg_type = 0
     breeding_record = None
     if egg is not None:
@@ -748,11 +755,9 @@ def box_add_egg(username, params):
     if egg is None and breeding_record is None:
         result["error"] = "zap_target_or_egg_not_found"
         return result
-
     if not egg_type:
         result["error"] = "zap_monster_type_not_found"
         return result
-
     island_type = island_type_of(target_island)
     normalize_box_state_for_island(target_box, target_definition, island_type)
     if (
@@ -765,7 +770,6 @@ def box_add_egg(username, params):
     append_boxed_egg(target_box, egg_type)
     start_amber_vessel_timer_if_needed(target_box, island_type)
     normalize_box_state_for_island(target_box, target_definition, island_type)
-
     if egg is not None:
         eggs = source_island.get("eggs") or []
         for i in range(len(eggs) - 1, -1, -1):
@@ -789,7 +793,6 @@ def box_add_egg(username, params):
         if breeding_record in breeding_list:
             breeding_list.remove(breeding_record)
     save_player(username, root)
-
     response = {
         "success": True,
         "user_egg_id": SFSLong(user_egg_id),
@@ -819,7 +822,6 @@ def box_add_monster(username, params):
     if island is None or not user_monster_id:
         return result
     monsters = island.get("monsters") or []
-
     target_box = None
     for m in monsters:
         if m is None:
@@ -834,7 +836,6 @@ def box_add_monster(username, params):
     if target_box is None or requested_box_id == user_monster_id:
         result["error"] = "missing_inactive_box_monster"
         return result
-
     boxed_monster_type = 0
     found_index = None
     for i in range(len(monsters) - 1, -1, -1):
@@ -850,7 +851,6 @@ def box_add_monster(username, params):
         result["error"] = "boxed_monster_not_found"
         return result
     boxed_monster_type = canonical_monster_id(boxed_monster_type)
-
     island_type = island_type_of(island)
     box_definition = get_monster_definition(target_box.get("monster", 0))
     normalize_box_state_for_island(target_box, box_definition, island_type)
@@ -879,9 +879,7 @@ def box_add_monster(username, params):
             result["error"] = "monster_not_required"
             result["message"] = "NOTIFICATION_MONSTER_NOT_REQUIRED"
             return result
-
     del monsters[found_index]
-
     append_boxed_egg(target_box, boxed_monster_type)
     start_amber_vessel_timer_if_needed(target_box, island_type)
     if island_type in BOX_SIMPLE_ISLAND_TYPES:
@@ -893,7 +891,6 @@ def box_add_monster(username, params):
         target_box["awakened"] = False
         apply_inactive_box_state(target_box, box_definition, island_type)
     save_player(username, root)
-
     return {
         "user_box_monster_id": SFSLong(requested_box_id),
         "success": True,
@@ -910,31 +907,31 @@ def box_purchase_fill(username, params):
     add_actual_currencies(result, player_object)
     if island is None or not user_monster_id:
         result["error"] = "missing_box_monster_id"
-        return result, {}
-
+        return (result, {})
     target_island, box_monster = find_monster_with_island(
         player_object, user_monster_id, island
     )
     if box_monster is None:
         result["error"] = "box_monster_not_found"
-        return result, {}
+        return (result, {})
     island = target_island or island
     definition = get_monster_definition(box_monster.get("monster", 0))
     can_evolve = ((definition or {}).get("evolve_into", 0) or 0) > 0
-    if not is_box_monster_entity(definition) and not box_monster.get("ascend_pending"):
+    if not is_box_monster_entity(definition) and (
+        not box_monster.get("ascend_pending")
+    ):
         if can_evolve:
             _start_evolve_round(box_monster, definition, island_type_of(island))
         else:
             result["error"] = "not_box_monster"
-            return result, {}
+            return (result, {})
     elif (
         is_awakened_box_monster(box_monster)
         and can_evolve
-        and not box_monster.get("ascend_pending")
+        and (not box_monster.get("ascend_pending"))
     ):
         _start_evolve_round(box_monster, definition, island_type_of(island))
-
-    if is_awakened_box_monster(box_monster) and not box_monster.get("ascend_pending"):
+    if is_awakened_box_monster(box_monster) and (not box_monster.get("ascend_pending")):
         client_result = {
             "success": True,
             "cmd": "gs_box_purchase_fill",
@@ -942,8 +939,7 @@ def box_purchase_fill(username, params):
             "properties": create_player_properties(player_object),
         }
         add_actual_currencies(client_result, player_object)
-        return client_result, _box_activate_update(box_monster)
-
+        return (client_result, _box_activate_update(box_monster))
     island_type = island_type_of(island)
     normalize_box_state_for_island(box_monster, definition, island_type)
     round2 = bool(box_monster.get("ascend_pending"))
@@ -984,7 +980,6 @@ def box_purchase_fill(username, params):
             if _count(boxed, wanted) < required_through_slot:
                 boxed.append(wanted)
     filled = max(0, len(boxed) - before)
-
     pref_wildcards = params.get("pref_wildcards", True)
     wildcards_spent = 0
     diamonds_spent = 0
@@ -1025,7 +1020,6 @@ def box_purchase_fill(username, params):
             new_diamonds = max(0, diamonds - diamonds_spent)
             player_object["diamonds"] = new_diamonds
             player_object["diamonds_actual"] = new_diamonds
-
     if round2:
         box_monster["evolve_boxed_eggs"] = _ints_to_json_array(boxed)
         box_monster["evolve_flex_boxed_eggs"] = _ints_to_json_array(flex_boxed)
@@ -1042,7 +1036,6 @@ def box_purchase_fill(username, params):
         box_monster["awakened"] = False
         apply_inactive_box_state(box_monster, definition, island_type)
     save_player(username, root)
-
     result = {
         "success": True,
         "user_monster_id": SFSLong(user_monster_id),
@@ -1054,8 +1047,8 @@ def box_purchase_fill(username, params):
         update = _box_activate_update(box_monster)
         update.update(round2_wire_progress(box_monster))
         result.update(round2_wire_progress(box_monster))
-        return result, update
-    return result, _box_progress_update(box_monster)
+        return (result, update)
+    return (result, _box_progress_update(box_monster))
 
 
 _evolve_predecessor_cache = None
@@ -1105,8 +1098,7 @@ def wake_wubbox(username, params):
     result = {"success": False, "properties": []}
     add_actual_currencies(result, player_object)
     if island is None:
-        return result, {}
-
+        return (result, {})
     monster = None
     if user_monster_id:
         found_island, monster = find_monster_with_island(
@@ -1118,14 +1110,14 @@ def wake_wubbox(username, params):
         for m in island.get("monsters") or []:
             if (
                 m is not None
-                and not is_awakened_box_monster(m)
+                and (not is_awakened_box_monster(m))
                 and is_box_monster_entity(get_monster_definition(m.get("monster", 0)))
             ):
                 monster = m
                 user_monster_id = m.get("user_monster_id", 0)
                 break
     if monster is None:
-        return result, {}
+        return (result, {})
     logger.info(
         "wake_wubbox resolved monster=%r user_monster_id=%r awakened_field=%r box_requirements=%r is_awakened=%r",
         monster.get("monster"),
@@ -1159,10 +1151,10 @@ def wake_wubbox(username, params):
                     round2_required,
                     evolve_boxed_eggs(monster),
                 )
-                return {
-                    "success": False,
-                    "user_monster_id": SFSLong(user_monster_id),
-                }, {}
+                return (
+                    {"success": False, "user_monster_id": SFSLong(user_monster_id)},
+                    {},
+                )
         if next_monster_id > 0 and monster.get("monster") != next_monster_id:
             previous_monster_id = monster.get("monster", 0) or 0
             monster["monster"] = next_monster_id
@@ -1213,12 +1205,15 @@ def wake_wubbox(username, params):
                 update,
             )
             if sold_update:
-                return client_result, [
-                    ("gs_update_sold_monsters", sold_update),
-                    ("gs_wake_wubbox", client_result),
-                    ("gs_update_monster", update),
-                ]
-            return client_result, update
+                return (
+                    client_result,
+                    [
+                        ("gs_update_sold_monsters", sold_update),
+                        ("gs_wake_wubbox", client_result),
+                        ("gs_update_monster", update),
+                    ],
+                )
+            return (client_result, update)
         client_result = {
             "success": True,
             "user_monster_id": SFSLong(user_monster_id),
@@ -1230,8 +1225,7 @@ def wake_wubbox(username, params):
             client_result,
             update,
         )
-        return client_result, update
-
+        return (client_result, update)
     definition = get_monster_definition(monster.get("monster", 0))
     import msm_monsters
 
@@ -1240,23 +1234,27 @@ def wake_wubbox(username, params):
         return nursery.get("user_structure_id", 2) if nursery is not None else 2
 
     if validate_only:
-        return {
-            "success": False,
-            "validated": True,
-            "nursery_id": _predicted_nursery_id(),
-            "user_monster_id": SFSLong(user_monster_id),
-        }, {}
-
+        return (
+            {
+                "success": False,
+                "validated": True,
+                "nursery_id": _predicted_nursery_id(),
+                "user_monster_id": SFSLong(user_monster_id),
+            },
+            {},
+        )
     island_type = island_type_of(island)
     required = box_requirements(definition, island_type)
     if required and len(boxed_eggs(monster)) < len(required):
-        return {
-            "success": False,
-            "validated": True,
-            "nursery_id": _predicted_nursery_id(),
-            "user_monster_id": SFSLong(user_monster_id),
-        }, {}
-
+        return (
+            {
+                "success": False,
+                "validated": True,
+                "nursery_id": _predicted_nursery_id(),
+                "user_monster_id": SFSLong(user_monster_id),
+            },
+            {},
+        )
     if island_type == 22:
         vessel_species = monster.get("monster", 0) or 0
         vessel_name = monster.get("name") or ""
@@ -1287,9 +1285,10 @@ def wake_wubbox(username, params):
         )
         if user_egg is None:
             save_player(username, root)
-            return {"success": False, "user_monster_id": SFSLong(user_monster_id)}, [
-                ("gs_sell_monster", sell_result)
-            ]
+            return (
+                {"success": False, "user_monster_id": SFSLong(user_monster_id)},
+                [("gs_sell_monster", sell_result)],
+            )
         user_egg["book_value"] = vessel_book_value
         save_player(username, root)
         buy_egg_result = {
@@ -1298,20 +1297,18 @@ def wake_wubbox(username, params):
             "properties": create_player_properties(player_object),
         }
         add_actual_currencies(buy_egg_result, player_object)
-        return {"success": True, "user_monster_id": SFSLong(user_monster_id)}, [
-            ("gs_sell_monster", sell_result),
-            ("gs_buy_egg", buy_egg_result),
-        ]
-
+        return (
+            {"success": True, "user_monster_id": SFSLong(user_monster_id)},
+            [("gs_sell_monster", sell_result), ("gs_buy_egg", buy_egg_result)],
+        )
     apply_awakened_box_state(monster, definition, island_type)
     save_player(username, root)
-
     client_result = {
         "success": True,
         "user_monster_id": SFSLong(user_monster_id),
         "evolution": False,
     }
-    return client_result, _box_activate_update(monster)
+    return (client_result, _box_activate_update(monster))
 
 
 def box_activate_monster(username, params):
@@ -1349,19 +1346,19 @@ def purchase_evolve_unlock(username, params):
     }
     if not user_monster_id:
         result["error"] = "evolve_monster_not_found"
-        return result, {}
+        return (result, {})
     _, monster = find_monster_with_island(player_object, user_monster_id)
     if monster is None:
         result["error"] = "evolve_monster_not_found"
-        return result, {}
+        return (result, {})
     definition = get_monster_definition(monster.get("monster", 0))
     evolve_into = (definition or {}).get("evolve_into", 0) or 0
     if evolve_into <= 0:
         result["error"] = "evolve_not_available"
-        return result, {}
-    if is_box_monster_entity(definition) and not is_awakened_box_monster(monster):
+        return (result, {})
+    if is_box_monster_entity(definition) and (not is_awakened_box_monster(monster)):
         result["error"] = "evolve_monster_not_awakened"
-        return result, {}
+        return (result, {})
     unlock_island, _unused = find_monster_with_island(player_object, user_monster_id)
     _start_evolve_round(
         monster, definition, island_type_of(unlock_island) if unlock_island else 0
@@ -1376,7 +1373,7 @@ def purchase_evolve_unlock(username, params):
     update.update(round2_wire_progress(monster))
     update["evolve_enabled"] = 1
     update["evolve_into"] = evolve_into
-    return result, update
+    return (result, update)
 
 
 def attempt_early_box_activate(username, params):
@@ -1391,13 +1388,13 @@ def attempt_early_box_activate(username, params):
         "properties": create_player_properties(player_object),
     }
     if not user_monster_id:
-        return result, {}
+        return (result, {})
     island, monster = find_monster_with_island(player_object, user_monster_id)
     if monster is None or island is None:
-        return result, {}
+        return (result, {})
     definition = get_monster_definition(monster.get("monster", 0))
     if not is_box_monster_entity(definition):
-        return result, {}
+        return (result, {})
     island_type = island_type_of(island)
     required = _ints_from_raw(monster.get("box_requirements"))
     if required:
@@ -1408,7 +1405,7 @@ def attempt_early_box_activate(username, params):
     result["attempt_success"] = True
     result["properties"] = create_player_properties(player_object)
     add_actual_currencies(result, player_object)
-    return result, _box_activate_update(monster)
+    return (result, _box_activate_update(monster))
 
 
 def purchase_evo_powerup_unlock(username, params):
@@ -1421,16 +1418,16 @@ def purchase_evo_powerup_unlock(username, params):
     }
     if not user_monster_id:
         result["error"] = "evolve_monster_not_found"
-        return result, {}
+        return (result, {})
     _, monster = find_monster_with_island(player_object, user_monster_id)
     if monster is None:
         result["error"] = "evolve_monster_not_found"
-        return result, {}
+        return (result, {})
     definition = get_monster_definition(monster.get("monster", 0))
     evolve_into = (definition or {}).get("evolve_into", 0) or 0
     if evolve_into <= 0:
         result["error"] = "evolve_not_available"
-        return result, {}
+        return (result, {})
     monster["evolve_unlocked"] = 1
     monster["powerup_unlocked"] = 1
     if not monster.get("ascend_pending"):
@@ -1455,4 +1452,4 @@ def purchase_evo_powerup_unlock(username, params):
     update = _box_activate_update(monster)
     update.update(round2_wire_progress(monster))
     update["powerup_unlocked"] = 1
-    return result, update
+    return (result, update)

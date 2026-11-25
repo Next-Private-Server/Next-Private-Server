@@ -13,7 +13,6 @@ from mod_schema import (
 
 logger = logging.getLogger("msm.mods")
 BRIDGE_API_VERSION = 1
-
 _EVENT_HOOKS = {}
 _LAUNCHER_TABS = {}
 _LAUNCHER_CALLBACKS = {}
@@ -35,7 +34,6 @@ _LUA_LOG_PATHS = [
     "/storage/emulated/0/Download/nps_lua.log",
     "/data/local/tmp/nps_lua.log",
 ]
-
 _CURRENCY_ACTUAL_KEYS = {
     "coins": "coins_actual",
     "diamonds": "diamonds_actual",
@@ -73,6 +71,7 @@ def normalize_currency(currency):
 
 
 def on_event(event_name):
+
     def register(fn):
         _EVENT_HOOKS.setdefault(event_name, []).append(fn)
         return fn
@@ -198,7 +197,7 @@ def _dispatch_hud_prompt(username="", command="", params=None, **_):
     if (
         command != "gs_set_displayname"
         or not isinstance(params, dict)
-        or not _HUD_PROMPT_HANDLERS
+        or (not _HUD_PROMPT_HANDLERS)
     ):
         return
     for key in _HUD_PROMPT_NAME_KEYS:
@@ -394,7 +393,7 @@ def _stable_slot_index(text, modulo):
         return 0
     value = 0
     for char in text:
-        value = (value * 131 + ord(char)) & 0xFFFFFFFF
+        value = value * 131 + ord(char) & 4294967295
     return value % modulo
 
 
@@ -492,7 +491,7 @@ def add_new_monster(
                 "food": 5,
                 "ethereal_currency": 0,
                 "max_ethereal": 0,
-            },
+            }
         ],
         "min_server_version": "1.0",
         "last_changed": int(time.time() * 1000),
@@ -513,7 +512,7 @@ def add_new_monster(
     if add_to_island:
         island_type = (
             add_to_island
-            if isinstance(add_to_island, int) and not isinstance(add_to_island, bool)
+            if isinstance(add_to_island, int) and (not isinstance(add_to_island, bool))
             else _PLANT_ISLAND_TYPE
         )
         _add_monster_to_island_book(
@@ -554,7 +553,6 @@ def _safe_int(value, fallback=0):
 
 
 def _clamp_client_int(value):
-
     return max(0, int(value))
 
 
@@ -722,7 +720,11 @@ def _merge_target_fields(payload, data):
         "structure_id",
     ):
         value = _target_value_for(out_key, data)
-        if value is not None and _is_target_scalar(value) and not payload.get(out_key):
+        if (
+            value is not None
+            and _is_target_scalar(value)
+            and (not payload.get(out_key))
+        ):
             payload[out_key] = value
 
 
@@ -804,8 +806,8 @@ def _event_payload(event_name, kwargs):
         payload["details"]["response_summary"] = payload["response_summary"]
     if (
         payload.get("user_monster_id")
-        and not payload.get("user_egg_id")
-        and command in ("gs_hatch_egg", "gs_finish_breeding")
+        and (not payload.get("user_egg_id"))
+        and (command in ("gs_hatch_egg", "gs_finish_breeding"))
     ):
         payload["hatch_target_id"] = payload.get("user_monster_id")
     return payload
@@ -816,6 +818,8 @@ def _fire_java_event(event_name, kwargs):
     if not runtime:
         return []
     try:
+        if not runtime.hasEventListeners(event_name):
+            return []
         payload = json.dumps(_event_payload(event_name, kwargs), ensure_ascii=False)
         raw_commands = runtime.emit(event_name, payload)
         commands = json.loads(str(raw_commands or "[]"))
@@ -827,6 +831,7 @@ def _fire_java_event(event_name, kwargs):
 
 
 class LauncherTab:
+
     def __init__(self, mod_id, tab_id, label, icon):
         self.mod_id = mod_id
         self.tab_id = tab_id
@@ -837,14 +842,14 @@ class LauncherTab:
         self._next_id = 1
 
     def _new_id(self):
-        eid = f"{self .tab_id }_{self ._next_id }"
+        eid = f"{self.tab_id}_{self._next_id}"
         self._next_id += 1
         return eid
 
     def _register_callback(self, fn):
         if fn is None:
             return None
-        cb_id = f"{self .mod_id }:{self ._new_id ()}"
+        cb_id = f"{self.mod_id}:{self._new_id()}"
         _LAUNCHER_CALLBACKS[cb_id] = fn
         return cb_id
 
@@ -878,7 +883,7 @@ class LauncherTab:
 
     def image(self, source):
         self.elements.append(
-            {"type": "image", "id": self._new_id(), "source": str(source)[:2_000_000]}
+            {"type": "image", "id": self._new_id(), "source": str(source)[:2000000]}
         )
 
     def upload_file(self, label, on_upload=None, accept=None):
@@ -916,10 +921,10 @@ class LauncherTab:
         }
 
 
-def launcher_tab(label, icon="\U0001f9e9", tab_id=None):
+def launcher_tab(label, icon="🧩", tab_id=None):
     mod_id = _caller_mod_id()
     slug = _safe_command_name(tab_id or str(label).lower().replace(" ", "_"))
-    tid = slug or f"tab_{len (_LAUNCHER_TABS .get (mod_id ,{}))+1 }"
+    tid = slug or f"tab_{len(_LAUNCHER_TABS.get(mod_id, {})) + 1}"
     tab = LauncherTab(mod_id, tid, str(label)[:32], str(icon)[:8])
     _LAUNCHER_TABS.setdefault(mod_id, {})[tid] = tab
     logger.info("mod %s registered launcher tab %s", mod_id, tid)
@@ -974,7 +979,7 @@ def fire_launcher_callback_json(mod_id, tab_id, callback_id, username, value_jso
     if tab is None:
         return json.dumps({"error": "unknown tab"})
     if not isinstance(callback_id, str) or not callback_id.startswith(
-        f"{safe_mod_id }:"
+        f"{safe_mod_id}:"
     ):
         logger.warning(
             "blocked cross-mod launcher callback %r for mod %s",
@@ -1143,6 +1148,10 @@ def request_property_update(username):
         _PENDING_PROPERTY_UPDATES.add(key)
 
 
+def has_pending_property_update(username):
+    return str(username or "") in _PENDING_PROPERTY_UPDATES
+
+
 def consume_property_update(player_object, username=""):
     key = str(username or "")
     if key not in _PENDING_PROPERTY_UPDATES:
@@ -1235,10 +1244,9 @@ def register_monster(monster_id, definition):
     catalog = _all_monster_defs()
     if monster_id in catalog:
         raise ModValidationError(
-            f"monster_id {monster_id } already exists in the catalog"
+            f"monster_id {monster_id} already exists in the catalog"
         )
     catalog[monster_id] = validated
-
     raw = msm_store.load_db_json("db_monster")
     if raw is not None:
         wire_entry = dict(validated)
@@ -1293,11 +1301,7 @@ def load_mods(mods_dir):
             mod_id = (manifest or {}).get("id", entry)
             mod_name = (manifest or {}).get("name", mod_id)
             _LOAD_ERRORS.append(
-                {
-                    "modId": mod_id,
-                    "modName": mod_name,
-                    "detail": traceback.format_exc(),
-                }
+                {"modId": mod_id, "modName": mod_name, "detail": traceback.format_exc()}
             )
     _load_staged_assets(os.path.join(os.path.dirname(mods_dir), "mod_assets"))
 
@@ -1406,13 +1410,12 @@ def _apply_strings(strings, asset_path, locale=""):
     }
     if not safe_strings:
         return
-    cache_key = "nps_strings" if not locale else f"nps_strings_{locale }"
+    cache_key = "nps_strings" if not locale else f"nps_strings_{locale}"
     current = msm_store._db_cache.get(cache_key)
     if not isinstance(current, dict):
         current = {}
         msm_store._db_cache[cache_key] = current
     current.update(safe_strings)
-
     injected = False
     for db_name in (
         "db_strings",
@@ -1439,7 +1442,7 @@ def _apply_strings(strings, asset_path, locale=""):
     logger.info(
         "mod asset loaded %d string(s)%s from %s%s",
         len(safe_strings),
-        f" for {locale }" if locale else "",
+        f" for {locale}" if locale else "",
         asset_path,
         " into text db cache" if injected else " into nps string cache",
     )
@@ -1589,7 +1592,7 @@ def _apply_data_patch(patch_path):
 
 
 def _load_entry_script(script_path, mod_id):
-    spec = importlib.util.spec_from_file_location(f"mod_{mod_id }", script_path)
+    spec = importlib.util.spec_from_file_location(f"mod_{mod_id}", script_path)
     module = importlib.util.module_from_spec(spec)
     module.__mod_id__ = mod_id
     spec.loader.exec_module(module)

@@ -1,0 +1,224 @@
+{
+ "islands": [
+  {
+   "island_id": 1,
+   "island_type": 1,
+   "label": "Plant Island"
+  },
+  {
+   "island_id": 2,
+   "island_type": 2,
+   "label": "Cold Island"
+  },
+  {
+   "island_id": 3,
+   "island_type": 3,
+   "label": "Air Island"
+  },
+  {
+   "island_id": 4,
+   "island_type": 4,
+   "label": "Water Island"
+  },
+  {
+   "island_id": 5,
+   "island_type": 5,
+   "label": "Earth Island"
+  },
+  {
+   "island_id": 6,
+   "island_type": 6,
+   "label": "Gold Island"
+  },
+  {
+   "island_id": 7,
+   "island_type": 7,
+   "label": "Ethereal Island"
+  },
+  {
+   "island_id": 8,
+   "island_type": 8,
+   "label": "Shugabush Island"
+  },
+  {
+   "island_id": 9,
+   "island_type": 9,
+   "label": "Tribal Island"
+  },
+  {
+   "island_id": 10,
+   "island_type": 10,
+   "label": "Wublin Island"
+  },
+  {
+   "island_id": 11,
+   "island_type": 11,
+   "label": "Composer Island"
+  },
+  {
+   "island_id": 12,
+   "island_type": 12,
+   "label": "Celestial Island"
+  },
+  {
+   "island_id": 13,
+   "island_type": 13,
+   "label": "Fire Haven"
+  },
+  {
+   "island_id": 14,
+   "island_type": 14,
+   "label": "Fire Oasis"
+  },
+  {
+   "island_id": 15,
+   "island_type": 15,
+   "label": "Psychic Island"
+  },
+  {
+   "island_id": 16,
+   "island_type": 16,
+   "label": "Faerie Island"
+  },
+  {
+   "island_id": 17,
+   "island_type": 17,
+   "label": "Bone Island"
+  },
+  {
+   "island_id": 18,
+   "island_type": 18,
+   "label": "Light Island"
+  },
+  {
+   "island_id": 19,
+   "island_type": 19,
+   "label": "Magic Island"
+  },
+  {
+   "island_id": 20,
+   "island_type": 20,
+   "label": "Battle Island"
+  },
+  {
+   "island_id": 21,
+   "island_type": 21,
+   "label": "Seasonal Island"
+  },
+  {
+   "island_id": 22,
+   "island_type": 22,
+   "label": "Island 22"
+  },
+  {
+   "island_id": 23,
+   "island_type": 23,
+   "label": "Mythical Island"
+  },
+  {
+   "island_id": 24,
+   "island_type": 24,
+   "label": "Ethereal Workshop"
+  },
+  {
+   "island_id": 25,
+   "island_type": 25,
+   "label": "Magical Nexus"
+  },
+  {
+   "island_id": 26,
+   "island_type": 26,
+   "label": "Workshop Island 26"
+  },
+  {
+   "island_id": 27,
+   "island_type": 27,
+   "label": "Workshop Island 27"
+  },
+  {
+   "island_id": 28,
+   "island_type": 28,
+   "label": "Workshop Island 28"
+  },
+  {
+   "island_id": 29,
+   "island_type": 29,
+   "label": "Workshop Island 29"
+  },
+  {
+   "island_id": 31,
+   "island_type": 31,
+   "label": "Paironormal Island"
+  },
+  {
+   "island_id": 32,
+   "island_type": 32,
+   "label": "bbli$zard"
+  },
+  {
+   "island_id": 101,
+   "island_type": 1,
+   "label": "Mirror Plant Island"
+  },
+  {
+   "island_id": 102,
+   "island_type": 2,
+   "label": "Mirror Cold Island"
+  },
+  {
+   "island_id": 103,
+   "island_type": 3,
+   "label": "Mirror Air Island"
+  },
+  {
+   "island_id": 104,
+   "island_type": 4,
+   "label": "Mirror Water Island"
+  },
+  {
+   "island_id": 105,
+   "island_type": 5,
+   "label": "Mirror Earth Island"
+  },
+  {
+   "island_id": 106,
+   "island_type": 11,
+   "label": "Composer Island 2"
+  },
+  {
+   "island_id": 107,
+   "island_type": 11,
+   "label": "Composer Island 3"
+  },
+  {
+   "island_id": 108,
+   "island_type": 11,
+   "label": "Composer Island 4"
+  },
+  {
+   "island_id": 109,
+   "island_type": 11,
+   "label": "Composer Island 5"
+  },
+  {
+   "island_id": 115,
+   "island_type": 15,
+   "label": "Mirror Psychic Island"
+  },
+  {
+   "island_id": 116,
+   "island_type": 16,
+   "label": "Mirror Faerie Island"
+  },
+  {
+   "island_id": 117,
+   "island_type": 17,
+   "label": "Mirror Bone Island"
+  },
+  {
+   "island_id": 118,
+   "island_type": 18,
+   "label": "Mirror Light Island"
+  }
+ ]
+}

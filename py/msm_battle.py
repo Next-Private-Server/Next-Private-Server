@@ -1,7 +1,6 @@
 import json
 import random
 import time
-
 from mod_api import event
 from msm_gamedata import get_battle_campaign_definition
 from msm_playerdata import create_player_properties, island_type_of
@@ -72,7 +71,7 @@ def _grant_campaign_costume(player_object, colosseum, costume_id):
         costumes = {}
         player_object["costumes"] = costumes
     items = costumes.setdefault("items", [])
-    if not any(isinstance(e, dict) and e.get("k") == costume_id for e in items):
+    if not any((isinstance(e, dict) and e.get("k") == costume_id for e in items)):
         items.append({"v": 1, "k": costume_id})
     if colosseum is None:
         return
@@ -121,7 +120,7 @@ def repair_campaign_costumes(player_object):
         return
     credit_ids = {
         e.get("id")
-        for e in ((colosseum.get("costume_data") or {}).get("costumes") or [])
+        for e in (colosseum.get("costume_data") or {}).get("costumes") or []
         if isinstance(e, dict)
     }
     for entry in campaigns:
@@ -158,13 +157,11 @@ def battle_start(username, params):
     battle_id = params.get("battle_id", 0)
     started = int(time.time() * 1000)
     campaign_id = params.get("campaign_id", 0)
-
     root = load_user_data(username)
     player_object = root.get("player_object") or {}
     battle_state = player_object.setdefault("battle", {})
     battle_state["loadout"] = json.dumps(slots)
     save_user_data(username, root)
-
     result = {
         "success": True,
         "battle_id": battle_id,
@@ -180,15 +177,12 @@ def battle_finish(username, params):
     result = params.get("result", 0) or 0
     battle_id = params.get("battle_id", 0) or 0
     campaign_id = params.get("campaign_id", 0) or 0
-
     root = load_user_data(username)
     player_object = root.get("player_object") or {}
-
     campaign = get_battle_campaign_definition(campaign_id) or {}
     battles = campaign.get("battles") or []
     battle_def = battles[battle_id] if 0 <= battle_id < len(battles) else {}
     battle_reward = dict(battle_def.get("reward") or {})
-
     won = result == 1
     if won:
         _apply_battle_currency_reward(player_object, battle_reward)
@@ -197,7 +191,6 @@ def battle_finish(username, params):
         player_object["battle_level"] = battle_level_for_xp(
             player_object.get("battle_xp", 0) or 0
         )
-
     next_battle = battle_id + 1 if won else battle_id
     campaign_completed_now = None
     campaign_reward = None
@@ -248,11 +241,10 @@ def battle_finish(username, params):
                 if other_id is None:
                     continue
                 if not any(
-                    isinstance(c, dict) and c.get("id") == other_id for c in campaigns
+                    (isinstance(c, dict) and c.get("id") == other_id for c in campaigns)
                 ):
                     campaigns.append({"id": other_id, "b": 0, "s": now_ms})
     save_user_data(username, root)
-
     response = {
         "success": True,
         "result": result,

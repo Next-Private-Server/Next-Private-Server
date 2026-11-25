@@ -5,22 +5,19 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-
 from msm_protocol import SFSLong
+import msm_toggles
 
 db_dir = None
 players_dir = None
-
 _db_cache = {}
 _user_file_locks = {}
 _user_file_locks_guard = threading.Lock()
 _mod_db_names = set()
-
 _UNCACHED_DB_NAMES = {"gs_timed_events"}
 
 
 def clear_db_cache():
-
     _db_cache.clear()
     _mod_db_names.clear()
 
@@ -34,7 +31,7 @@ def load_db_json(name):
         return _db_cache[name]
     if db_dir is None:
         raise RuntimeError("msm_store.db_dir not configured")
-    path = Path(db_dir) / f"{name }.json"
+    path = Path(db_dir) / f"{name}.json"
     if not path.exists():
         if name in _UNCACHED_DB_NAMES:
             return None
@@ -71,7 +68,7 @@ def _merge_db_value(existing, key, value):
             if (
                 id_key is not None
                 and isinstance(entry, dict)
-                and entry.get(id_key) in existing_ids
+                and (entry.get(id_key) in existing_ids)
             ):
                 continue
             target_list.append(entry)
@@ -92,7 +89,6 @@ def _merge_db_value(existing, key, value):
 
 
 def apply_mod_db_files(base_dir):
-
     root = Path(base_dir) / "mod_assets"
     if not root.is_dir():
         return
@@ -133,19 +129,51 @@ def apply_mod_db_files(base_dir):
                 logger.exception("failed to apply db file %s", db_file)
 
 
+def _force_market_visible(items, id_key):
+    if not isinstance(items, list):
+        return items
+    return [
+        (
+            {**entry, "view_in_market": 1, "time_availability": 255, "requirements": []}
+            if isinstance(entry, dict)
+            else entry
+        )
+        for entry in items
+    ]
+
+
+def _patch_unlock_all_market(command, payload):
+    if command.startswith("db_monster"):
+        payload["monsters_data"] = _force_market_visible(
+            payload.get("monsters_data"), "monster_id"
+        )
+    elif command.startswith("db_structure"):
+        payload["structures_data"] = _force_market_visible(
+            payload.get("structures_data"), "structure_id"
+        )
+    elif command.startswith("db_costumes"):
+        items = payload.get("costume_data")
+        if isinstance(items, list):
+            payload["costume_data"] = [
+                {**c, "ignore_locks": 1} if isinstance(c, dict) else c for c in items
+            ]
+    return payload
+
+
 def normalize_db_payload(command, payload):
     now_ms = SFSLong(int(time.time() * 1000))
     payload["server_time"] = now_ms
     payload.setdefault("last_updated", now_ms)
     if command.startswith("gs_"):
         payload.setdefault("success", True)
+    payload = _patch_unlock_all_market(command, payload)
     return payload
 
 
 def _player_file(username):
     if players_dir is None:
         raise RuntimeError("msm_store.players_dir not configured")
-    return Path(players_dir) / f"{username }.json"
+    return Path(players_dir) / f"{username}.json"
 
 
 def _lock_for_path(path):
@@ -158,10 +186,19 @@ def _lock_for_path(path):
         return lock
 
 
+def player_file_version(username):
+    path = _player_file(username)
+    try:
+        stat = path.stat()
+    except OSError:
+        return None
+    return (path, stat.st_ino, stat.st_mtime_ns, stat.st_size)
+
+
 def _atomic_write_json(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(
-        prefix=f".{path .name }.", suffix=".tmp", dir=str(path.parent)
+        prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
     )
     tmp_path = Path(tmp_name)
     try:
@@ -189,10 +226,9 @@ _FROZEN_CURRENCY_BASE_KEYS = (
     "speed_up_credit",
     "total_starpower_collected",
 )
-
 _FROZEN_CURRENCY_KEYS = frozenset(
     _FROZEN_CURRENCY_BASE_KEYS
-    + tuple(f"{key }_actual" for key in _FROZEN_CURRENCY_BASE_KEYS)
+    + tuple((f"{key}_actual" for key in _FROZEN_CURRENCY_BASE_KEYS))
 )
 
 
@@ -229,9 +265,13 @@ def _fallback_player_file(missing_path):
         p
         for p in folder.glob("*.json")
         if p.is_file()
-        and not any(
-            mark in p.name.lower()
-            for mark in (".bak", "backup", "previous", "template")
+        and (
+            not any(
+                (
+                    mark in p.name.lower()
+                    for mark in (".bak", "backup", "previous", "template")
+                )
+            )
         )
     ]
     if not candidates:
@@ -249,7 +289,18 @@ def _create_default_save(missing_path):
             if template.is_file():
                 try:
                     missing_path.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copyfile(template, missing_path)
+                    with _lock_for_path(missing_path):
+                        if missing_path.exists():
+                            return missing_path
+                        with tempfile.NamedTemporaryFile(
+                            dir=missing_path.parent, suffix=".tmp", delete=False
+                        ) as tmp:
+                            tmp_path = Path(tmp.name)
+                        try:
+                            shutil.copyfile(template, tmp_path)
+                            os.replace(tmp_path, missing_path)
+                        finally:
+                            tmp_path.unlink(missing_ok=True)
                     return missing_path
                 except OSError:
                     return template
@@ -266,7 +317,14 @@ def load_user_data(username):
             raise FileNotFoundError(f"no player data for {username!r} at {path}")
         path = fallback
     with path.open("r", encoding="utf-8-sig") as fh:
-        root = json.load(fh)
+        try:
+            root = json.load(fh)
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            offset = exc.pos if isinstance(exc, json.JSONDecodeError) else exc.start
+            print(
+                f"[Bridge health] player save decode failed: {type(exc).__name__} at offset {offset}"
+            )
+            raise
     po = root.get("player_object")
     if isinstance(po, dict):
         for key in _FROZEN_CURRENCY_BASE_KEYS + ("minigame_tokens", "sticker_stars"):

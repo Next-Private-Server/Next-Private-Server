@@ -34,7 +34,6 @@ _VISIT_ONLY_FIELDS = (
     "country",
     "friend_gift",
 )
-
 _NPS_ONLY_FIELDS = ("active",)
 
 
@@ -248,22 +247,22 @@ def _known_island_type(island_type_id):
 def _sanitize_friend_island(island):
     island["monsters"] = [
         _filtered(m, _REAL_FRIEND_MONSTER_KEYS)
-        for m in (island.get("monsters") or [])
+        for m in island.get("monsters") or []
         if m is not None and _known_monster(m.get("monster"))
     ]
     island["structures"] = [
         _filtered(s, _REAL_FRIEND_STRUCTURE_KEYS)
-        for s in (island.get("structures") or [])
+        for s in island.get("structures") or []
         if s is not None and _known_structure(s.get("structure"))
     ]
     island["eggs"] = [
         _filtered(e, _REAL_FRIEND_EGG_KEYS)
-        for e in (island.get("eggs") or [])
+        for e in island.get("eggs") or []
         if e is not None and _known_monster(e.get("monster"))
     ]
     island["breeding"] = [
         _filtered(b, _REAL_FRIEND_BREEDING_KEYS)
-        for b in (island.get("breeding") or [])
+        for b in island.get("breeding") or []
         if b is not None
         and _known_monster(b.get("monster_1"))
         and _known_monster(b.get("monster_2"))
@@ -282,7 +281,7 @@ def friend_visit_object(player_object, user_id):
             _apply_island_backfills(island)
     sanitized_islands = [
         _sanitize_friend_island(copy.deepcopy(island))
-        for island in (friend.get("islands") or [])
+        for island in friend.get("islands") or []
         if island is not None and _known_island_type(island.get("island"))
     ]
     return {
@@ -306,6 +305,21 @@ def friend_visit_object(player_object, user_id):
     }
 
 
+_PROFILE_CARD_FIELDS = (
+    "bg_id",
+    "card_id",
+    "frame_id",
+    "avatar_id",
+    "phrase_id",
+    "moniker_id",
+    "fav_mon_1_id",
+    "fav_mon_2_id",
+    "fav_mon_3_id",
+    "fav_island_id",
+    "total_torches_lit",
+)
+
+
 def build_own_snapshot(player_object):
     islands = []
     for island in player_object.get("islands") or []:
@@ -320,6 +334,18 @@ def build_own_snapshot(player_object):
         "songs": player_object.get("songs") or [],
         "owned_island_themes": player_object.get("owned_island_themes") or [],
         "active_island_themes": player_object.get("active_island_themes") or [],
+        "level": int(player_object.get("level") or 1),
+        "xp": int(player_object.get("xp") or 0),
+        "display_name": player_object.get("display_name") or "",
+        "profile": {
+            "version": 1,
+            "migration_ran": 3,
+            **{
+                k: player_object.get(k)
+                for k in _PROFILE_CARD_FIELDS
+                if player_object.get(k) is not None
+            },
+        },
     }
 
 
@@ -365,11 +391,7 @@ def is_real_friend_wire_id(user_id):
     return isinstance(user_id, int) and user_id >= REAL_FRIEND_ID_OFFSET
 
 
-_DEFAULT_PROFILE_DATA = (
-    '{"bg_id": 1, "card_id": 1, "version": 1, "frame_id": 583, "avatar_id": 1, '
-    '"phrase_id": 1, "moniker_id": 0, "fav_mon_1_id": 0, "fav_mon_2_id": 0, '
-    '"fav_mon_3_id": 0, "fav_island_id": 1, "migration_ran": 3, "total_torches_lit": 0}'
-)
+_DEFAULT_PROFILE_DATA = '{"bg_id": 1, "card_id": 1, "version": 1, "frame_id": 583, "avatar_id": 1, "phrase_id": 1, "moniker_id": 0, "fav_mon_1_id": 0, "fav_mon_2_id": 0, "fav_mon_3_id": 0, "fav_island_id": 1, "migration_ran": 3, "total_torches_lit": 0}'
 
 
 def _real_friend_wire_entry(friend):
@@ -564,17 +586,17 @@ _SNAPSHOT_INTS = (
 
 def _coerce_snapshot_island(island):
     for key in _SNAPSHOT_LISTS:
-        if key in island and not isinstance(island[key], list):
+        if key in island and (not isinstance(island[key], list)):
             island[key] = []
     for key in _SNAPSHOT_DICTS:
-        if key in island and not isinstance(island[key], dict):
+        if key in island and (not isinstance(island[key], dict)):
             island[key] = {}
     for key in _SNAPSHOT_STRINGS:
         if key not in island:
             continue
         value = island[key]
         if isinstance(value, list):
-            island[key] = "[" + ",".join(str(v) for v in value) + "]"
+            island[key] = "[" + ",".join((str(v) for v in value)) + "]"
         elif not isinstance(value, str):
             island[key] = "[]"
     for key in _SNAPSHOT_INTS:
@@ -594,7 +616,7 @@ def _coerce_snapshot_island(island):
 
 
 def _remap_snapshot_ids(islands, account_id, wire_user_id):
-    base = 1000000000 + (int(account_id) % 10000) * 100000
+    base = 1000000000 + int(account_id) % 10000 * 100000
     counters = {"monsters": 1000, "structures": 50000, "eggs": 90000}
     for index, island in enumerate(islands):
         island_id = base + index
@@ -620,7 +642,6 @@ def real_friend_visit_object(wire_user_id):
     snapshot = nps_online.fetch_friend_snapshot(account_id)
     if snapshot is None:
         return None
-
     islands = []
     for island in snapshot.get("islands") or []:
         if island is None or not _known_island_type(island.get("island")):
@@ -629,17 +650,14 @@ def real_friend_visit_object(wire_user_id):
         islands.append(
             _coerce_snapshot_island(_sanitize_friend_island(copy.deepcopy(island)))
         )
-
     display_name = ""
     for entry in real_friends_wire_list():
         if entry.get("user_id") == wire_user_id:
             display_name = entry.get("display_name", "")
             break
-
     account_id = wire_user_id - REAL_FRIEND_ID_OFFSET
     _remap_snapshot_ids(islands, account_id, wire_user_id)
     active_island = islands[0]["user_island_id"] if islands else 0
-
     return {
         "user_id": wire_user_id,
         "bbb_id": wire_user_id,

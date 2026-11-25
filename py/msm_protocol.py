@@ -72,7 +72,6 @@ class SFSUtfStringArray(list):
 
 
 def _normalize_wire_value(value):
-
     if isinstance(value, dict) and len(value) == 1:
         hex_bits = value.get("__double_bits")
         if hex_bits is not None:
@@ -150,7 +149,7 @@ def _encode_utf(value):
         value = str(value)
     data = value.encode("utf-8")
     if len(data) > 65535:
-        raise ValueError(f"SFS UTF string is too long: {len (data )} bytes")
+        raise ValueError(f"SFS UTF string is too long: {len(data)} bytes")
     return struct.pack(">H", len(data)) + data
 
 
@@ -182,7 +181,7 @@ def _encode_value(sfs_type, value):
             out += struct.pack(">B", 1 if v else 0)
         return out
     if sfs_type == SFS_TYPE_BYTE_ARRAY:
-        return struct.pack(">i", len(value)) + bytes(int(v) & 0xFF for v in value)
+        return struct.pack(">i", len(value)) + bytes((int(v) & 255 for v in value))
     if sfs_type == SFS_TYPE_SHORT_ARRAY:
         out = struct.pack(">H", len(value))
         for v in value:
@@ -222,7 +221,7 @@ def _encode_value(sfs_type, value):
         return out
     if sfs_type == SFS_TYPE_SFS_OBJECT:
         return _encode_object_body(value)
-    raise TypeError(f"Unsupported SFSDataType id {sfs_type }")
+    raise TypeError(f"Unsupported SFSDataType id {sfs_type}")
 
 
 def _encode_object_body(data):
@@ -253,7 +252,7 @@ class _Reader:
         chunk = self.data[self.pos : self.pos + n]
         if len(chunk) != n:
             raise ValueError(
-                f"expected {n } bytes at offset {self .pos }, got {len (chunk )}"
+                f"expected {n} bytes at offset {self.pos}, got {len(chunk)}"
             )
         self.pos += n
         return chunk
@@ -327,7 +326,7 @@ def _decode_value(reader, sfs_type):
         return out
     if sfs_type == SFS_TYPE_SFS_OBJECT:
         return _decode_object_body(reader)
-    raise TypeError(f"Unsupported SFSDataType id {sfs_type }")
+    raise TypeError(f"Unsupported SFSDataType id {sfs_type}")
 
 
 def _decode_object_body(reader):
@@ -344,7 +343,7 @@ def decode_sfsobject(data):
     reader = _Reader(data)
     root_type = reader.read_u8()
     if root_type != SFS_TYPE_SFS_OBJECT:
-        raise TypeError(f"expected root SFS_OBJECT(18), got {root_type }")
+        raise TypeError(f"expected root SFS_OBJECT(18), got {root_type}")
     return _decode_object_body(reader)
 
 

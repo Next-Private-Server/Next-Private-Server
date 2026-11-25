@@ -18,7 +18,7 @@ from msm_playerdata import (
     load_player,
     save_player,
 )
-from msm_structures import _charge_speedup
+from msm_structures import INSTANT_TIMER_FLOOR_MS, _charge_speedup
 
 _FAILURE_DURATION_MS = 36000000
 _SUCCESS_DURATION_MS = {3: 108000000, 4: 108000000, 5: 216000000}
@@ -34,6 +34,8 @@ def _normalized_genes(params):
 
 
 def _synthesis_duration_ms(genes, succeeded):
+    if msm_toggles.is_enabled("instant_timers"):
+        return INSTANT_TIMER_FLOOR_MS
     if not succeeded:
         return _FAILURE_DURATION_MS
     return _SUCCESS_DURATION_MS.get(len(genes or ""), 108000000)
@@ -47,14 +49,23 @@ def _setting_list(key, default):
         return default
 
 
+def _synthesis_instability(genes):
+    instability = 1
+    for g in genes:
+        instability *= get_gene_instability(g)
+    return instability
+
+
+def _synthesis_max_instability(structure):
+    definition = get_structure_definition((structure or {}).get("structure", 0)) or {}
+    return float((definition.get("extra") or {}).get("max_instability", 15) or 15)
+
+
 def _synthesis_success_chance(genes, structure=None):
     if not genes:
         return 0.5
-    definition = get_structure_definition((structure or {}).get("structure", 0)) or {}
-    max_instability = float(
-        (definition.get("extra") or {}).get("max_instability", 15) or 15
-    )
-    instability = sum(get_gene_instability(g) for g in genes)
+    max_instability = _synthesis_max_instability(structure)
+    instability = _synthesis_instability(genes)
     bases = _setting_list("USER_SYNTHESIZER_BASE_PERCENTAGES", [0.5, 0.15, 0.05])
     base = float(bases[min(max(len(genes) - 3, 0), len(bases) - 1)])
     chance_var = get_user_game_setting_float("USER_SYNTHESIZER_CHANCE_VAR", 1.5)
@@ -194,6 +205,13 @@ def start_synthesizing(username, params):
     combined = _normalized_genes(
         {"genes": _used_monster_genes(island, used_monster) + genes}
     )
+    if _synthesis_instability(combined) > _synthesis_max_instability(structure):
+        return {
+            "success": False,
+            "error_msg": "Too unstable",
+            "user_structure_id": SFSLong(structure_id),
+            "properties": create_player_properties(player_object),
+        }
     _consume_critters(island, genes)
     _charge_synthesis_cost(player_object, combined)
     now = int(time.time() * 1000)
@@ -333,7 +351,7 @@ def finish_synthesizing(username, params):
         else (None, None)
     )
     entry = _find_synthesizing_entry(island, structure_id)
-    if entry is not None and not entry.get("success"):
+    if entry is not None and (not entry.get("success")):
         return collect_synthesizing_failure(username, params)
     return collect_synthesizing_success(username, params)
 

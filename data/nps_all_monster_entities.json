@@ -1,0 +1,3488 @@
+{
+  "entities": [
+    {
+      "entity_id": 64,
+      "name": "Tweedle"
+    },
+    {
+      "entity_id": 65,
+      "name": "Potbelly"
+    },
+    {
+      "entity_id": 66,
+      "name": "Noggin"
+    },
+    {
+      "entity_id": 67,
+      "name": "ToeJammer"
+    },
+    {
+      "entity_id": 68,
+      "name": "Mammott"
+    },
+    {
+      "entity_id": 69,
+      "name": "Dandidoo"
+    },
+    {
+      "entity_id": 70,
+      "name": "Cybop"
+    },
+    {
+      "entity_id": 71,
+      "name": "Quibble"
+    },
+    {
+      "entity_id": 72,
+      "name": "Pango"
+    },
+    {
+      "entity_id": 73,
+      "name": "Shrubb"
+    },
+    {
+      "entity_id": 74,
+      "name": "Oaktopus"
+    },
+    {
+      "entity_id": 75,
+      "name": "Furcorn"
+    },
+    {
+      "entity_id": 76,
+      "name": "Fwog"
+    },
+    {
+      "entity_id": 77,
+      "name": "Drumpler"
+    },
+    {
+      "entity_id": 78,
+      "name": "Maw"
+    },
+    {
+      "entity_id": 79,
+      "name": "Reedling"
+    },
+    {
+      "entity_id": 80,
+      "name": "Spunge"
+    },
+    {
+      "entity_id": 81,
+      "name": "Thumpies"
+    },
+    {
+      "entity_id": 82,
+      "name": "Pompom"
+    },
+    {
+      "entity_id": 83,
+      "name": "Congle"
+    },
+    {
+      "entity_id": 84,
+      "name": "Pummel"
+    },
+    {
+      "entity_id": 85,
+      "name": "Clamble"
+    },
+    {
+      "entity_id": 86,
+      "name": "Bowgart"
+    },
+    {
+      "entity_id": 87,
+      "name": "Trox"
+    },
+    {
+      "entity_id": 88,
+      "name": "Shellbeat"
+    },
+    {
+      "entity_id": 89,
+      "name": "Quarrister"
+    },
+    {
+      "entity_id": 90,
+      "name": "Deedge"
+    },
+    {
+      "entity_id": 91,
+      "name": "Riff"
+    },
+    {
+      "entity_id": 92,
+      "name": "Entbrat"
+    },
+    {
+      "entity_id": 94,
+      "name": "Scups"
+    },
+    {
+      "entity_id": 188,
+      "name": "Punkleton"
+    },
+    {
+      "entity_id": 201,
+      "name": "Yool"
+    },
+    {
+      "entity_id": 247,
+      "name": "Schmoochle"
+    },
+    {
+      "entity_id": 248,
+      "name": "Wubbox Plant Island"
+    },
+    {
+      "entity_id": 250,
+      "name": "Wubbox Cold Island"
+    },
+    {
+      "entity_id": 251,
+      "name": "Wubbox Air Island"
+    },
+    {
+      "entity_id": 252,
+      "name": "Wubbox Water Island"
+    },
+    {
+      "entity_id": 253,
+      "name": "Wubbox Earth Island"
+    },
+    {
+      "entity_id": 267,
+      "name": "Blabbit"
+    },
+    {
+      "entity_id": 272,
+      "name": "Ghazt"
+    },
+    {
+      "entity_id": 273,
+      "name": "Reebro"
+    },
+    {
+      "entity_id": 274,
+      "name": "Hoola"
+    },
+    {
+      "entity_id": 281,
+      "name": "Shugabush"
+    },
+    {
+      "entity_id": 288,
+      "name": "Grumpyre"
+    },
+    {
+      "entity_id": 289,
+      "name": "Nebulob"
+    },
+    {
+      "entity_id": 290,
+      "name": "Arackulele"
+    },
+    {
+      "entity_id": 291,
+      "name": "Whisp"
+    },
+    {
+      "entity_id": 298,
+      "name": "Jeeode"
+    },
+    {
+      "entity_id": 299,
+      "name": "Boodoo"
+    },
+    {
+      "entity_id": 302,
+      "name": "Legendary Potbelly"
+    },
+    {
+      "entity_id": 303,
+      "name": "Legendary Mammott"
+    },
+    {
+      "entity_id": 304,
+      "name": "Legendary Quibble"
+    },
+    {
+      "entity_id": 305,
+      "name": "Legendary Oaktopus"
+    },
+    {
+      "entity_id": 306,
+      "name": "Legendary Furcorn"
+    },
+    {
+      "entity_id": 307,
+      "name": "Legendary Pompom"
+    },
+    {
+      "entity_id": 308,
+      "name": "Legendary Deedge"
+    },
+    {
+      "entity_id": 309,
+      "name": "Legendary Shugabush"
+    },
+    {
+      "entity_id": 310,
+      "name": "Legendary Shugabass"
+    },
+    {
+      "entity_id": 311,
+      "name": "Legendary Shuguitar"
+    },
+    {
+      "entity_id": 312,
+      "name": "Legendary Shugajo"
+    },
+    {
+      "entity_id": 313,
+      "name": "Legendary Shugarock"
+    },
+    {
+      "entity_id": 314,
+      "name": "Legendary Shugabuzz"
+    },
+    {
+      "entity_id": 315,
+      "name": "Legendary Shugabeats"
+    },
+    {
+      "entity_id": 316,
+      "name": "Legendary Shugavox"
+    },
+    {
+      "entity_id": 329,
+      "name": "Sox"
+    },
+    {
+      "entity_id": 342,
+      "name": "Humbug"
+    },
+    {
+      "entity_id": 343,
+      "name": "Kazilleon"
+    },
+    {
+      "entity_id": 344,
+      "name": "Bellowfish"
+    },
+    {
+      "entity_id": 345,
+      "name": "Dragong"
+    },
+    {
+      "entity_id": 346,
+      "name": "Jellbilly"
+    },
+    {
+      "entity_id": 354,
+      "name": "Fungpray"
+    },
+    {
+      "entity_id": 357,
+      "name": "Wubbox Ethereal Island"
+    },
+    {
+      "entity_id": 358,
+      "name": "Rare Furcorn"
+    },
+    {
+      "entity_id": 359,
+      "name": "Legendary Rare Furcorn"
+    },
+    {
+      "entity_id": 360,
+      "name": "Rare Entbrat"
+    },
+    {
+      "entity_id": 361,
+      "name": "Rare Spunge"
+    },
+    {
+      "entity_id": 362,
+      "name": "Rare Thumpies"
+    },
+    {
+      "entity_id": 364,
+      "name": "Rare Pummel"
+    },
+    {
+      "entity_id": 365,
+      "name": "Rare Pango"
+    },
+    {
+      "entity_id": 366,
+      "name": "Rare Fwog"
+    },
+    {
+      "entity_id": 367,
+      "name": "Rare Pompom"
+    },
+    {
+      "entity_id": 368,
+      "name": "Legendary Rare Pompom"
+    },
+    {
+      "entity_id": 369,
+      "name": "Rare Maw"
+    },
+    {
+      "entity_id": 370,
+      "name": "Rare Shrubb"
+    },
+    {
+      "entity_id": 371,
+      "name": "Rare Cybop"
+    },
+    {
+      "entity_id": 372,
+      "name": "Rare Clamble"
+    },
+    {
+      "entity_id": 373,
+      "name": "Rare Congle"
+    },
+    {
+      "entity_id": 374,
+      "name": "Rare Quibble"
+    },
+    {
+      "entity_id": 375,
+      "name": "Legendary Rare Quibble"
+    },
+    {
+      "entity_id": 419,
+      "name": "Rare Dandidoo"
+    },
+    {
+      "entity_id": 420,
+      "name": "Rare Oaktopus"
+    },
+    {
+      "entity_id": 421,
+      "name": "Legendary Rare Oaktopus"
+    },
+    {
+      "entity_id": 422,
+      "name": "Rare Reedling"
+    },
+    {
+      "entity_id": 426,
+      "name": "Rare Deedge"
+    },
+    {
+      "entity_id": 427,
+      "name": "Legendary Rare Deedge"
+    },
+    {
+      "entity_id": 428,
+      "name": "Rare Bowgart"
+    },
+    {
+      "entity_id": 429,
+      "name": "Rare Scups"
+    },
+    {
+      "entity_id": 430,
+      "name": "Rare Riff"
+    },
+    {
+      "entity_id": 431,
+      "name": "Rare Drumpler"
+    },
+    {
+      "entity_id": 432,
+      "name": "Rare Shellbeat"
+    },
+    {
+      "entity_id": 95,
+      "name": "Aura"
+    },
+    {
+      "entity_id": 433,
+      "name": "Rare Trox"
+    },
+    {
+      "entity_id": 434,
+      "name": "Rare Quarrister"
+    },
+    {
+      "entity_id": 435,
+      "name": "Rare Mammott"
+    },
+    {
+      "entity_id": 436,
+      "name": "Legendary Rare Mammott"
+    },
+    {
+      "entity_id": 437,
+      "name": "Rare Potbelly"
+    },
+    {
+      "entity_id": 438,
+      "name": "Legendary Rare Potbelly"
+    },
+    {
+      "entity_id": 439,
+      "name": "Rare Toejammer"
+    },
+    {
+      "entity_id": 440,
+      "name": "Rare Tweedle"
+    },
+    {
+      "entity_id": 441,
+      "name": "Rare Noggin"
+    },
+    {
+      "entity_id": 453,
+      "name": "Rare Wubbox Plant Island"
+    },
+    {
+      "entity_id": 454,
+      "name": "Rare Wubbox Cold Island"
+    },
+    {
+      "entity_id": 455,
+      "name": "Rare Wubbox Air Island"
+    },
+    {
+      "entity_id": 456,
+      "name": "Rare Wubbox Water Island"
+    },
+    {
+      "entity_id": 457,
+      "name": "Rare Wubbox Earth Island"
+    },
+    {
+      "entity_id": 458,
+      "name": "Brump"
+    },
+    {
+      "entity_id": 459,
+      "name": "Zynth"
+    },
+    {
+      "entity_id": 460,
+      "name": "Poewk"
+    },
+    {
+      "entity_id": 461,
+      "name": "Thwok"
+    },
+    {
+      "entity_id": 462,
+      "name": "Dwumrohl"
+    },
+    {
+      "entity_id": 464,
+      "name": "Zuuker"
+    },
+    {
+      "entity_id": 465,
+      "name": "Screemu"
+    },
+    {
+      "entity_id": 466,
+      "name": "Rare Ghazt"
+    },
+    {
+      "entity_id": 467,
+      "name": "Rare Grumpyre"
+    },
+    {
+      "entity_id": 468,
+      "name": "Rare Reebro"
+    },
+    {
+      "entity_id": 469,
+      "name": "Rare Jeeode"
+    },
+    {
+      "entity_id": 470,
+      "name": "Rare Humbug"
+    },
+    {
+      "entity_id": 471,
+      "name": "Rare Fungpray"
+    },
+    {
+      "entity_id": 472,
+      "name": "Rare Dragong"
+    },
+    {
+      "entity_id": 473,
+      "name": "Do"
+    },
+    {
+      "entity_id": 474,
+      "name": "Re"
+    },
+    {
+      "entity_id": 475,
+      "name": "Mi"
+    },
+    {
+      "entity_id": 476,
+      "name": "Fa"
+    },
+    {
+      "entity_id": 477,
+      "name": "Sol"
+    },
+    {
+      "entity_id": 478,
+      "name": "La"
+    },
+    {
+      "entity_id": 479,
+      "name": "Ti"
+    },
+    {
+      "entity_id": 480,
+      "name": "Rare Bellowfish"
+    },
+    {
+      "entity_id": 481,
+      "name": "Tympa"
+    },
+    {
+      "entity_id": 482,
+      "name": "Rare Hoola"
+    },
+    {
+      "entity_id": 483,
+      "name": "Dermit"
+    },
+    {
+      "entity_id": 484,
+      "name": "Gheegur"
+    },
+    {
+      "entity_id": 485,
+      "name": "Whajje"
+    },
+    {
+      "entity_id": 486,
+      "name": "Blipsqueak"
+    },
+    {
+      "entity_id": 487,
+      "name": "Creepuscule"
+    },
+    {
+      "entity_id": 488,
+      "name": "Scargo"
+    },
+    {
+      "entity_id": 489,
+      "name": "Wubbox Wublin Island"
+    },
+    {
+      "entity_id": 490,
+      "name": "Rare Punkleton"
+    },
+    {
+      "entity_id": 491,
+      "name": "Rare Kazilleon"
+    },
+    {
+      "entity_id": 500,
+      "name": "Tweedle Composer Island"
+    },
+    {
+      "entity_id": 501,
+      "name": "Potbelly Composer Island"
+    },
+    {
+      "entity_id": 502,
+      "name": "Noggin Composer Island"
+    },
+    {
+      "entity_id": 503,
+      "name": "Toejammer Composer Island"
+    },
+    {
+      "entity_id": 504,
+      "name": "Mammott Composer Island"
+    },
+    {
+      "entity_id": 505,
+      "name": "Dandidoo Composer Island"
+    },
+    {
+      "entity_id": 506,
+      "name": "Cybop Composer Island"
+    },
+    {
+      "entity_id": 507,
+      "name": "Quibble Composer Island"
+    },
+    {
+      "entity_id": 508,
+      "name": "Pango Composer Island"
+    },
+    {
+      "entity_id": 509,
+      "name": "Shrubb Composer Island"
+    },
+    {
+      "entity_id": 510,
+      "name": "Oaktopus Composer Island"
+    },
+    {
+      "entity_id": 511,
+      "name": "Furcorn Composer Island"
+    },
+    {
+      "entity_id": 512,
+      "name": "Fwog Composer Island"
+    },
+    {
+      "entity_id": 513,
+      "name": "Drumpler Composer Island"
+    },
+    {
+      "entity_id": 514,
+      "name": "Maw Composer Island"
+    },
+    {
+      "entity_id": 515,
+      "name": "Reedling Composer Island"
+    },
+    {
+      "entity_id": 516,
+      "name": "Spunge Composer Island"
+    },
+    {
+      "entity_id": 517,
+      "name": "Thumpies Composer Island"
+    },
+    {
+      "entity_id": 518,
+      "name": "Scups Composer Island"
+    },
+    {
+      "entity_id": 519,
+      "name": "Pompom Composer Island"
+    },
+    {
+      "entity_id": 520,
+      "name": "Congle Composer Island"
+    },
+    {
+      "entity_id": 521,
+      "name": "Pummel Composer Island"
+    },
+    {
+      "entity_id": 522,
+      "name": "Clamble Composer Island"
+    },
+    {
+      "entity_id": 523,
+      "name": "Bowgart Composer Island"
+    },
+    {
+      "entity_id": 524,
+      "name": "Trox Composer Island"
+    },
+    {
+      "entity_id": 525,
+      "name": "Shellbeat Composer Island"
+    },
+    {
+      "entity_id": 526,
+      "name": "Quarrister Composer Island"
+    },
+    {
+      "entity_id": 527,
+      "name": "Deedge Composer Island"
+    },
+    {
+      "entity_id": 528,
+      "name": "Riff Composer Island"
+    },
+    {
+      "entity_id": 529,
+      "name": "Entbrat Composer Island"
+    },
+    {
+      "entity_id": 530,
+      "name": "Glowbe Composer Island"
+    },
+    {
+      "entity_id": 532,
+      "name": "Rare Yool"
+    },
+    {
+      "entity_id": 533,
+      "name": "Rare Boodoo"
+    },
+    {
+      "entity_id": 534,
+      "name": "Tawkerr Plant Island"
+    },
+    {
+      "entity_id": 535,
+      "name": "Parlsona Plant Island"
+    },
+    {
+      "entity_id": 536,
+      "name": "Rare Arackulele"
+    },
+    {
+      "entity_id": 537,
+      "name": "Rare Schmoochle"
+    },
+    {
+      "entity_id": 538,
+      "name": "Rare Jellbilly"
+    },
+    {
+      "entity_id": 539,
+      "name": "Astropod"
+    },
+    {
+      "entity_id": 540,
+      "name": "Rare Sox"
+    },
+    {
+      "entity_id": 541,
+      "name": "Pixolotl"
+    },
+    {
+      "entity_id": 542,
+      "name": "Rare Blabbit"
+    },
+    {
+      "entity_id": 543,
+      "name": "Rare Nebulob"
+    },
+    {
+      "entity_id": 544,
+      "name": "Bona-Petite"
+    },
+    {
+      "entity_id": 545,
+      "name": "Rare Whisp"
+    },
+    {
+      "entity_id": 546,
+      "name": "Maulch"
+    },
+    {
+      "entity_id": 547,
+      "name": "Fleechwurm"
+    },
+    {
+      "entity_id": 548,
+      "name": "Tawkerr Cold Island"
+    },
+    {
+      "entity_id": 549,
+      "name": "Maggpi Cold Island"
+    },
+    {
+      "entity_id": 550,
+      "name": "Torrt"
+    },
+    {
+      "entity_id": 551,
+      "name": "Blasoom"
+    },
+    {
+      "entity_id": 552,
+      "name": "Hornacle"
+    },
+    {
+      "entity_id": 553,
+      "name": "Attmoz"
+    },
+    {
+      "entity_id": 554,
+      "name": "Glaishur"
+    },
+    {
+      "entity_id": 555,
+      "name": "Syncopite"
+    },
+    {
+      "entity_id": 556,
+      "name": "Galvana"
+    },
+    {
+      "entity_id": 559,
+      "name": "Scaratar"
+    },
+    {
+      "entity_id": 574,
+      "name": "Loodvigg"
+    },
+    {
+      "entity_id": 575,
+      "name": "Furnoss"
+    },
+    {
+      "entity_id": 576,
+      "name": "Plixie"
+    },
+    {
+      "entity_id": 579,
+      "name": "Vhamp"
+    },
+    {
+      "entity_id": 580,
+      "name": "Floogull"
+    },
+    {
+      "entity_id": 581,
+      "name": "Kayna Fire Island"
+    },
+    {
+      "entity_id": 582,
+      "name": "Stogg"
+    },
+    {
+      "entity_id": 583,
+      "name": "Noggin Fire Island"
+    },
+    {
+      "entity_id": 584,
+      "name": "Dandidoo Fire Island"
+    },
+    {
+      "entity_id": 585,
+      "name": "Reedling Fire Island"
+    },
+    {
+      "entity_id": 586,
+      "name": "Shrubb Fire Island"
+    },
+    {
+      "entity_id": 587,
+      "name": "Barrb"
+    },
+    {
+      "entity_id": 588,
+      "name": "Potbelly Fire Island"
+    },
+    {
+      "entity_id": 589,
+      "name": "Tweedle Fire Island"
+    },
+    {
+      "entity_id": 590,
+      "name": "Cybop Fire Island"
+    },
+    {
+      "entity_id": 591,
+      "name": "Flowah"
+    },
+    {
+      "entity_id": 592,
+      "name": "Glowl"
+    },
+    {
+      "entity_id": 593,
+      "name": "Repatillo"
+    },
+    {
+      "entity_id": 594,
+      "name": "Tring"
+    },
+    {
+      "entity_id": 595,
+      "name": "Parlsona Air Island"
+    },
+    {
+      "entity_id": 596,
+      "name": "Stoowarb"
+    },
+    {
+      "entity_id": 772,
+      "name": "Rare Stogg"
+    },
+    {
+      "entity_id": 597,
+      "name": "Wynq"
+    },
+    {
+      "entity_id": 598,
+      "name": "Quibble Fire Island"
+    },
+    {
+      "entity_id": 599,
+      "name": "Congle Fire Island"
+    },
+    {
+      "entity_id": 799,
+      "name": "Sneyser"
+    },
+    {
+      "entity_id": 800,
+      "name": "Whaddle"
+    },
+    {
+      "entity_id": 801,
+      "name": "Woolabee"
+    },
+    {
+      "entity_id": 802,
+      "name": "Phangler"
+    },
+    {
+      "entity_id": 803,
+      "name": "Boskus"
+    },
+    {
+      "entity_id": 804,
+      "name": "Pango Fire Island"
+    },
+    {
+      "entity_id": 805,
+      "name": "ToeJammer Fire Island"
+    },
+    {
+      "entity_id": 806,
+      "name": "Maw Fire Island"
+    },
+    {
+      "entity_id": 807,
+      "name": "Mammott Fire Island"
+    },
+    {
+      "entity_id": 809,
+      "name": "Rare Tweedle Fire Island"
+    },
+    {
+      "entity_id": 810,
+      "name": "Rare Potbelly Fire Island"
+    },
+    {
+      "entity_id": 811,
+      "name": "Rare Noggin Fire Island"
+    },
+    {
+      "entity_id": 812,
+      "name": "Rare Dandidoo Fire Island"
+    },
+    {
+      "entity_id": 813,
+      "name": "Rare Cybop Fire Island"
+    },
+    {
+      "entity_id": 814,
+      "name": "Rare Shrubb Fire Island"
+    },
+    {
+      "entity_id": 815,
+      "name": "Rare Reedling Fire Island"
+    },
+    {
+      "entity_id": 816,
+      "name": "Rare Floogull"
+    },
+    {
+      "entity_id": 848,
+      "name": "Oaktopus Fire Island"
+    },
+    {
+      "entity_id": 600,
+      "name": "Rare Repatillo"
+    },
+    {
+      "entity_id": 601,
+      "name": "Epic Tweedle"
+    },
+    {
+      "entity_id": 602,
+      "name": "Epic Potbelly"
+    },
+    {
+      "entity_id": 603,
+      "name": "Epic Noggin"
+    },
+    {
+      "entity_id": 604,
+      "name": "Epic Toejammer"
+    },
+    {
+      "entity_id": 605,
+      "name": "Epic Mammott"
+    },
+    {
+      "entity_id": 606,
+      "name": "Epic Dandidoo"
+    },
+    {
+      "entity_id": 607,
+      "name": "Epic Cybop"
+    },
+    {
+      "entity_id": 608,
+      "name": "Epic Quibble"
+    },
+    {
+      "entity_id": 609,
+      "name": "Epic Pango"
+    },
+    {
+      "entity_id": 610,
+      "name": "Epic Shrubb"
+    },
+    {
+      "entity_id": 611,
+      "name": "Epic Oaktopus"
+    },
+    {
+      "entity_id": 612,
+      "name": "Epic Furcorn"
+    },
+    {
+      "entity_id": 613,
+      "name": "Epic Fwog"
+    },
+    {
+      "entity_id": 614,
+      "name": "Epic Drumpler"
+    },
+    {
+      "entity_id": 615,
+      "name": "Epic Maw"
+    },
+    {
+      "entity_id": 616,
+      "name": "Epic Reedling"
+    },
+    {
+      "entity_id": 617,
+      "name": "Epic Spunge"
+    },
+    {
+      "entity_id": 618,
+      "name": "Epic Thumpies"
+    },
+    {
+      "entity_id": 619,
+      "name": "Epic Pompom"
+    },
+    {
+      "entity_id": 620,
+      "name": "Epic Congle"
+    },
+    {
+      "entity_id": 621,
+      "name": "Epic Pummel"
+    },
+    {
+      "entity_id": 622,
+      "name": "Epic Clamble"
+    },
+    {
+      "entity_id": 623,
+      "name": "Epic Bowgart"
+    },
+    {
+      "entity_id": 624,
+      "name": "Epic T-Rox"
+    },
+    {
+      "entity_id": 625,
+      "name": "Epic Shellbeat"
+    },
+    {
+      "entity_id": 626,
+      "name": "Epic Quarrister"
+    },
+    {
+      "entity_id": 627,
+      "name": "Epic Deedge"
+    },
+    {
+      "entity_id": 628,
+      "name": "Epic Riff"
+    },
+    {
+      "entity_id": 629,
+      "name": "Epic Entbrat"
+    },
+    {
+      "entity_id": 631,
+      "name": "Epic Scups"
+    },
+    {
+      "entity_id": 632,
+      "name": "Epic Punkleton"
+    },
+    {
+      "entity_id": 633,
+      "name": "Epic Yool"
+    },
+    {
+      "entity_id": 634,
+      "name": "Epic Schmoochle"
+    },
+    {
+      "entity_id": 649,
+      "name": "Epic Blabbit"
+    },
+    {
+      "entity_id": 652,
+      "name": "Epic Hoola"
+    },
+    {
+      "entity_id": 849,
+      "name": "Rare Phangler"
+    },
+    {
+      "entity_id": 850,
+      "name": "Rootitoot"
+    },
+    {
+      "entity_id": 851,
+      "name": "Yawstrich"
+    },
+    {
+      "entity_id": 852,
+      "name": "G'joob"
+    },
+    {
+      "entity_id": 860,
+      "name": "Theremind"
+    },
+    {
+      "entity_id": 861,
+      "name": "Bonkers"
+    },
+    {
+      "entity_id": 862,
+      "name": "Poppette"
+    },
+    {
+      "entity_id": 863,
+      "name": "Yuggler"
+    },
+    {
+      "entity_id": 864,
+      "name": "Tapricorn"
+    },
+    {
+      "entity_id": 865,
+      "name": "Rooba"
+    },
+    {
+      "entity_id": 866,
+      "name": "Periscorp"
+    },
+    {
+      "entity_id": 867,
+      "name": "Gloptic"
+    },
+    {
+      "entity_id": 868,
+      "name": "Rare Flowah"
+    },
+    {
+      "entity_id": 871,
+      "name": "Rare Wynq"
+    },
+    {
+      "entity_id": 872,
+      "name": "Gobbleygourd"
+    },
+    {
+      "entity_id": 898,
+      "name": "Drumpler Fire Island"
+    },
+    {
+      "entity_id": 899,
+      "name": "Floot Fly"
+    },
+    {
+      "entity_id": 900,
+      "name": "HippityHop"
+    },
+    {
+      "entity_id": 901,
+      "name": "Squot"
+    },
+    {
+      "entity_id": 902,
+      "name": "Wimmzies"
+    },
+    {
+      "entity_id": 903,
+      "name": "Ziggurab"
+    },
+    {
+      "entity_id": 904,
+      "name": "Cantorell"
+    },
+    {
+      "entity_id": 905,
+      "name": "Bridg-it"
+    },
+    {
+      "entity_id": 906,
+      "name": "Clavi Gnat"
+    },
+    {
+      "entity_id": 907,
+      "name": "Pladdie"
+    },
+    {
+      "entity_id": 916,
+      "name": "Epic Dandidoo Fire Island"
+    },
+    {
+      "entity_id": 853,
+      "name": "Rare Tring"
+    },
+    {
+      "entity_id": 936,
+      "name": "Rare Boskus"
+    },
+    {
+      "entity_id": 937,
+      "name": "Rare Toejammer Fire Island"
+    },
+    {
+      "entity_id": 938,
+      "name": "Rare Mammott Fire Island"
+    },
+    {
+      "entity_id": 939,
+      "name": "Rare Quibble Fire Island"
+    },
+    {
+      "entity_id": 940,
+      "name": "Rare Pango Fire Island"
+    },
+    {
+      "entity_id": 941,
+      "name": "Rare Maw Fire Island"
+    },
+    {
+      "entity_id": 942,
+      "name": "Rare Congle Fire Island"
+    },
+    {
+      "entity_id": 943,
+      "name": "Rare Woolabee"
+    },
+    {
+      "entity_id": 944,
+      "name": "Fwog Fire Island"
+    },
+    {
+      "entity_id": 945,
+      "name": "Clackula"
+    },
+    {
+      "entity_id": 946,
+      "name": "Peckidna"
+    },
+    {
+      "entity_id": 947,
+      "name": "Denchuhs"
+    },
+    {
+      "entity_id": 948,
+      "name": "Hawlo"
+    },
+    {
+      "entity_id": 949,
+      "name": "Thrumble"
+    },
+    {
+      "entity_id": 950,
+      "name": "Withur"
+    },
+    {
+      "entity_id": 951,
+      "name": "Uuduk"
+    },
+    {
+      "entity_id": 952,
+      "name": "Banjaw"
+    },
+    {
+      "entity_id": 953,
+      "name": "Plinkajou"
+    },
+    {
+      "entity_id": 962,
+      "name": "Maggpi Water Island"
+    },
+    {
+      "entity_id": 963,
+      "name": "Parlsona Water Island"
+    },
+    {
+      "entity_id": 964,
+      "name": "Rare Whaddle"
+    },
+    {
+      "entity_id": 965,
+      "name": "Epic Tweedle Fire Island"
+    },
+    {
+      "entity_id": 966,
+      "name": "Epic Potbelly Fire Island"
+    },
+    {
+      "entity_id": 967,
+      "name": "Epic Noggin Fire Island"
+    },
+    {
+      "entity_id": 968,
+      "name": "Epic Toejammer Fire Island"
+    },
+    {
+      "entity_id": 969,
+      "name": "Epic Mammott Fire Island"
+    },
+    {
+      "entity_id": 970,
+      "name": "Epic Cybop Fire Island"
+    },
+    {
+      "entity_id": 971,
+      "name": "Epic Quibble Fire Island"
+    },
+    {
+      "entity_id": 972,
+      "name": "Epic Pango Fire Island"
+    },
+    {
+      "entity_id": 973,
+      "name": "Epic Shrubb Fire Island"
+    },
+    {
+      "entity_id": 974,
+      "name": "Epic Maw Fire Island"
+    },
+    {
+      "entity_id": 975,
+      "name": "Epic Reedling Fire Island"
+    },
+    {
+      "entity_id": 976,
+      "name": "Epic Congle Fire Island"
+    },
+    {
+      "entity_id": 977,
+      "name": "Rare Rootitoot"
+    },
+    {
+      "entity_id": 993,
+      "name": "Rare Barrb"
+    },
+    {
+      "entity_id": 1008,
+      "name": "Rare Glowl"
+    },
+    {
+      "entity_id": 1014,
+      "name": "Tawkerr Earth Island"
+    },
+    {
+      "entity_id": 1015,
+      "name": "Stoowarb Earth Island"
+    },
+    {
+      "entity_id": 1048,
+      "name": "Rare Thrumble"
+    },
+    {
+      "entity_id": 1049,
+      "name": "Rare Sneyser"
+    },
+    {
+      "entity_id": 1050,
+      "name": "Rare Ziggurab"
+    },
+    {
+      "entity_id": 1078,
+      "name": "Furcorn Fire Island"
+    },
+    {
+      "entity_id": 1080,
+      "name": "Sooza"
+    },
+    {
+      "entity_id": 1081,
+      "name": "Fluoress"
+    },
+    {
+      "entity_id": 1082,
+      "name": "Gob"
+    },
+    {
+      "entity_id": 1083,
+      "name": "Spytrap"
+    },
+    {
+      "entity_id": 1084,
+      "name": "Pluckbill"
+    },
+    {
+      "entity_id": 1085,
+      "name": "Rare Sooza"
+    },
+    {
+      "entity_id": 1086,
+      "name": "TooToo"
+    },
+    {
+      "entity_id": 1087,
+      "name": "Bulbo"
+    },
+    {
+      "entity_id": 1093,
+      "name": "Fiddlement"
+    },
+    {
+      "entity_id": 1094,
+      "name": "Blow't"
+    },
+    {
+      "entity_id": 1098,
+      "name": "Rare Kayna"
+    },
+    {
+      "entity_id": 1099,
+      "name": "Rare Furcorn Fire Island"
+    },
+    {
+      "entity_id": 1100,
+      "name": "Epic Furcorn Fire Island"
+    },
+    {
+      "entity_id": 1101,
+      "name": "Rare Oaktopus Fire Island"
+    },
+    {
+      "entity_id": 1102,
+      "name": "Epic Oaktopus Fire Island"
+    },
+    {
+      "entity_id": 1105,
+      "name": "Rare Drumpler Fire Island"
+    },
+    {
+      "entity_id": 1106,
+      "name": "Epic Drumpler Fire Island"
+    },
+    {
+      "entity_id": 1107,
+      "name": "Rare Fwog Fire Island"
+    },
+    {
+      "entity_id": 1108,
+      "name": "Epic Fwog Fire Island"
+    },
+    {
+      "entity_id": 1112,
+      "name": "Epic Ghazt"
+    },
+    {
+      "entity_id": 1132,
+      "name": "Rare Theremind"
+    },
+    {
+      "entity_id": 1133,
+      "name": "Xyster"
+    },
+    {
+      "entity_id": 1134,
+      "name": "Knucklehead"
+    },
+    {
+      "entity_id": 1135,
+      "name": "Frondley"
+    },
+    {
+      "entity_id": 1137,
+      "name": "Epic Kayna"
+    },
+    {
+      "entity_id": 1146,
+      "name": "Deja-Jin"
+    },
+    {
+      "entity_id": 1147,
+      "name": "Rare Wimmzies"
+    },
+    {
+      "entity_id": 1148,
+      "name": "Larvaluss"
+    },
+    {
+      "entity_id": 1150,
+      "name": "Epic Whaddle"
+    },
+    {
+      "entity_id": 1151,
+      "name": "Cahoot"
+    },
+    {
+      "entity_id": 1152,
+      "name": "Mushaboom"
+    },
+    {
+      "entity_id": 1153,
+      "name": "Rare Gobbleygourd"
+    },
+    {
+      "entity_id": 1154,
+      "name": "Osstax"
+    },
+    {
+      "entity_id": 1155,
+      "name": "Rare Banjaw"
+    },
+    {
+      "entity_id": 1156,
+      "name": "G'day"
+    },
+    {
+      "entity_id": 1157,
+      "name": "Epic Stogg"
+    },
+    {
+      "entity_id": 1158,
+      "name": "Roarick"
+    },
+    {
+      "entity_id": 1159,
+      "name": "Rare Gob"
+    },
+    {
+      "entity_id": 1161,
+      "name": "Enchantling"
+    },
+    {
+      "entity_id": 1181,
+      "name": "Legendary Epic Potbelly"
+    },
+    {
+      "entity_id": 1182,
+      "name": "Legendary Epic Mammott"
+    },
+    {
+      "entity_id": 1183,
+      "name": "Legendary Epic Quibble"
+    },
+    {
+      "entity_id": 1184,
+      "name": "Legendary Epic Oaktopus"
+    },
+    {
+      "entity_id": 1185,
+      "name": "Legendary Epic Furcorn"
+    },
+    {
+      "entity_id": 1186,
+      "name": "Legendary Epic Pompom"
+    },
+    {
+      "entity_id": 1187,
+      "name": "Legendary Epic Deedge"
+    },
+    {
+      "entity_id": 1188,
+      "name": "Rare Wubbox Ethereal Island"
+    },
+    {
+      "entity_id": 1189,
+      "name": "Schmoochle Seasonal Island"
+    },
+    {
+      "entity_id": 1199,
+      "name": "Epic Ziggurab"
+    },
+    {
+      "entity_id": 1200,
+      "name": "Yool Seasonal Island"
+    },
+    {
+      "entity_id": 1201,
+      "name": "Blabbit Seasonal Island"
+    },
+    {
+      "entity_id": 1202,
+      "name": "Punkleton Seasonal Island"
+    },
+    {
+      "entity_id": 1203,
+      "name": "Hoola Seasonal Island"
+    },
+    {
+      "entity_id": 1204,
+      "name": "Gobbleygourd Seasonal Island"
+    },
+    {
+      "entity_id": 1205,
+      "name": "Jam Boree Seasonal Island"
+    },
+    {
+      "entity_id": 1206,
+      "name": "Epic Wubbox Plant Island"
+    },
+    {
+      "entity_id": 1207,
+      "name": "Epic Reebro"
+    },
+    {
+      "entity_id": 1209,
+      "name": "Rare Punkleton Seasonal Island"
+    },
+    {
+      "entity_id": 1210,
+      "name": "Epic Punkleton Seasonal Island"
+    },
+    {
+      "entity_id": 1219,
+      "name": "Rare Gobbleygourd Seasonal Island"
+    },
+    {
+      "entity_id": 1220,
+      "name": "Rare Yuggler"
+    },
+    {
+      "entity_id": 1221,
+      "name": "Clavavera Seasonal Island"
+    },
+    {
+      "entity_id": 1223,
+      "name": "Epic Wubbox Cold Island"
+    },
+    {
+      "entity_id": 1224,
+      "name": "Epic Gobbleygourd"
+    },
+    {
+      "entity_id": 1225,
+      "name": "Epic Gobbleygourd Seasonal Island"
+    },
+    {
+      "entity_id": 1226,
+      "name": "Rare Yool Seasonal Island"
+    },
+    {
+      "entity_id": 1227,
+      "name": "Epic Yool Seasonal Island"
+    },
+    {
+      "entity_id": 1228,
+      "name": "Epic Tring"
+    },
+    {
+      "entity_id": 1249,
+      "name": "Carillong Seasonal Island"
+    },
+    {
+      "entity_id": 1251,
+      "name": "Rare Bridg-it"
+    },
+    {
+      "entity_id": 1252,
+      "name": "Kayna Amber Island"
+    },
+    {
+      "entity_id": 1253,
+      "name": "Glowl Amber Island"
+    },
+    {
+      "entity_id": 1254,
+      "name": "Phangler Amber Island"
+    },
+    {
+      "entity_id": 1255,
+      "name": "Floogull Amber Island"
+    },
+    {
+      "entity_id": 1256,
+      "name": "Ziggurab Amber Island"
+    },
+    {
+      "entity_id": 1257,
+      "name": "Yelmut Amber Island"
+    },
+    {
+      "entity_id": 1258,
+      "name": "Rare Schmoochle Seasonal Island"
+    },
+    {
+      "entity_id": 1259,
+      "name": "Epic Schmoochle Seasonal Island"
+    },
+    {
+      "entity_id": 1278,
+      "name": "Epic Boskus"
+    },
+    {
+      "entity_id": 1279,
+      "name": "Rare Hawlo"
+    },
+    {
+      "entity_id": 1280,
+      "name": "Ffidyll Seasonal Island"
+    },
+    {
+      "entity_id": 1282,
+      "name": "Sooza Amber Island"
+    },
+    {
+      "entity_id": 1283,
+      "name": "Boskus Amber Island"
+    },
+    {
+      "entity_id": 1284,
+      "name": "Flum Ox Amber Island"
+    },
+    {
+      "entity_id": 1285,
+      "name": "Epic Wubbox Air Island"
+    },
+    {
+      "entity_id": 1286,
+      "name": "Rare Blabbit Seasonal Island"
+    },
+    {
+      "entity_id": 1287,
+      "name": "Epic Blabbit Seasonal Island"
+    },
+    {
+      "entity_id": 1288,
+      "name": "Epic Jeeode"
+    },
+    {
+      "entity_id": 1289,
+      "name": "Stogg Amber Island"
+    },
+    {
+      "entity_id": 1290,
+      "name": "Thrumble Amber Island"
+    },
+    {
+      "entity_id": 1291,
+      "name": "Krillby Amber Island"
+    },
+    {
+      "entity_id": 1292,
+      "name": "Rare TooToo"
+    },
+    {
+      "entity_id": 1293,
+      "name": "Viveine Seasonal Island"
+    },
+    {
+      "entity_id": 1295,
+      "name": "Flowah Amber Island"
+    },
+    {
+      "entity_id": 1296,
+      "name": "Barrb Amber Island"
+    },
+    {
+      "entity_id": 1297,
+      "name": "Edamimi Amber Island"
+    },
+    {
+      "entity_id": 1298,
+      "name": "Epic Rootitoot"
+    },
+    {
+      "entity_id": 1299,
+      "name": "Spurrit Seasonal Island"
+    },
+    {
+      "entity_id": 1301,
+      "name": "Monculus Seasonal Island"
+    },
+    {
+      "entity_id": 1303,
+      "name": "Repatillo Amber Island"
+    },
+    {
+      "entity_id": 1304,
+      "name": "Whaddle Amber Island"
+    },
+    {
+      "entity_id": 1305,
+      "name": "Pong Ping Amber Island"
+    },
+    {
+      "entity_id": 1306,
+      "name": "Rare Floot Fly"
+    },
+    {
+      "entity_id": 1307,
+      "name": "Whiz-bang Seasonal Island"
+    },
+    {
+      "entity_id": 1309,
+      "name": "Rare Kayna Amber Island"
+    },
+    {
+      "entity_id": 1310,
+      "name": "Rare Glowl Amber Island"
+    },
+    {
+      "entity_id": 1311,
+      "name": "Rare Phangler Amber Island"
+    },
+    {
+      "entity_id": 1312,
+      "name": "Rare Boskus Amber Island"
+    },
+    {
+      "entity_id": 1313,
+      "name": "Rare Stogg Amber Island"
+    },
+    {
+      "entity_id": 1314,
+      "name": "Rare Flowah Amber Island"
+    },
+    {
+      "entity_id": 1327,
+      "name": "Candelavra Amber Island"
+    },
+    {
+      "entity_id": 1328,
+      "name": "Sneyser Amber Island"
+    },
+    {
+      "entity_id": 1329,
+      "name": "Rootitoot Amber Island"
+    },
+    {
+      "entity_id": 1330,
+      "name": "Woolabee Amber Island"
+    },
+    {
+      "entity_id": 1331,
+      "name": "Rare Hoola Seasonal Island"
+    },
+    {
+      "entity_id": 1332,
+      "name": "Epic Hoola Seasonal Island"
+    },
+    {
+      "entity_id": 1333,
+      "name": "Epic Grumpyre"
+    },
+    {
+      "entity_id": 1334,
+      "name": "Wynq Amber Island"
+    },
+    {
+      "entity_id": 1335,
+      "name": "Tiawa Amber Island"
+    },
+    {
+      "entity_id": 1336,
+      "name": "Epic Wubbox Water Island"
+    },
+    {
+      "entity_id": 1337,
+      "name": "Epic Wubbox Earth Island"
+    },
+    {
+      "entity_id": 1338,
+      "name": "Boo'qwurm Seasonal Island"
+    },
+    {
+      "entity_id": 1360,
+      "name": "Rare Barrb Amber Island"
+    },
+    {
+      "entity_id": 1361,
+      "name": "Rare Floogull Amber Island"
+    },
+    {
+      "entity_id": 1362,
+      "name": "Rare Whaddle Amber Island"
+    },
+    {
+      "entity_id": 1363,
+      "name": "Rare Repatillo Amber Island"
+    },
+    {
+      "entity_id": 1364,
+      "name": "Rare Woolabee Amber Island"
+    },
+    {
+      "entity_id": 1365,
+      "name": "Rare Wynq Amber Island"
+    },
+    {
+      "entity_id": 1366,
+      "name": "Strombonin"
+    },
+    {
+      "entity_id": 1391,
+      "name": "Cataliszt"
+    },
+    {
+      "entity_id": 1368,
+      "name": "Rare Jam Boree"
+    },
+    {
+      "entity_id": 1369,
+      "name": "Rare Rootitoot Amber Island"
+    },
+    {
+      "entity_id": 1370,
+      "name": "Rare Ziggurab Amber Island"
+    },
+    {
+      "entity_id": 1371,
+      "name": "Rare Sooza Amber Island"
+    },
+    {
+      "entity_id": 1392,
+      "name": "Rare Thrumble Amber Island"
+    },
+    {
+      "entity_id": 1399,
+      "name": "Sporerow"
+    },
+    {
+      "entity_id": 1400,
+      "name": "Bleatnik"
+    },
+    {
+      "entity_id": 1401,
+      "name": "Cranchee"
+    },
+    {
+      "entity_id": 1402,
+      "name": "Rare G'Joob"
+    },
+    {
+      "entity_id": 1403,
+      "name": "Tring Amber Island"
+    },
+    {
+      "entity_id": 1404,
+      "name": "Rare Tring Amber Island"
+    },
+    {
+      "entity_id": 1405,
+      "name": "Rare Withur"
+    },
+    {
+      "entity_id": 1406,
+      "name": "Clavavera"
+    },
+    {
+      "entity_id": 1407,
+      "name": "Bisonorus Amber Island"
+    },
+    {
+      "entity_id": 1408,
+      "name": "Rare Sneyser Amber Island"
+    },
+    {
+      "entity_id": 1415,
+      "name": "Epic Glowl"
+    },
+    {
+      "entity_id": 1416,
+      "name": "Wubbox Fire Haven"
+    },
+    {
+      "entity_id": 1418,
+      "name": "Cherubble"
+    },
+    {
+      "entity_id": 1419,
+      "name": "shLep"
+    },
+    {
+      "entity_id": 1420,
+      "name": "Rare Yelmut Amber Island"
+    },
+    {
+      "entity_id": 1421,
+      "name": "Incisaur Amber Island"
+    },
+    {
+      "entity_id": 1422,
+      "name": "Rare Strombonin"
+    },
+    {
+      "entity_id": 1423,
+      "name": "Bowhead Amber Island"
+    },
+    {
+      "entity_id": 1424,
+      "name": "Rare Flum Ox Amber Island"
+    },
+    {
+      "entity_id": 1425,
+      "name": "Carillong"
+    },
+    {
+      "entity_id": 1432,
+      "name": "Rare Xyster"
+    },
+    {
+      "entity_id": 1440,
+      "name": "Rare Yawstrich"
+    },
+    {
+      "entity_id": 1441,
+      "name": "Drummidary Amber Island"
+    },
+    {
+      "entity_id": 1442,
+      "name": "Rare Krillby Amber Island"
+    },
+    {
+      "entity_id": 1443,
+      "name": "Hyehehe"
+    },
+    {
+      "entity_id": 1444,
+      "name": "Wheezel"
+    },
+    {
+      "entity_id": 1445,
+      "name": "Epic Humbug"
+    },
+    {
+      "entity_id": 1446,
+      "name": "Ffidyll"
+    },
+    {
+      "entity_id": 1447,
+      "name": "Tuskski Amber Island"
+    },
+    {
+      "entity_id": 1448,
+      "name": "Rare Edamimi Amber Island"
+    },
+    {
+      "entity_id": 1456,
+      "name": "Epic Kayna Amber Island"
+    },
+    {
+      "entity_id": 1457,
+      "name": "Rare Dwumrohl"
+    },
+    {
+      "entity_id": 1458,
+      "name": "Rare HippityHop"
+    },
+    {
+      "entity_id": 1459,
+      "name": "Rare Zynth"
+    },
+    {
+      "entity_id": 1460,
+      "name": "Rare Poewk"
+    },
+    {
+      "entity_id": 1461,
+      "name": "Rare Thwok"
+    },
+    {
+      "entity_id": 1462,
+      "name": "Rare Brump"
+    },
+    {
+      "entity_id": 1463,
+      "name": "Anglow"
+    },
+    {
+      "entity_id": 1464,
+      "name": "Pinghound"
+    },
+    {
+      "entity_id": 1465,
+      "name": "Epic Whaddle Amber Island"
+    },
+    {
+      "entity_id": 1466,
+      "name": "Legendary Viveine"
+    },
+    {
+      "entity_id": 1467,
+      "name": "Viveine Amber Island"
+    },
+    {
+      "entity_id": 1468,
+      "name": "Epic Stogg Amber Island"
+    },
+    {
+      "entity_id": 1469,
+      "name": "Epic Ziggurab Amber Island"
+    },
+    {
+      "entity_id": 1470,
+      "name": "Epic Tring Amber Island"
+    },
+    {
+      "entity_id": 1471,
+      "name": "Epic Boskus Amber Island"
+    },
+    {
+      "entity_id": 1472,
+      "name": "Epic Rootitoot Amber Island"
+    },
+    {
+      "entity_id": 1473,
+      "name": "Epic Glowl Amber Island"
+    },
+    {
+      "entity_id": 1474,
+      "name": "Gnarls Amber Island"
+    },
+    {
+      "entity_id": 1475,
+      "name": "Rare Pong Ping Amber Island"
+    },
+    {
+      "entity_id": 1484,
+      "name": "Rare Clavavera"
+    },
+    {
+      "entity_id": 1485,
+      "name": "Rare Clavavera Seasonal Island"
+    },
+    {
+      "entity_id": 1486,
+      "name": "Rare Whajje"
+    },
+    {
+      "entity_id": 1487,
+      "name": "Rare Wubbox Fire Haven"
+    },
+    {
+      "entity_id": 1488,
+      "name": "Spurrit"
+    },
+    {
+      "entity_id": 1489,
+      "name": "Epic Sneyser"
+    },
+    {
+      "entity_id": 1490,
+      "name": "Epic Sneyser Amber Island"
+    },
+    {
+      "entity_id": 1497,
+      "name": "Monculus Ethereal Island"
+    },
+    {
+      "entity_id": 1498,
+      "name": "Monculus Wublin Island"
+    },
+    {
+      "entity_id": 1499,
+      "name": "Rare Blipsqueak"
+    },
+    {
+      "entity_id": 1500,
+      "name": "Epic Whisp"
+    },
+    {
+      "entity_id": 1514,
+      "name": "Rare Tiawa Amber Island"
+    },
+    {
+      "entity_id": 1515,
+      "name": "Rare Fluoress"
+    },
+    {
+      "entity_id": 1516,
+      "name": "Adult Scaratar"
+    },
+    {
+      "entity_id": 1517,
+      "name": "Adult Loodvigg"
+    },
+    {
+      "entity_id": 1518,
+      "name": "Whiz-bang"
+    },
+    {
+      "entity_id": 1525,
+      "name": "Gold Island Epic Wubbox 01"
+    },
+    {
+      "entity_id": 1526,
+      "name": "Gold Island Epic Wubbox 02"
+    },
+    {
+      "entity_id": 1527,
+      "name": "Gold Island Epic Wubbox 03"
+    },
+    {
+      "entity_id": 1528,
+      "name": "Gold Island Epic Wubbox 04"
+    },
+    {
+      "entity_id": 1529,
+      "name": "Gold Island Epic Wubbox 05"
+    },
+    {
+      "entity_id": 1530,
+      "name": "Rare Incisaur Amber Island"
+    },
+    {
+      "entity_id": 1531,
+      "name": "Rare Tympa"
+    },
+    {
+      "entity_id": 1532,
+      "name": "Rare Carillong"
+    },
+    {
+      "entity_id": 1533,
+      "name": "Rare Carillong Seasonal Island"
+    },
+    {
+      "entity_id": 1535,
+      "name": "Boo'qwurm"
+    },
+    {
+      "entity_id": 1536,
+      "name": "Rare Bisonorus Amber Island"
+    },
+    {
+      "entity_id": 1554,
+      "name": "Rare Creepuscule"
+    },
+    {
+      "entity_id": 1555,
+      "name": "Yooreek"
+    },
+    {
+      "entity_id": 1556,
+      "name": "Blarret"
+    },
+    {
+      "entity_id": 1557,
+      "name": "Auglur"
+    },
+    {
+      "entity_id": 1558,
+      "name": "Meebkin"
+    },
+    {
+      "entity_id": 1559,
+      "name": "Gaddzooks"
+    },
+    {
+      "entity_id": 1562,
+      "name": "Epic Jam Boree Seasonal Island"
+    },
+    {
+      "entity_id": 1563,
+      "name": "Knurv"
+    },
+    {
+      "entity_id": 1564,
+      "name": "Buzzinga"
+    },
+    {
+      "entity_id": 1565,
+      "name": "Rare Ffidyll Seasonal Island"
+    },
+    {
+      "entity_id": 1566,
+      "name": "Rare Ffidyll"
+    },
+    {
+      "entity_id": 1567,
+      "name": "Rare Astropod"
+    },
+    {
+      "entity_id": 1568,
+      "name": "Adult Torrt"
+    },
+    {
+      "entity_id": 1582,
+      "name": "Rare Gheegur"
+    },
+    {
+      "entity_id": 1583,
+      "name": "Epic Thrumble"
+    },
+    {
+      "entity_id": 1584,
+      "name": "Epic Thrumble Amber Island"
+    },
+    {
+      "entity_id": 1585,
+      "name": "Rare Viveine Seasonal Island"
+    },
+    {
+      "entity_id": 1586,
+      "name": "Rare Viveine Amber Island"
+    },
+    {
+      "entity_id": 1587,
+      "name": "Legendary Rare Viveine"
+    },
+    {
+      "entity_id": 1592,
+      "name": "Epic Boodoo"
+    },
+    {
+      "entity_id": 1593,
+      "name": "Rare Rooba"
+    },
+    {
+      "entity_id": 1594,
+      "name": "Bisonorus"
+    },
+    {
+      "entity_id": 1595,
+      "name": "Krillby"
+    },
+    {
+      "entity_id": 1596,
+      "name": "Yelmut"
+    },
+    {
+      "entity_id": 1597,
+      "name": "Rare Krillby"
+    },
+    {
+      "entity_id": 1598,
+      "name": "Rare Bisonorus"
+    },
+    {
+      "entity_id": 1599,
+      "name": "Rare Yelmut"
+    },
+    {
+      "entity_id": 1600,
+      "name": "Whaill"
+    },
+    {
+      "entity_id": 1601,
+      "name": "Incisaur"
+    },
+    {
+      "entity_id": 1602,
+      "name": "BeMeebEth"
+    },
+    {
+      "entity_id": 1603,
+      "name": "Flum Ox"
+    },
+    {
+      "entity_id": 1604,
+      "name": "Rare Flum Ox"
+    },
+    {
+      "entity_id": 1605,
+      "name": "Pong Ping"
+    },
+    {
+      "entity_id": 1606,
+      "name": "Edamimi"
+    },
+    {
+      "entity_id": 1608,
+      "name": "Rare Edamimi"
+    },
+    {
+      "entity_id": 1609,
+      "name": "Tiawa"
+    },
+    {
+      "entity_id": 1610,
+      "name": "Rare Tiawa"
+    },
+    {
+      "entity_id": 1611,
+      "name": "Rare Pong Ping"
+    },
+    {
+      "entity_id": 1612,
+      "name": "Rare Incisaur"
+    },
+    {
+      "entity_id": 1613,
+      "name": "Rare Bona-Petite"
+    },
+    {
+      "entity_id": 1614,
+      "name": "Adult Plixie"
+    },
+    {
+      "entity_id": 1615,
+      "name": "Gnarls"
+    },
+    {
+      "entity_id": 1619,
+      "name": "Epic Clavavera"
+    },
+    {
+      "entity_id": 1620,
+      "name": "Epic Clavavera Seasonal Island"
+    },
+    {
+      "entity_id": 1621,
+      "name": "Candelavra"
+    },
+    {
+      "entity_id": 1629,
+      "name": "Rare Candelavra Amber Island"
+    },
+    {
+      "entity_id": 1630,
+      "name": "Rare Candelavra"
+    },
+    {
+      "entity_id": 1631,
+      "name": "Tuskski"
+    },
+    {
+      "entity_id": 1632,
+      "name": "Bowhead"
+    },
+    {
+      "entity_id": 1633,
+      "name": "Drummidary"
+    },
+    {
+      "entity_id": 1634,
+      "name": "Rare Spurrit Seasonal Island"
+    },
+    {
+      "entity_id": 1635,
+      "name": "Rare Spurrit"
+    },
+    {
+      "entity_id": 1636,
+      "name": "Adult Attmoz"
+    },
+    {
+      "entity_id": 1643,
+      "name": "Epic Bellowfish"
+    },
+    {
+      "entity_id": 1644,
+      "name": "Rare Scargo"
+    },
+    {
+      "entity_id": 1645,
+      "name": "Flasque"
+    },
+    {
+      "entity_id": 1646,
+      "name": "Nitebear"
+    },
+    {
+      "entity_id": 1647,
+      "name": "Rare Monculus Seasonal Island"
+    },
+    {
+      "entity_id": 1648,
+      "name": "Rare Monculus Ethereal Island"
+    },
+    {
+      "entity_id": 1649,
+      "name": "Rare Monculus Wublin Island"
+    },
+    {
+      "entity_id": 1650,
+      "name": "Adult Hornacle"
+    },
+    {
+      "entity_id": 1651,
+      "name": "Rare Whiz-bang Seasonal Island"
+    },
+    {
+      "entity_id": 1652,
+      "name": "Rare Whiz-bang"
+    },
+    {
+      "entity_id": 1653,
+      "name": "Epic Wynq"
+    },
+    {
+      "entity_id": 1654,
+      "name": "Epic Wynq Amber Island"
+    },
+    {
+      "entity_id": 1668,
+      "name": "Rare Fleechwurm"
+    },
+    {
+      "entity_id": 1669,
+      "name": "Epic Carillong"
+    },
+    {
+      "entity_id": 1670,
+      "name": "Epic Carillong Seasonal Island"
+    },
+    {
+      "entity_id": 1671,
+      "name": "Adult Furnoss"
+    },
+    {
+      "entity_id": 1672,
+      "name": "Rare Knucklehead"
+    },
+    {
+      "entity_id": 1674,
+      "name": "Rare Screemu"
+    },
+    {
+      "entity_id": 1675,
+      "name": "Adult Glaishur"
+    },
+    {
+      "entity_id": 1676,
+      "name": "Epic Woolabee"
+    },
+    {
+      "entity_id": 1677,
+      "name": "Epic Woolabee Amber Island"
+    },
+    {
+      "entity_id": 1678,
+      "name": "Rare Boo'qwurm Seasonal Island"
+    },
+    {
+      "entity_id": 1679,
+      "name": "Rare Boo'qwurm"
+    },
+    {
+      "entity_id": 1680,
+      "name": "Piplash"
+    },
+    {
+      "entity_id": 1681,
+      "name": "Vhenshun"
+    },
+    {
+      "entity_id": 1683,
+      "name": "Epic Sox"
+    },
+    {
+      "entity_id": 1685,
+      "name": "Rare Bonkers"
+    },
+    {
+      "entity_id": 1686,
+      "name": "Rare Tuskski Amber Island"
+    },
+    {
+      "entity_id": 1687,
+      "name": "Rare Tuskski"
+    },
+    {
+      "entity_id": 1693,
+      "name": "Adult Blasoom"
+    },
+    {
+      "entity_id": 1694,
+      "name": "Rare Dermit"
+    },
+    {
+      "entity_id": 1695,
+      "name": "Epic Ffidyll Seasonal Island"
+    },
+    {
+      "entity_id": 1696,
+      "name": "Epic Ffidyll"
+    },
+    {
+      "entity_id": 1697,
+      "name": "Epic Jellbilly"
+    },
+    {
+      "entity_id": 1698,
+      "name": "Epic Flowah"
+    },
+    {
+      "entity_id": 1699,
+      "name": "Epic Flowah Amber Island"
+    },
+    {
+      "entity_id": 1700,
+      "name": "Epic Barrb"
+    },
+    {
+      "entity_id": 1701,
+      "name": "Epic Barrb Amber Island"
+    },
+    {
+      "entity_id": 1708,
+      "name": "Epic Viveine Seasonal Island"
+    },
+    {
+      "entity_id": 1709,
+      "name": "Legendary Epic Viveine"
+    },
+    {
+      "entity_id": 1710,
+      "name": "Epic Viveine Amber Island"
+    },
+    {
+      "entity_id": 1712,
+      "name": "Ghazt Composer Island"
+    },
+    {
+      "entity_id": 1713,
+      "name": "Rare Pluckbill"
+    },
+    {
+      "entity_id": 1714,
+      "name": "X'rt"
+    },
+    {
+      "entity_id": 1711,
+      "name": "Pentumbra"
+    },
+    {
+      "entity_id": 1715,
+      "name": "Rare Maulch"
+    },
+    {
+      "entity_id": 1716,
+      "name": "Adult Syncopite"
+    },
+    {
+      "entity_id": 1717,
+      "name": "Epic Spurrit Seasonal Island"
+    },
+    {
+      "entity_id": 1718,
+      "name": "Epic Spurrit"
+    },
+    {
+      "entity_id": 1723,
+      "name": "Epic Phangler"
+    },
+    {
+      "entity_id": 1724,
+      "name": "Epic Phangler Amber Island"
+    },
+    {
+      "entity_id": 1725,
+      "name": "Wubbox Fire Oasis"
+    },
+    {
+      "entity_id": 93,
+      "name": "Mimic"
+    },
+    {
+      "entity_id": 1728,
+      "name": "Adult Vhamp"
+    },
+    {
+      "entity_id": 1729,
+      "name": "Rare Zuuker"
+    },
+    {
+      "entity_id": 1731,
+      "name": "Epic Monculus Seasonal Island"
+    },
+    {
+      "entity_id": 1732,
+      "name": "Epic Monculus Ethereal Island"
+    },
+    {
+      "entity_id": 1733,
+      "name": "Rare Hyehehe"
+    },
+    {
+      "entity_id": 1734,
+      "name": "Rare Cherubble"
+    },
+    {
+      "entity_id": 1735,
+      "name": "Epic Nebulob"
+    },
+    {
+      "entity_id": 1736,
+      "name": "Epic Sooza"
+    },
+    {
+      "entity_id": 1737,
+      "name": "Epic Sooza Amber Island"
+    },
+    {
+      "entity_id": 1742,
+      "name": "Teeter-Tauter"
+    },
+    {
+      "entity_id": 1743,
+      "name": "Rare Anglow"
+    },
+    {
+      "entity_id": 1744,
+      "name": "Rhysmuth"
+    },
+    {
+      "entity_id": 1745,
+      "name": "Rare Clackula"
+    },
+    {
+      "entity_id": 1746,
+      "name": "Rare Pixolotl"
+    },
+    {
+      "entity_id": 1748,
+      "name": "Epic Whiz-bang Seasonal Island"
+    },
+    {
+      "entity_id": 1749,
+      "name": "Epic Whiz-bang"
+    },
+    {
+      "entity_id": 1755,
+      "name": "Rare Buzzinga"
+    },
+    {
+      "entity_id": 1754,
+      "name": "Adult Galvana"
+    },
+    {
+      "entity_id": 1756,
+      "name": "Epic Repatillo"
+    },
+    {
+      "entity_id": 1757,
+      "name": "Epic Repatillo Amber Island"
+    },
+    {
+      "entity_id": 1758,
+      "name": "Oogiddy"
+    },
+    {
+      "entity_id": 1759,
+      "name": "Epic Kazilleon"
+    },
+    {
+      "entity_id": 1760,
+      "name": "Rare Gloptic"
+    },
+    {
+      "entity_id": 1765,
+      "name": "Epic Boo'qwurm Seasonal Island"
+    },
+    {
+      "entity_id": 1766,
+      "name": "Epic Boo'qwurm"
+    },
+    {
+      "entity_id": 1767,
+      "name": "Rare Cataliszt"
+    },
+    {
+      "entity_id": 1768,
+      "name": "Rare Bowhead"
+    },
+    {
+      "entity_id": 1769,
+      "name": "Rare Bowhead Amber Island"
+    },
+    {
+      "entity_id": 1770,
+      "name": "Light Island Titansoul"
+    },
+    {
+      "entity_id": 1771,
+      "name": "Rare Wubbox Wublin Island"
+    },
+    {
+      "entity_id": 1808,
+      "name": "Epic Yawstrich"
+    },
+    {
+      "entity_id": 1809,
+      "name": "Epic Arackulele"
+    },
+    {
+      "entity_id": 1810,
+      "name": "Epic G'joob"
+    },
+    {
+      "entity_id": 1847,
+      "name": "Rare Bleatnik"
+    },
+    {
+      "entity_id": 1848,
+      "name": "Rare Gnarls Amber Island"
+    },
+    {
+      "entity_id": 1849,
+      "name": "Rare Gnarls"
+    },
+    {
+      "entity_id": 1850,
+      "name": "Rare Osstax"
+    },
+    {
+      "entity_id": 1851,
+      "name": "Rare Uuduk"
+    },
+    {
+      "entity_id": 1852,
+      "name": "Rare Fiddlement"
+    },
+    {
+      "entity_id": 1853,
+      "name": "Epic Floogull"
+    },
+    {
+      "entity_id": 1854,
+      "name": "Epic Floogull Amber Island"
+    },
+    {
+      "entity_id": 1855,
+      "name": "Rare Clavi Gnat"
+    },
+    {
+      "entity_id": 1856,
+      "name": "Rare Wubbox Fire Oasis"
+    },
+    {
+      "entity_id": 1857,
+      "name": "Epic Wubbox Fire Haven"
+    },
+    {
+      "entity_id": 1858,
+      "name": "Epic Wubbox Fire Oasis"
+    },
+    {
+      "entity_id": 1859,
+      "name": "Hairionette (Major)"
+    },
+    {
+      "entity_id": 1860,
+      "name": "Hairionette (Minor)"
+    },
+    {
+      "entity_id": 1861,
+      "name": "Epic Buzzinga"
+    },
+    {
+      "entity_id": 1862,
+      "name": "Rare Knurv"
+    },
+    {
+      "entity_id": 1863,
+      "name": "Epic Strombonin"
+    },
+    {
+      "entity_id": 1864,
+      "name": "Rare Cranchee"
+    },
+    {
+      "entity_id": 1865,
+      "name": "Rare Bulbo"
+    },
+    {
+      "entity_id": 1866,
+      "name": "Rare Drummidary Amber Island"
+    },
+    {
+      "entity_id": 1867,
+      "name": "Rare Drummidary"
+    },
+    {
+      "entity_id": 1886,
+      "name": "Rare Poppette"
+    },
+    {
+      "entity_id": 1887,
+      "name": "Epic Yelmut"
+    },
+    {
+      "entity_id": 1888,
+      "name": "Epic Yelmut Amber Island"
+    },
+    {
+      "entity_id": 1889,
+      "name": "Lowb"
+    },
+    {
+      "entity_id": 1890,
+      "name": "Rare G'day"
+    },
+    {
+      "entity_id": 1891,
+      "name": "Epic Dragong"
+    },
+    {
+      "entity_id": 1892,
+      "name": "Epic Krillby"
+    },
+    {
+      "entity_id": 1893,
+      "name": "Epic Krillby Amber Island"
+    },
+    {
+      "entity_id": 1894,
+      "name": "Rare Cantorell"
+    },
+    {
+      "entity_id": 1895,
+      "name": "Rare Sporerow"
+    },
+    {
+      "entity_id": 1896,
+      "name": "Epic Fungpray"
+    },
+    {
+      "entity_id": 1897,
+      "name": "Rare Denchuhs"
+    },
+    {
+      "entity_id": 1898,
+      "name": "Epic Pong Ping"
+    },
+    {
+      "entity_id": 1899,
+      "name": "Epic Pong Ping Amber Island"
+    },
+    {
+      "entity_id": 1900,
+      "name": "Rare Pladdie"
+    },
+    {
+      "entity_id": 1901,
+      "name": "Owlesque (Major)"
+    },
+    {
+      "entity_id": 1902,
+      "name": "Owlesque (Minor)"
+    },
+    {
+      "entity_id": 1904,
+      "name": "Epic Dwumrohl"
+    },
+    {
+      "entity_id": 1905,
+      "name": "Epic Zynth"
+    },
+    {
+      "entity_id": 1906,
+      "name": "Epic Poewk"
+    },
+    {
+      "entity_id": 1907,
+      "name": "Epic Thwok"
+    },
+    {
+      "entity_id": 1908,
+      "name": "Epic Brump"
+    },
+    {
+      "entity_id": 1909,
+      "name": "Epic Monculus Wublin Island"
+    },
+    {
+      "entity_id": 1910,
+      "name": "Epic Wubbox Ethereal Island"
+    },
+    {
+      "entity_id": 1911,
+      "name": "Rare Spytrap"
+    },
+    {
+      "entity_id": 1912,
+      "name": "Rare Roarick"
+    },
+    {
+      "entity_id": 1913,
+      "name": "Rare Pinghound"
+    },
+    {
+      "entity_id": 1914,
+      "name": "Epic Anglow"
+    },
+    {
+      "entity_id": 1915,
+      "name": "Epic Edamimi"
+    },
+    {
+      "entity_id": 1916,
+      "name": "Epic Edamimi Amber Island"
+    },
+    {
+      "entity_id": 1917,
+      "name": "Psychic Island Titansoul"
+    },
+    {
+      "entity_id": 1918,
+      "name": "Rare Mushaboom"
+    },
+    {
+      "entity_id": 1919,
+      "name": "Rare Plinkajou"
+    },
+    {
+      "entity_id": 1920,
+      "name": "Epic Cherubble"
+    },
+    {
+      "entity_id": 1921,
+      "name": "Rare Mimic"
+    },
+    {
+      "entity_id": 1922,
+      "name": "Rare shLep"
+    },
+    {
+      "entity_id": 1923,
+      "name": "Rare Tapricorn"
+    },
+    {
+      "entity_id": 1928,
+      "name": "Bogle"
+    },
+    {
+      "entity_id": 1929,
+      "name": "Epic Tiawa"
+    },
+    {
+      "entity_id": 1930,
+      "name": "Epic Tiawa Amber Island"
+    },
+    {
+      "entity_id": 1931,
+      "name": "Epic Zuuker"
+    },
+    {
+      "entity_id": 1932,
+      "name": "Rare Deja-Jin"
+    },
+    {
+      "entity_id": 1933,
+      "name": "Rare Blow't"
+    },
+    {
+      "entity_id": 1934,
+      "name": "Rare Squot"
+    },
+    {
+      "entity_id": 1935,
+      "name": "Rare Larvaluss"
+    },
+    {
+      "entity_id": 1936,
+      "name": "Rare Blarret"
+    },
+    {
+      "entity_id": 1937,
+      "name": "Epic Incisaur"
+    },
+    {
+      "entity_id": 1938,
+      "name": "Epic Incisaur Amber Island"
+    },
+    {
+      "entity_id": 1939,
+      "name": "Epic Hyehehe"
+    },
+    {
+      "entity_id": 1940,
+      "name": "Rare Cahoot"
+    },
+    {
+      "entity_id": 1941,
+      "name": "Rare Periscorp"
+    },
+    {
+      "entity_id": 1942,
+      "name": "Epic Bisonorus"
+    },
+    {
+      "entity_id": 1943,
+      "name": "Epic Bisonorus Amber Island"
+    },
+    {
+      "entity_id": 1944,
+      "name": "Rare Frondley"
+    },
+    {
+      "entity_id": 1945,
+      "name": "Rare Wheezel"
+    },
+    {
+      "entity_id": 1946,
+      "name": "Rare Peckidna"
+    },
+    {
+      "entity_id": 1947,
+      "name": "Arcorina (Major)"
+    },
+    {
+      "entity_id": 1948,
+      "name": "Arcorina (Minor)"
+    },
+    {
+      "entity_id": 1949,
+      "name": "Epic Tympa"
+    },
+    {
+      "entity_id": 1950,
+      "name": "Hairionette (Multimodal)"
+    },
+    {
+      "entity_id": 1954,
+      "name": "Rare Yooreek"
+    },
+    {
+      "entity_id": 1955,
+      "name": "Rare Gaddzooks"
+    },
+    {
+      "entity_id": 1956,
+      "name": "Rare Meebkin"
+    },
+    {
+      "entity_id": 1957,
+      "name": "Rare Auglur"
+    },
+    {
+      "entity_id": 1973,
+      "name": "Owlesque (Multimodal)"
+    },
+    {
+      "entity_id": 1974,
+      "name": "Arcorina (Multimodal)"
+    },
+    {
+      "entity_id": 1975,
+      "name": "Shhimmer (Major)"
+    },
+    {
+      "entity_id": 1976,
+      "name": "Shhimmer (Minor)"
+    },
+    {
+      "entity_id": 1977,
+      "name": "Shhimmer (Multimodal)"
+    },
+    {
+      "entity_id": 1978,
+      "name": "Scallyrags (Major)"
+    },
+    {
+      "entity_id": 1979,
+      "name": "Scallyrags (Minor)"
+    },
+    {
+      "entity_id": 1980,
+      "name": "Scallyrags (MultiModal)"
+    },
+    {
+      "entity_id": 1981,
+      "name": "Dakktyl (Major)"
+    },
+    {
+      "entity_id": 1982,
+      "name": "Dakktyl (Minor)"
+    },
+    {
+      "entity_id": 1983,
+      "name": "Dakktyl (Multimodal)"
+    },
+    {
+      "entity_id": 1984,
+      "name": "Jerm (Major)"
+    },
+    {
+      "entity_id": 1985,
+      "name": "Jerm (Minor)"
+    },
+    {
+      "entity_id": 1986,
+      "name": "Jerm (Multimodal)"
+    },
+    {
+      "entity_id": 1987,
+      "name": "Rare Enchantling"
+    },
+    {
+      "entity_id": 1988,
+      "name": "Epic Bleatnik"
+    },
+    {
+      "entity_id": 1989,
+      "name": "Epic Flum Ox"
+    },
+    {
+      "entity_id": 1990,
+      "name": "Epic Flum Ox Amber Island"
+    },
+    {
+      "entity_id": 1993,
+      "name": "Epic Clackula"
+    },
+    {
+      "entity_id": 1994,
+      "name": "Epic Blipsqueak"
+    },
+    {
+      "entity_id": 1997,
+      "name": "Epic Knurv"
+    },
+    {
+      "entity_id": 1998,
+      "name": "Rare Nitebear"
+    },
+    {
+      "entity_id": 1995,
+      "name": "Epic Candelavra"
+    },
+    {
+      "entity_id": 1996,
+      "name": "Epic Candelavra Amber Island"
+    },
+    {
+      "entity_id": 2005,
+      "name": "BBNO$ Legendary"
+    },
+    {
+      "entity_id": 2006,
+      "name": "Fandhul"
+    },
+    {
+      "entity_id": 2007,
+      "name": "Epic Rooba"
+    },
+    {
+      "entity_id": 2008,
+      "name": "Epic Cranchee"
+    },
+    {
+      "entity_id": 2009,
+      "name": "Epic Gheegur"
+    },
+    {
+      "entity_id": 2010,
+      "name": "eRmA gUrDy (Major)"
+    },
+    {
+      "entity_id": 2011,
+      "name": "eRmA gUrDy (Minor)"
+    },
+    {
+      "entity_id": 2012,
+      "name": "eRmA gUrDy (Multimodal)"
+    },
+    {
+      "entity_id": 2013,
+      "name": "Base Common Wubbox"
+    },
+    {
+      "entity_id": 2014,
+      "name": "Epic Dermit"
+    },
+    {
+      "entity_id": 2015,
+      "name": "Epic Bowhead"
+    },
+    {
+      "entity_id": 2016,
+      "name": "Epic Bowhead Amber Island"
+    },
+    {
+      "entity_id": 2017,
+      "name": "Charrkoll"
+    },
+    {
+      "entity_id": 2019,
+      "name": "Illoost (Major)"
+    },
+    {
+      "entity_id": 2020,
+      "name": "Illoost (Minor)"
+    },
+    {
+      "entity_id": 2021,
+      "name": "Illoost (Multimodal)"
+    },
+    {
+      "entity_id": 2022,
+      "name": "Rare Whaill"
+    },
+    {
+      "entity_id": 2023,
+      "name": "Epic TooToo"
+    },
+    {
+      "entity_id": 2024,
+      "name": "Epic Sporerow"
+    },
+    {
+      "entity_id": 2025,
+      "name": "Epic Drummidary"
+    },
+    {
+      "entity_id": 2026,
+      "name": "Epic Drummidary Amber Island"
+    },
+    {
+      "entity_id": 2027,
+      "name": "Faerie Island Titansoul"
+    },
+    {
+      "entity_id": 2028,
+      "name": "Epic Tuskski"
+    },
+    {
+      "entity_id": 2029,
+      "name": "Epic Tuskski Amber Island"
+    },
+    {
+      "entity_id": 2030,
+      "name": "Epic Floot Fly"
+    },
+    {
+      "entity_id": 2031,
+      "name": "Epic Fleechwurm"
+    },
+    {
+      "entity_id": 2035,
+      "name": "Epic Pinghound"
+    },
+    {
+      "entity_id": 2038,
+      "name": "Galymph (Major)"
+    },
+    {
+      "entity_id": 2039,
+      "name": "Galymph (Minor)"
+    },
+    {
+      "entity_id": 2040,
+      "name": "Galymph (Multimodal)"
+    },
+    {
+      "entity_id": 2041,
+      "name": "Rare Piplash"
+    },
+    {
+      "entity_id": 2042,
+      "name": "Epic Gnarls"
+    },
+    {
+      "entity_id": 2043,
+      "name": "Epic Gnarls Amber Island"
+    },
+    {
+      "entity_id": 2044,
+      "name": "Alcordion"
+    },
+    {
+      "entity_id": 2045,
+      "name": "T-Pirainha"
+    },
+    {
+      "entity_id": 2046,
+      "name": "Epic Knucklehead"
+    },
+    {
+      "entity_id": 2050,
+      "name": "Epic Peckidna"
+    },
+    {
+      "entity_id": 2051,
+      "name": "Epic shLep"
+    },
+    {
+      "entity_id": 2052,
+      "name": "Epic Mimic"
+    },
+    {
+      "entity_id": 2055,
+      "name": "Droah"
+    },
+    {
+      "entity_id": 2056,
+      "name": "Rare Flasque"
+    },
+    {
+      "entity_id": 2057,
+      "name": "Epic Bona-Petite"
+    },
+    {
+      "entity_id": 2058,
+      "name": "King Dip"
+    },
+    {
+      "entity_id": 2060,
+      "name": "Raqsoun (Major)"
+    },
+    {
+      "entity_id": 2061,
+      "name": "Raqsoun (Minor)"
+    },
+    {
+      "entity_id": 2062,
+      "name": "Raqsoun (Multimodal)"
+    },
+    {
+      "entity_id": 2069,
+      "name": "Celestial Dip (Galaxy)"
+    },
+    {
+      "entity_id": 2064,
+      "name": "Rare Ti"
+    },
+    {
+      "entity_id": 2065,
+      "name": "Rare Vhenshun"
+    },
+    {
+      "entity_id": 2066,
+      "name": "Epic Fluoress"
+    },
+    {
+      "entity_id": 2067,
+      "name": "Epic Wheezel"
+    },
+    {
+      "entity_id": 2068,
+      "name": "Epic Cantorell"
+    },
+    {
+      "entity_id": 2070,
+      "name": "The Inflatterer (Major)"
+    },
+    {
+      "entity_id": 2071,
+      "name": "The Inflatterer (Minor)"
+    },
+    {
+      "entity_id": 2072,
+      "name": "The Inflatterer (Multimodal)"
+    },
+    {
+      "entity_id": 2080,
+      "name": "Epic Astropod"
+    },
+    {
+      "entity_id": 2081,
+      "name": "Rare X'rt"
+    },
+    {
+      "entity_id": 2083,
+      "name": "Epic Theremind"
+    }
+  ]
+}

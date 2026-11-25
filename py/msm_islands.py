@@ -12,11 +12,13 @@ from msm_gamedata import (
     get_monster_definition,
     get_monster_id_for_entity_id,
     get_structure_definition,
+    get_user_game_setting_float,
     get_user_game_setting_int,
     island_for_theme,
     is_egg_holder_structure,
     island_theme_speed_mod,
     load_db_json,
+    monster_rarity_tier,
     resolve_island_type,
 )
 from msm_playerdata import (
@@ -74,6 +76,18 @@ def _make_structure(
 AMBER_ISLAND_TYPE = 22
 CRUCIBLE_STRUCTURE_ID = 711
 CRUCIBLE_POSITION = (21, 3)
+CRUCIBLE_OVERHEATING_LEVEL = 4
+CRUCIBLE_DEFAULT_HEAT_LEVELS = 3
+CRUCIBLE_FAIL_TIME_MULTIPLIER = 0.5
+CRUCIBLE_FLAG_LETTERS = ("A", "B", "C", "D", "E", "N")
+CRUCIBLE_GENE_DIGIT_TO_FLAG = {
+    "1": "A",
+    "2": "B",
+    "3": "C",
+    "4": "D",
+    "5": "E",
+    "6": "N",
+}
 
 
 def _make_crucible_structure(user_island_id, structure_id, pos_x, pos_y, now):
@@ -131,6 +145,25 @@ def _find_amber_evolve_record_on_island(island, structure_id):
     return None
 
 
+def _ensure_amber_evolve_record(island, structure_id):
+    record = _find_amber_evolve_record_on_island(island, structure_id)
+    if record is None:
+        record = {
+            "structure_id": structure_id,
+            "user_monster_id": 0,
+            "started_on": 0,
+            "finished_on": 0,
+            "from_monster": 0,
+            "to_monster": 0,
+            "heat_level": 0,
+            "heat_collect_reward": 0,
+            "flags": {},
+            "queued_flag": "",
+        }
+        island.setdefault("amber_evolve", []).append(record)
+    return record
+
+
 _CRUCIBLE_FUEL_RELIC_COSTS_CACHE = None
 
 
@@ -150,30 +183,213 @@ def crucible_fuel_relic_costs():
     return _CRUCIBLE_FUEL_RELIC_COSTS_CACHE
 
 
+def _crucible_heat_cost(from_level, to_level):
+    costs = crucible_fuel_relic_costs()
+    total = 0
+    for i in range(from_level + 1, to_level + 1):
+        if i - 1 < len(costs):
+            total += costs[i - 1]
+    return total
+
+
+def _crucible_heat_collection_range(heat_level):
+    if heat_level <= 0:
+        return (0, 0)
+    costs = crucible_fuel_relic_costs()
+    idx = min(heat_level - 1, len(costs) - 1)
+    cost = costs[idx] if costs else 0
+    lo = max(1, cost // 2)
+    hi = max(lo, cost)
+    return (lo, hi)
+
+
+def _crucible_calc_random_heat_collection(post_evolve_heat_level):
+    lo, hi = _crucible_heat_collection_range(post_evolve_heat_level)
+    if hi <= 0:
+        return 0
+    return lo if lo >= hi else random.randint(lo, hi)
+
+
+_CRUCIBLE_LEVEL_BOOST_RANGE_CACHE = None
+
+
+def _crucible_level_boost_range():
+    global _CRUCIBLE_LEVEL_BOOST_RANGE_CACHE
+    if _CRUCIBLE_LEVEL_BOOST_RANGE_CACHE is None:
+        rng = [5, 15]
+        data = load_db_json("game_settings") or {}
+        for entry in data.get("user_game_settings") or []:
+            if entry.get("key") == "USER_CRUCIBLE_LEVEL_BOOST_RANGE":
+                try:
+                    rng = json.loads(entry.get("value") or "[5,15]")
+                except (ValueError, TypeError):
+                    rng = [5, 15]
+                break
+        _CRUCIBLE_LEVEL_BOOST_RANGE_CACHE = rng
+    return (_CRUCIBLE_LEVEL_BOOST_RANGE_CACHE[0], _CRUCIBLE_LEVEL_BOOST_RANGE_CACHE[1])
+
+
+def _crucible_heat_boost(is_epic_dest, heat_level):
+    if is_epic_dest:
+        return get_user_game_setting_float("USER_CRUCIBLE_HEAT_BOOST_EPIC_FIXED", 0.03)
+    return heat_level * get_user_game_setting_float("USER_CRUCIBLE_HEAT_BOOST", 0.1)
+
+
+def _crucible_flag_boost(is_epic_dest, genes, flags_active):
+    gene_chars = [c for c in str(genes or "")]
+    if not gene_chars:
+        return 0.0
+    for c in gene_chars:
+        flag = CRUCIBLE_GENE_DIGIT_TO_FLAG.get(
+            c, c if c in CRUCIBLE_FLAG_LETTERS else None
+        )
+        if not flag or not (flags_active or {}).get(flag):
+            return 0.0
+    if is_epic_dest:
+        return get_user_game_setting_float("USER_CRUCIBLE_MAX_FLAG_BOOST_EPIC", 0.15)
+    return get_user_game_setting_float("USER_CRUCIBLE_MAX_FLAG_BOOST", 0.3)
+
+
+def _crucible_level_boost(is_epic_dest, monster_level):
+    lo, hi = _crucible_level_boost_range()
+    per_level = get_user_game_setting_float(
+        (
+            "USER_CRUCIBLE_LEVEL_BOOST_EPIC"
+            if is_epic_dest
+            else "USER_CRUCIBLE_LEVEL_BOOST"
+        ),
+        0.002 if is_epic_dest else 0.005,
+    )
+    max_boost = get_user_game_setting_float(
+        (
+            "USER_CRUCIBLE_MAX_LEVEL_BOOST_EPIC"
+            if is_epic_dest
+            else "USER_CRUCIBLE_MAX_LEVEL_BOOST"
+        ),
+        0.02 if is_epic_dest else 0.05,
+    )
+    clamped = min(max(monster_level - lo, 0), hi - lo)
+    return min(per_level * clamped, max_boost)
+
+
+def _crucible_chance_of_evolution(
+    is_epic_dest, genes, monster_level, heat_level, flags_active
+):
+    return (
+        _crucible_heat_boost(is_epic_dest, heat_level)
+        + _crucible_flag_boost(is_epic_dest, genes, flags_active)
+        + _crucible_level_boost(is_epic_dest, monster_level)
+    )
+
+
+def _crucible_evolve_target_id(definition):
+    entity_id = (definition or {}).get("evolve_into", 0) or 0
+    return get_monster_id_for_entity_id(entity_id) if entity_id else 0
+
+
+def _crucible_evolve_key_cost(source_def, heat_level, target_def, is_common_source):
+    if heat_level < CRUCIBLE_OVERHEATING_LEVEL:
+        return int(source_def.get("crucible_access_key_cost", 0) or 0)
+    if not target_def:
+        return int(source_def.get("crucible_access_key_cost", 0) or 0)
+    if is_common_source:
+        return int(target_def.get("crucible_access_key_cost", 0) or 0)
+    return int(source_def.get("crucible_access_key_cost", 0) or 0)
+
+
+def crucible_do_evolve_rolls(
+    source_monster_id, heat_level, monster_level, flags_active
+):
+    source_def = get_monster_definition(source_monster_id) or {}
+    tier = monster_rarity_tier(source_monster_id)
+    own_target_id = _crucible_evolve_target_id(source_def)
+    if own_target_id <= 0:
+        return (0, False)
+    if tier == "epic":
+        return (0, False)
+    if tier == "rare":
+        if heat_level < CRUCIBLE_OVERHEATING_LEVEL:
+            return (0, False)
+        chance = _crucible_chance_of_evolution(
+            True, source_def.get("genes"), monster_level, heat_level, flags_active
+        )
+        if random.random() < chance:
+            return (own_target_id, False)
+        return (source_monster_id, False)
+    own_target_def = get_monster_definition(own_target_id) or {}
+    second_target_id = 0
+    if heat_level >= CRUCIBLE_OVERHEATING_LEVEL:
+        second_target_id = _crucible_evolve_target_id(own_target_def)
+    if second_target_id > 0:
+        chance1 = _crucible_chance_of_evolution(
+            False, source_def.get("genes"), monster_level, heat_level, flags_active
+        )
+        if random.random() < chance1:
+            chance2 = _crucible_chance_of_evolution(
+                True,
+                own_target_def.get("genes"),
+                monster_level,
+                heat_level,
+                flags_active,
+            )
+            if random.random() < chance2:
+                return (second_target_id, True)
+            return (own_target_id, True)
+        return (source_monster_id, True)
+    chance = _crucible_chance_of_evolution(
+        False, source_def.get("genes"), monster_level, heat_level, flags_active
+    )
+    if random.random() < chance:
+        return (own_target_id, False)
+    return (source_monster_id, False)
+
+
+def _crucible_select_inactive_flag(flags_active):
+    inactive = [
+        letter
+        for letter in CRUCIBLE_FLAG_LETTERS
+        if not (flags_active or {}).get(letter)
+    ]
+    return random.choice(inactive) if inactive else ""
+
+
+def _crucible_supported_heat_levels(structure):
+    definition = (
+        get_structure_definition(
+            structure.get("structure", structure.get("structure_id", 0))
+        )
+        or {}
+    )
+    extra = definition.get("extra") or {}
+    try:
+        levels = int(extra.get("h", CRUCIBLE_DEFAULT_HEAT_LEVELS))
+    except (TypeError, ValueError):
+        levels = CRUCIBLE_DEFAULT_HEAT_LEVELS
+    return max(1, levels)
+
+
 def _crucible_wire_object(island, structure, overrides=None):
     record = _find_amber_evolve_record_on_island(
         island, structure.get("user_structure_id", 0)
     )
-    monster_uid = record.get("user_monster_id", 0) or 0 if record else 0
-    new_type = 0
-    if record is not None:
-        for m in island.get("monsters") or []:
-            if m is not None and m.get("user_monster_id") == monster_uid:
-                definition = get_monster_definition(m.get("monster", 0)) or {}
-                evolve_into_entity_id = definition.get("evolve_into", 0) or 0
-                if evolve_into_entity_id:
-                    new_type = get_monster_id_for_entity_id(evolve_into_entity_id)
-                break
+    flags = record.get("flags") if record else None
     wire = {
         "struct": SFSLong(structure.get("user_structure_id", 0)),
-        "monster": SFSLong(monster_uid),
-        "new_type": new_type,
+        "monster": SFSLong(record.get("user_monster_id", 0) or 0 if record else 0),
+        "new_type": record.get("to_monster", 0) or 0 if record else 0,
         "started_on": SFSLong(record.get("started_on", 0) or 0 if record else 0),
         "complete_on": SFSLong(record.get("finished_on", 0) or 0 if record else 0),
-        "e": 1 if record is not None else 0,
-        "h": structure.get("crucible_heat_level", 0) or 0,
+        "e": 1 if record and record.get("user_monster_id") else 0,
+        "h": record.get("heat_level", 0) or 0 if record else 0,
+        "c": record.get("heat_collect_reward", 0) or 0 if record else 0,
         "u": structure.get("crucible_unlock_stage", 0) or 0,
     }
+    for letter in CRUCIBLE_FLAG_LETTERS:
+        if flags and flags.get(letter):
+            wire["flag" + letter] = 1
+    queued = record.get("queued_flag") if record else ""
+    if queued:
+        wire["q"] = queued
     for key, value in (overrides or {}).items():
         if key in ("monster", "started_on", "complete_on"):
             wire[key] = SFSLong(value or 0)
@@ -205,12 +421,12 @@ def _find_crucible_structure_and_island(player_object, structure_id):
                 continue
             for s in isl.get("structures") or []:
                 if s is not None and s.get("user_structure_id") == structure_id:
-                    return isl, s
+                    return (isl, s)
     island = find_island(player_object, get_active_island_id(player_object))
     structure = find_crucible_structure(island)
     if structure is not None:
-        return island, structure
-    return None, None
+        return (island, structure)
+    return (None, None)
 
 
 def viewed_crucible_unlock(username, params):
@@ -220,7 +436,6 @@ def viewed_crucible_unlock(username, params):
     island, structure = _find_crucible_structure_and_island(player_object, structure_id)
     if structure is None:
         return {"success": False}
-
     structure["crucible_unlock_stage"] = requested_stage
     save_player(username, root)
     return {
@@ -236,42 +451,273 @@ def viewed_crucible_monster(username, params):
     return {"success": True, "message": ""}
 
 
-def collect_crucible_heat(username, params):
+def start_amber_evolve(username, params):
     structure_id = params.get("structure_id") or params.get("user_structure_id") or 0
-    buy_flags = params.get("buy_flags", 0) or 0
+    user_monster_id = params.get("user_monster_id") or params.get("monster_id") or 0
+    requested_heat_level = int(params.get("heat_level") or 1)
+    root, player_object = load_player(username)
+    island, structure = _find_crucible_structure_and_island(player_object, structure_id)
+    if (
+        island is None
+        or structure is None
+        or island_type_of(island) != AMBER_ISLAND_TYPE
+    ):
+        return {"success": False}
+    monster = None
+    for m in island.get("monsters") or []:
+        if m is not None and m.get("user_monster_id") == user_monster_id:
+            monster = m
+            break
+    if monster is None:
+        return {"success": False}
+    supported_heat_levels = _crucible_supported_heat_levels(structure)
+    if requested_heat_level < 1 or requested_heat_level > supported_heat_levels:
+        return {"success": False}
+    source_monster_id = monster.get("monster", 0) or 0
+    source_def = get_monster_definition(source_monster_id) or {}
+    monster_level = max(1, monster.get("level", 1) or 1)
+    min_level = get_user_game_setting_int("USER_CRUCIBLE_MONSTER_MIN_LEVEL", 4)
+    if (
+        not source_def.get("evolve_enabled")
+        or monster_level < min_level
+        or monster.get("in_hotel")
+    ):
+        return {
+            "success": False,
+            "user_monster_id": SFSLong(user_monster_id),
+            "user_structure_id": SFSLong(structure_id),
+        }
+    record = _ensure_amber_evolve_record(island, structure.get("user_structure_id", 0))
+    relic_cost = _crucible_heat_cost(
+        record.get("heat_level", 0) or 0, requested_heat_level
+    )
+    tier = monster_rarity_tier(source_monster_id)
+    own_target_id = _crucible_evolve_target_id(source_def)
+    target_def = get_monster_definition(own_target_id) if own_target_id else None
+    key_cost = _crucible_evolve_key_cost(
+        source_def, requested_heat_level, target_def, tier == "common"
+    )
+    available_relics = player_object.get("relics", 0) or 0
+    available_keys = player_object.get("keys", 0) or 0
+    if available_relics < relic_cost or available_keys < key_cost:
+        return {
+            "success": False,
+            "user_monster_id": SFSLong(user_monster_id),
+            "user_structure_id": SFSLong(structure_id),
+        }
+    output_monster_id, flags_reset_mid_roll = crucible_do_evolve_rolls(
+        source_monster_id,
+        requested_heat_level,
+        monster_level,
+        record.get("flags") or {},
+    )
+    if output_monster_id == 0:
+        return {
+            "success": False,
+            "user_monster_id": SFSLong(user_monster_id),
+            "user_structure_id": SFSLong(structure_id),
+        }
+    player_object["relics"] = available_relics - relic_cost
+    player_object["relics_actual"] = player_object["relics"]
+    player_object["keys"] = available_keys - key_cost
+    player_object["keys_actual"] = player_object["keys"]
+    now = int(time.time() * 1000)
+    succeeded = output_monster_id != source_monster_id
+    if flags_reset_mid_roll:
+        record["flags"] = {}
+    if succeeded:
+        result_def = get_monster_definition(output_monster_id) or {}
+        build_ms = 0
+        if not msm_toggles.is_enabled("instant_timers"):
+            build_ms = int(result_def.get("build_time", 0) or 0) * 1000
+        record["queued_flag"] = ""
+    else:
+        build_ms = 0
+        if not msm_toggles.is_enabled("instant_timers"):
+            build_ms = int(
+                int(source_def.get("build_time", 0) or 0)
+                * 1000
+                * CRUCIBLE_FAIL_TIME_MULTIPLIER
+            )
+        if requested_heat_level < CRUCIBLE_OVERHEATING_LEVEL:
+            record["queued_flag"] = _crucible_select_inactive_flag(
+                record.get("flags") or {}
+            )
+        else:
+            record["flags"] = {}
+            record["queued_flag"] = ""
+    record["user_monster_id"] = user_monster_id
+    record["from_monster"] = source_monster_id
+    record["to_monster"] = output_monster_id if succeeded else 0
+    record["started_on"] = now
+    record["finished_on"] = now + build_ms
+    record["heat_level"] = requested_heat_level
+    record["heat_collect_reward"] = _crucible_calc_random_heat_collection(
+        requested_heat_level - 1
+    )
+    save_player(username, root)
+    result = {
+        "success": True,
+        "last_user_monster_id": SFSLong(user_monster_id),
+        "last_heat": record["heat_level"],
+        "user_crucible": _crucible_wire_object(island, structure),
+    }
+    add_actual_currencies(result, player_object)
+    return result
+
+
+def speed_up_amber_evolve(username, params):
+    structure_id = params.get("structure_id") or params.get("user_structure_id") or 0
     root, player_object = load_player(username)
     island, structure = _find_crucible_structure_and_island(player_object, structure_id)
     if structure is None:
-        return {"success": False}, {}
-    costs = crucible_fuel_relic_costs()
-    current_heat = structure.get("crucible_heat_level", 0) or 0
-    max_heat = len(costs) * 25
-    relics_spent = 0
-    if current_heat < max_heat:
-        next_level = current_heat // 25 + 1
-        cost_index = min(next_level - 1, len(costs) - 1)
-        cost = costs[cost_index] if costs else 0
-        available_relics = player_object.get("relics", 0) or 0
-        if available_relics >= cost:
-            relics_spent = cost
-            player_object["relics"] = available_relics - cost
-            player_object["relics_actual"] = player_object["relics"]
-            structure["crucible_heat_level"] = min(100, current_heat + 25)
-    save_player(username, root)
+        return {"success": False}
     record = _find_amber_evolve_record_on_island(
         island, structure.get("user_structure_id", 0)
     )
-    user_monster_id = record.get("user_monster_id", 0) or 0 if record else 0
+    if record is None or not record.get("user_monster_id"):
+        return {"success": False}
+    now = int(time.time() * 1000)
+    remaining = (record.get("finished_on", now) or now) - now
+    _charge_speedup_for_crucible(player_object, remaining)
+    record["finished_on"] = now - 1000
+    save_player(username, root)
     result = {
         "success": True,
+        "user_structure_id": SFSLong(structure_id),
         "user_crucible": _crucible_wire_object(island, structure),
-        "collected_relics": relics_spent,
+    }
+    return result
+
+
+def _charge_speedup_for_crucible(player_object, remaining_ms):
+    import math
+
+    diamonds = max(1, math.ceil(max(0, remaining_ms) / 3600000))
+    player_object["diamonds"] = max(
+        0, (player_object.get("diamonds", 0) or 0) - diamonds
+    )
+    player_object["diamonds_actual"] = player_object["diamonds"]
+
+
+def finish_amber_evolve(username, params, force_complete=False):
+    structure_id = params.get("structure_id") or params.get("user_structure_id") or 0
+    verify = bool(params.get("verify"))
+    root, player_object = load_player(username)
+    island, structure = _find_crucible_structure_and_island(player_object, structure_id)
+
+    def _no_evolve(user_monster_id=0):
+        payload = {
+            "success": False,
+            "verify": verify,
+            "user_structure_id": SFSLong(structure_id),
+            "user_monster_id": SFSLong(user_monster_id),
+            "evolve_success": False,
+            "new_monst": 0,
+            "mercy_flag": "",
+        }
+        if island is not None and structure is not None:
+            payload["user_crucible"] = _crucible_wire_object(island, structure)
+        return (payload, {})
+
+    if island is None or structure is None:
+        return _no_evolve()
+    record = _find_amber_evolve_record_on_island(
+        island, structure.get("user_structure_id", 0)
+    )
+    if record is None or not record.get("user_monster_id"):
+        return _no_evolve()
+    now = int(time.time() * 1000)
+    finished_on = record.get("finished_on", 0) or 0
+    if not force_complete and (not verify) and (finished_on > now):
+        return _no_evolve(record.get("user_monster_id", 0) or 0)
+    user_monster_id = record.get("user_monster_id", 0) or 0
+    target_monster_id = record.get("to_monster", 0) or 0
+    evolve_success = target_monster_id > 0
+    mercy_flag = ""
+    update = {}
+    if not verify:
+        monster = None
+        for m in island.get("monsters") or []:
+            if m is not None and m.get("user_monster_id") == user_monster_id:
+                monster = m
+                break
+        if monster is not None:
+            if evolve_success:
+                previous_name = (
+                    get_monster_definition(monster.get("monster", 0)) or {}
+                ).get("common_name") or ""
+                monster["monster"] = target_monster_id
+                monster["monster_id"] = target_monster_id
+                definition = get_monster_definition(target_monster_id) or {}
+                if not monster.get("name") or monster.get("name") == previous_name:
+                    monster["name"] = (
+                        definition.get("common_name") or definition.get("name") or ""
+                    )
+                import msm_box
+
+                apply_awakened_box_state = getattr(
+                    msm_box, "apply_awakened_box_state", None
+                )
+                if callable(apply_awakened_box_state):
+                    apply_awakened_box_state(monster, definition, AMBER_ISLAND_TYPE)
+                update = msm_box._box_activate_update(monster, species_changed=True)
+            else:
+                queued = record.get("queued_flag") or ""
+                if queued:
+                    flags = record.setdefault("flags", {})
+                    flags[queued] = True
+                    mercy_flag = queued
+        if record.get("heat_level", 0) != CRUCIBLE_OVERHEATING_LEVEL:
+            record["heat_level"] = max(0, (record.get("heat_level", 0) or 0) - 1)
+        else:
+            record["heat_level"] = 0
+        record["user_monster_id"] = 0
+        record["to_monster"] = 0
+        record["from_monster"] = 0
+        record["started_on"] = 0
+        record["finished_on"] = 0
+        record["queued_flag"] = ""
+    save_player(username, root)
+    result = {
+        "success": True,
+        "verify": verify,
+        "user_structure_id": SFSLong(structure_id),
         "user_monster_id": SFSLong(user_monster_id),
-        "new_monst": 0,
-        "mercy_flag": "",
+        "evolve_success": evolve_success,
+        "new_monst": target_monster_id if evolve_success else 0,
+        "mercy_flag": mercy_flag,
+        "user_crucible": _crucible_wire_object(island, structure),
+    }
+    return (result, update)
+
+
+def collect_crucible_heat(username, params):
+    structure_id = params.get("structure_id") or params.get("user_structure_id") or 0
+    root, player_object = load_player(username)
+    island, structure = _find_crucible_structure_and_island(player_object, structure_id)
+    if structure is None:
+        return ({"success": False}, {})
+    record = _find_amber_evolve_record_on_island(
+        island, structure.get("user_structure_id", 0)
+    )
+    success = False
+    relics = 0
+    if record is not None and (record.get("heat_level") or 0) > 0:
+        relics = record.get("heat_collect_reward", 0) or 0
+        record["heat_collect_reward"] = 0
+        record["heat_level"] = 0
+        player_object["relics"] = (player_object.get("relics", 0) or 0) + relics
+        player_object["relics_actual"] = player_object["relics"]
+        success = True
+    save_player(username, root)
+    result = {
+        "success": success,
+        "user_crucible": _crucible_wire_object(island, structure),
+        "collected_relics": relics,
     }
     add_actual_currencies(result, player_object)
-    return result, {}
+    return (result, {})
 
 
 ETHEREAL_ISLAND_TYPES = (26, 27, 28, 29)
@@ -283,13 +729,7 @@ ETHEREAL_DISH_HARMONIZER_STRUCTURE_ID = 1027
 ETHEREAL_HARMONIZER_STRUCTURE_IDS = (1027, 1049)
 ETHEREAL_POSITION_REPAIR_VERSION = 3
 ETHEREAL_EGGCUP_REPAIR_VERSION = 3
-
-ETHEREAL_HARMONIZER_POSITIONS = {
-    26: (5, 22),
-    27: (10, 12),
-    28: (8, 14),
-    29: (31, 15),
-}
+ETHEREAL_HARMONIZER_POSITIONS = {26: (5, 22), 27: (10, 12), 28: (8, 14), 29: (31, 15)}
 ETHEREAL_EGGCUP_POSITIONS_BY_TYPE = {
     26: [(4, 22), (4, 24)],
     27: [(8, 12), (8, 10)],
@@ -326,8 +766,10 @@ def default_island_structures(user_island_id, island_type):
         ]
         if island_type in ETHEREAL_ISLAND_TYPES_WITH_EGGCUPS:
             entries.extend(
-                (ETHEREAL_EGGCUP_STRUCTURE_ID, x, y, 0)
-                for x, y in ETHEREAL_EGGCUP_POSITIONS_BY_TYPE[island_type]
+                (
+                    (ETHEREAL_EGGCUP_STRUCTURE_ID, x, y, 0)
+                    for x, y in ETHEREAL_EGGCUP_POSITIONS_BY_TYPE[island_type]
+                )
             )
         return [
             _make_structure(
@@ -386,7 +828,6 @@ NPS_TEST_STRUCTURE_ID = 9000
 
 
 def backfill_nps_test_structure(island):
-
     structures = island.setdefault("structures", [])
     for i in range(len(structures) - 1, -1, -1):
         if (
@@ -396,9 +837,7 @@ def backfill_nps_test_structure(island):
             del structures[i]
 
 
-NPS_STRUCTURE_BUTTON_CATALOG = {
-    NPS_TEST_STRUCTURE_ID: ("CRIE", "NPS_STRUCTURE_CLICK"),
-}
+NPS_STRUCTURE_BUTTON_CATALOG = {NPS_TEST_STRUCTURE_ID: ("CRIE", "NPS_STRUCTURE_CLICK")}
 NPS_STRUCTURE_BUTTON_CONFIG_PATHS = (
     "/sdcard/Download/nps_structure_buttons.properties",
     "/storage/emulated/0/Download/nps_structure_buttons.properties",
@@ -406,7 +845,6 @@ NPS_STRUCTURE_BUTTON_CONFIG_PATHS = (
 
 
 def write_nps_structure_button_config(player_object):
-
     lines = []
     for island in player_object.get("islands") or []:
         if not island:
@@ -435,7 +873,12 @@ def write_nps_structure_button_config(player_object):
 def backfill_island_type(island):
     explicit_type = island.get("type")
     island_type = island.get("island_type")
-    if island_type and island_type >= 100 and explicit_type and 0 < explicit_type < 100:
+    if (
+        island_type
+        and island_type >= 100
+        and explicit_type
+        and (0 < explicit_type < 100)
+    ):
         island["island_type"] = explicit_type
         return
     if island_type and island_type >= 100:
@@ -447,11 +890,10 @@ def backfill_island_type(island):
     user_island_id = island.get("user_island_id", 0) or 0
     if user_island_id < 1000 or user_island_id >= 100000000:
         return
-    catalog_id = island.get("mirror_of_island_id") or (user_island_id - 1000)
+    catalog_id = island.get("mirror_of_island_id") or user_island_id - 1000
     resolved = resolve_island_type(catalog_id)
     island.pop("mirror_of_island_id", None)
     island.pop("island_id", None)
-
     island["island"] = catalog_id if get_island_definition(catalog_id) else resolved
     island["type"] = resolved
     island["island_type"] = resolved
@@ -589,7 +1031,7 @@ def repair_dish_harmonizer_state(island):
             continue
         targets = structure.get("dish_harmonizer_targets") or []
         claimed = set(structure.get("dish_harmonizer_claimed") or [])
-        if targets and not structure.get("dish_harmonizer_complete_on"):
+        if targets and (not structure.get("dish_harmonizer_complete_on")):
             structure["dish_harmonizer_complete_on"] = (
                 structure.get("building_completed", 0) or 0
             )
@@ -610,7 +1052,7 @@ def backfill_ethereal_eggcups(island):
     if island_type not in ETHEREAL_ISLAND_TYPES_WITH_EGGCUPS:
         return
     structures = island.setdefault("structures", [])
-    if any(s is not None and s.get("structure") == 804 for s in structures):
+    if any((s is not None and s.get("structure") == 804 for s in structures)):
         island["structures"] = [
             s for s in structures if s is None or s.get("structure") != 804
         ]
@@ -623,9 +1065,11 @@ def backfill_ethereal_eggcups(island):
     eggcup_positions = ETHEREAL_EGGCUP_POSITIONS_BY_TYPE[island_type]
     occupied = {(s.get("pos_x"), s.get("pos_y")) for s in structures if s is not None}
     eggcup_count = sum(
-        1
-        for s in structures
-        if s is not None and s.get("structure") == ETHEREAL_EGGCUP_STRUCTURE_ID
+        (
+            1
+            for s in structures
+            if s is not None and s.get("structure") == ETHEREAL_EGGCUP_STRUCTURE_ID
+        )
     )
     if eggcup_count < len(eggcup_positions):
         now = int(time.time() * 1000)
@@ -690,7 +1134,6 @@ def repair_preset_mirror_island_collisions(player_object):
         if island_type is None:
             continue
         groups.setdefault(island_type, []).append(island)
-
     to_remove = []
     for island_type, group in groups.items():
         if len(group) < 2:
@@ -698,7 +1141,6 @@ def repair_preset_mirror_island_collisions(player_object):
         for island in group:
             if "user" not in island and "user_id" not in island:
                 to_remove.append(island)
-
     for island in to_remove:
         if island in islands:
             islands.remove(island)
@@ -722,7 +1164,6 @@ def repair_duplicate_island_types(player_object):
     for uid, group in groups.items():
         if len(group) < 2:
             continue
-
         primary = max(group, key=lambda isl: len(isl.keys()))
         for other in group:
             if other is primary:
@@ -891,7 +1332,7 @@ def repair_structure_build_timestamps(island):
         if (
             isinstance(structure_def, int)
             and structure_def > 0
-            and structure.get("structure_id") != structure_def
+            and (structure.get("structure_id") != structure_def)
         ):
             structure["structure_id"] = structure_def
         definition = get_structure_definition(structure_def) or {}
@@ -933,7 +1374,7 @@ def repair_structure_definition_aliases(player_object):
             if (
                 isinstance(structure_def, int)
                 and structure_def > 0
-                and alias != structure_def
+                and (alias != structure_def)
             ):
                 structure["structure_id"] = structure_def
                 changed = True
@@ -965,7 +1406,7 @@ def repair_collapsed_catalog_islands(player_object):
                 for i in group
                 if int(i.get("user_island_id", 0) or 0) == 1000 + base_type
             ),
-            group[0],
+            min(group, key=lambda i: int(i.get("user_island_id", 0) or 0)),
         )
         spare = [
             cid
@@ -980,6 +1421,40 @@ def repair_collapsed_catalog_islands(player_object):
             used.add(island["island"])
             changed = True
     return changed
+
+
+def repair_swapped_mirror_islands(player_object):
+    if player_object.get("mirror_split_order_repaired"):
+        return False
+    islands = [i for i in player_object.get("islands") or [] if isinstance(i, dict)]
+    changed = False
+    mains = {
+        int(i.get("island", 0) or 0): i
+        for i in islands
+        if 0 < int(i.get("island", 0) or 0) < 100
+    }
+    for mirror in islands:
+        catalog = int(mirror.get("island", 0) or 0)
+        if not 100 <= catalog < 200:
+            continue
+        base_type = (get_island_definition(catalog) or {}).get("island_type")
+        main = mains.get(base_type)
+        if main is None:
+            continue
+        main_uid = int(main.get("user_island_id", 0) or 0)
+        mirror_uid = int(mirror.get("user_island_id", 0) or 0)
+        if (
+            main_uid == 1000 + base_type
+            or mirror_uid < 100000000
+            or main_uid < 100000000
+        ):
+            continue
+        if mirror_uid < main_uid:
+            main["island"], mirror["island"] = (catalog, base_type)
+            mains[base_type] = mirror
+            changed = True
+    player_object["mirror_split_order_repaired"] = True
+    return True
 
 
 NO_CASTLE_ISLAND_TYPES = (10, 12)
@@ -1012,12 +1487,10 @@ def repair_editor_made_islands(player_object):
                 for s in structures
                 if not (
                     isinstance(s, dict)
-                    and (
-                        (get_structure_definition(s.get("structure", 0)) or {}).get(
-                            "structure_type"
-                        )
-                        == "castle"
+                    and (get_structure_definition(s.get("structure", 0)) or {}).get(
+                        "structure_type"
                     )
+                    == "castle"
                 )
             ]
             if len(kept) != len(structures):
@@ -1034,7 +1507,7 @@ def repair_low_id_structures(player_object):
         s.get("user_structure_id")
         for isl in islands
         if isl is not None
-        for s in (isl.get("structures") or [])
+        for s in isl.get("structures") or []
         if s is not None
     }
     for island in islands:
@@ -1087,8 +1560,10 @@ def purge_direct_placement_eggs(player_object):
             phantom = _is_direct_placement_egg(egg) or (
                 purge_legacy and _is_legacy_direct_placement_egg(egg)
             )
-            if phantom and not requires_direct_placement(
-                get_monster_definition((egg or {}).get("monster", 0)), island_type
+            if phantom and (
+                not requires_direct_placement(
+                    get_monster_definition((egg or {}).get("monster", 0)), island_type
+                )
             ):
                 continue
             kept.append(egg)
@@ -1235,13 +1710,12 @@ def repair_orphaned_process_refs(player_object):
 
 
 def migrate_legacy_mirror_ids(player_object):
-
     islands = player_object.get("islands") or []
     for island in islands:
         if island is None:
             continue
         old_uid = island.get("user_island_id", 0) or 0
-        if not (1100 <= old_uid < 2000):
+        if not 1100 <= old_uid < 2000:
             continue
         island.pop("mirror_of_island_id", None)
         island.pop("island_id", None)
@@ -1275,7 +1749,6 @@ def buy_island(username, params):
         user_island_id = random.randint(100000000, 999999999)
         while user_island_id in existing_ids:
             user_island_id = random.randint(100000000, 999999999)
-
     existing_user = 100000000
     for isl in player_object.get("islands") or []:
         if isl is not None and isl.get("user"):
@@ -1313,7 +1786,6 @@ def buy_island(username, params):
             "monsters": 999,
             "rank": 999999,
         }
-
     if msm_toggles.is_enabled("functioning_currencies"):
         island_definition = get_island_definition(island_id) or {}
         cost_diamonds = island_definition.get("cost_diamonds", 0) or 0
@@ -1334,7 +1806,6 @@ def buy_island(username, params):
         from msm_monsters import place_egg
 
         place_egg(player_object, new_island, free_quad, "islet_unlock", ready=True)
-
     repair_duplicate_structure_ids(player_object)
     save_player(username, root)
     result = {
@@ -1362,7 +1833,7 @@ def update_island_mode(username, params):
         if (
             user_island_id
             and current_id != user_island_id
-            and island_field != (user_island_id - 1000)
+            and (island_field != user_island_id - 1000)
         ):
             continue
         island["mode"] = mode
@@ -1380,7 +1851,6 @@ def update_island_mode(username, params):
 
 
 def mute_island(username, params):
-
     user_island_id = (
         params.get("user_island_id", params.get("island_id", params.get("island", 0)))
         or 0
@@ -1390,7 +1860,7 @@ def mute_island(username, params):
         user_island_id = get_active_island_id(player_object)
     if 0 < user_island_id < 1000:
         user_island_id += 1000
-    monster_ids, structure_ids = [], []
+    monster_ids, structure_ids = ([], [])
     requested_muted = params.get("muted")
     muted = 0
     for island in player_object.get("islands") or []:
@@ -1408,9 +1878,9 @@ def mute_island(username, params):
 
         for monster in island.get("monsters") or []:
             definition = get_monster_definition(monster.get("monster", 0))
-            if msm_box.is_box_monster_entity(
-                definition
-            ) and not msm_box.is_awakened_box_monster(monster):
+            if msm_box.is_box_monster_entity(definition) and (
+                not msm_box.is_awakened_box_monster(monster)
+            ):
                 continue
             monster["muted"] = muted
             mid = monster.get("user_monster_id")
@@ -1466,14 +1936,12 @@ def _upsert_active_theme(player_object, theme_id, island_type):
             if existing_theme == theme_id:
                 already_active = True
             del themes[i]
-
     if not already_active:
         themes.append({"t": theme_id, "i": island_type})
-    return themes, already_active
+    return (themes, already_active)
 
 
 def buy_island_skin(username, params):
-
     theme_id = None
     for key in (
         "island_theme_id",
@@ -1533,11 +2001,50 @@ def buy_island_skin(username, params):
 
 
 def activate_island_theme(username, params):
-    full = dict(buy_island_skin(username, params))
-    full["cmd"] = "gs_activate_island_theme"
-    full["buy_and_activate_now"] = bool(params.get("buy_and_activate_now", True))
-    full["trial"] = bool(params.get("trial"))
-    return full
+    theme_id = params.get("island_theme_id")
+    if theme_id is None:
+        for key in (
+            "user_island_theme_id",
+            "theme_id",
+            "skin_id",
+            "skin",
+            "theme",
+            "id",
+            "storeitem_id",
+        ):
+            if params.get(key) is not None:
+                theme_id = params.get(key)
+                break
+    theme_id = int(theme_id or 0)
+    trial = bool(params.get("trial", False))
+    buy_now = bool(params.get("buy_and_activate_now", False))
+    requested_island = (
+        params.get("island_id")
+        or params.get("user_island_id")
+        or params.get("island")
+        or 0
+    )
+    island_type = (
+        island_for_theme(theme_id)
+        or (requested_island - 1000 if requested_island >= 1000 else requested_island)
+        or 1
+    )
+    root, player_object = load_player(username)
+    if not trial:
+        owned = player_object.setdefault("owned_island_themes", [])
+        if theme_id and theme_id not in owned:
+            owned.append(theme_id)
+        if theme_id:
+            _upsert_active_theme(player_object, theme_id, island_type)
+        save_player(username, root)
+    return {
+        "success": True,
+        "buy_and_activate_now": buy_now,
+        "island": island_type,
+        "user_island_theme_id": theme_id,
+        "trial": trial,
+        "properties": create_player_properties(player_object),
+    }
 
 
 def get_island_rank(username, params):

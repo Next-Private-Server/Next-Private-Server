@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import asyncio
 import inspect
 import json
@@ -12,14 +11,12 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
-
 import websockets
-
 from msm_protocol import SFSLong, decode_sfsobject, encode_sfsobject
 
 AUTH_URL = "https://auth.bbbgame.net/auth/api/token"
 WS_URL = "wss://msm-mobile-prod-v2.bbbgame.net:443/msm/socket"
-CLIENT_VERSION = "5.7.0"
+CLIENT_VERSION = "5.7.6"
 CLIENT_OS = "9"
 CLIENT_DEVICE = "V2241A"
 DEVICE_VENDOR = "vivo"
@@ -40,7 +37,7 @@ def _env_int(name: str, default: int) -> int:
 
 
 def _server_access_key() -> str:
-    return _env_str("NPS_MSM_ACCESS_KEY", "25010558-d92f-4b26-87cd-30aa7751c377")
+    return _env_str("NPS_MSM_ACCESS_KEY", "a4513fd9-e829-4e84-ac3d-f2348237b25d")
 
 
 def _frame(
@@ -62,11 +59,11 @@ def _cbor_write_len(major: int, length: int) -> bytes:
     prefix = major << 5
     if length < 24:
         return bytes([prefix | length])
-    if length <= 0xFF:
+    if length <= 255:
         return bytes([prefix | 24, length])
-    if length <= 0xFFFF:
+    if length <= 65535:
         return bytes([prefix | 25]) + length.to_bytes(2, "big")
-    if length <= 0xFFFFFFFF:
+    if length <= 4294967295:
         return bytes([prefix | 26]) + length.to_bytes(4, "big")
     return bytes([prefix | 27]) + length.to_bytes(8, "big")
 
@@ -87,7 +84,7 @@ def _encode_cbor(value: Any) -> bytes:
         return _cbor_write_len(3, len(data)) + data
     if isinstance(value, (list, tuple)):
         return _cbor_write_len(4, len(value)) + b"".join(
-            _encode_cbor(child) for child in value
+            (_encode_cbor(child) for child in value)
         )
     if isinstance(value, dict):
         items = sorted(value.items(), key=lambda item: str(item[0]))
@@ -99,6 +96,7 @@ def _encode_cbor(value: Any) -> bytes:
 
 
 class _CborReader:
+
     def __init__(self, data: bytes) -> None:
         self.data = data
         self.pos = 0
@@ -130,7 +128,7 @@ class _CborReader:
 def _decode_cbor_value(reader: _CborReader) -> Any:
     initial = reader.read_u8()
     major = initial >> 5
-    addl = initial & 0x1F
+    addl = initial & 31
     if major == 0:
         return reader.read_len(addl)
     if major == 1:
@@ -169,11 +167,7 @@ def _decode_cbor(data: bytes) -> Any:
 
 
 def _cbor_frame(order: int, request_id: str, request: dict[str, Any]) -> bytes:
-    payload = {
-        "order": order,
-        "request": request,
-        "requestId": request_id,
-    }
+    payload = {"order": order, "request": request, "requestId": request_id}
     return b"CBOR" + _encode_cbor(payload)
 
 
@@ -189,7 +183,7 @@ def _cbor_support_frame(order: int) -> bytes:
                 "USER_DISCONNECT",
                 "ADMIN_MESSAGE",
                 "gs_move_monster",
-            ],
+            ]
         },
     )
 
@@ -209,7 +203,7 @@ def _parse_server_frame(data: bytes) -> tuple[str, dict[str, Any]]:
         params = payload.get(
             "response", payload.get("request", payload.get("data", payload))
         )
-        return command, params if isinstance(params, dict) else {"value": params}
+        return (command, params if isinstance(params, dict) else {"value": params})
     if len(data) < 2:
         raise ValueError("short server frame")
     name_len = int.from_bytes(data[:2], "big")
@@ -218,7 +212,7 @@ def _parse_server_frame(data: bytes) -> tuple[str, dict[str, Any]]:
         raise ValueError("truncated server command")
     command = data[2:end].decode("ascii", "replace")
     payload = decode_sfsobject(data[end:]) if end < len(data) else {}
-    return command, payload
+    return (command, payload)
 
 
 def _find_key(value: Any, wanted: str) -> Any:
@@ -250,7 +244,6 @@ def _auth(email: str, password: str, device_id: str) -> dict[str, Any]:
     client_device = _env_str("NPS_MSM_CLIENT_DEVICE", CLIENT_DEVICE)
     client_platform = _env_str("NPS_MSM_CLIENT_PLATFORM", "android")
     device_vendor = _env_str("NPS_MSM_DEVICE_VENDOR", DEVICE_VENDOR)
-
     body = {
         "g": "1",
         "u": email,
@@ -352,20 +345,19 @@ def _public_error(exc: Exception) -> tuple[str, str]:
             "network",
             "The connection to the official server failed. Check your internet connection and try again.",
         )
-
     message = str(exc).strip() or exc.__class__.__name__
     kind = _error_kind(message)
     if kind == "missing_credentials":
-        return kind, "Email and password are required."
+        return (kind, "Email and password are required.")
     if kind == "bad_credentials":
-        return kind, "Email or password was rejected by the official auth server."
+        return (kind, "Email or password was rejected by the official auth server.")
     if kind == "blocked":
         return (
             kind,
             "The official auth server blocked the request. Try again later or use a normal network connection.",
         )
     if kind == "timeout":
-        return kind, "The official server took too long to respond. Try again."
+        return (kind, "The official server took too long to respond. Try again.")
     if kind == "client_version":
         return (
             kind,
@@ -377,13 +369,13 @@ def _public_error(exc: Exception) -> tuple[str, str]:
             "The official server accepted auth but refused the game login. Try again.",
         )
     if kind == "bad_save":
-        return kind, "The official server responded, but the save data was not valid."
+        return (kind, "The official server responded, but the save data was not valid.")
     if kind == "network":
         return (
             kind,
             "The connection to the official server failed. Check your internet connection and try again.",
         )
-    return kind, "Import failed. Try again later."
+    return (kind, "Import failed. Try again later.")
 
 
 def _normalize_player_json(
@@ -413,12 +405,10 @@ async def _export(email: str, password: str) -> dict[str, Any]:
     device_id = _env_str("NPS_MSM_RAW_DEVICE_ID", secrets.token_hex(8))
     last_update_version = _env_str("NPS_MSM_LAST_UPDATE_VERSION", client_version)
     last_updated = _env_int("NPS_MSM_LAST_UPDATED", 0)
-
     auth_doc = _auth(email, password, device_id)
     token = str(_first_scalar(_find_key(auth_doc, "access_token")))
     user = str(_first_scalar(_find_key(auth_doc, "user_game_id")))
     server_access_key = _server_access_key()
-
     headers = {
         "client-version": client_version,
         "client_version": client_version,
@@ -441,19 +431,11 @@ async def _export(email: str, password: str) -> dict[str, Any]:
         "raw_device_id": device_id,
         "token": token,
     }
-    user_login = {
-        "data": login_data,
-        "password": "",
-        "user": user,
-        "zone": ZONE,
-    }
-
+    user_login = {"data": login_data, "password": "", "user": user, "zone": ZONE}
     quest_payload: dict[str, Any] | None = None
-
     async with _websocket_connect(headers) as ws:
         await ws.send(_cbor_support_frame(0))
         await ws.send(_frame(1, "USER_LOGIN", user_login))
-
         initialized = False
         deadline = asyncio.get_running_loop().time() + 45.0
         while asyncio.get_running_loop().time() < deadline:
@@ -472,7 +454,6 @@ async def _export(email: str, password: str) -> dict[str, Any]:
                 break
         if not initialized:
             raise RuntimeError("server init timed out")
-
         await ws.send(_frame(2, "gs_player", {"last_updated": SFSLong(last_updated)}))
         deadline = asyncio.get_running_loop().time() + 60.0
         player_payload: dict[str, Any] | None = None

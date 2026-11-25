@@ -4,6 +4,7 @@ import base64
 import hashlib
 import json
 import logging
+from logging.handlers import RotatingFileHandler
 import os
 import random
 import re
@@ -16,6 +17,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.parse import parse_qs
 import uvicorn
+import bridge_watch
+from uvicorn.protocols.websockets.websockets_sansio_impl import WebSocketsSansIOProtocol
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
@@ -26,9 +29,11 @@ import msm_store
 import msm_gamedata
 import msm_handlers
 import msm_playerdata
+import msm_toggles
 
 
 class _AndroidLogWriter:
+
     def __init__(self, tag):
         self._buffer = ""
         self._tag = tag
@@ -111,7 +116,6 @@ BASE_DIR = locate_base()
 CONFIG_PATH = locate_child(BASE_DIR, "Config.json")
 ACCOUNTS_PATH = locate_child(BASE_DIR, "Accounts.json")
 WHITELIST_PATH = locate_child(BASE_DIR, "Whitelist.json")
-
 _debug_logger = logging.getLogger("msm")
 _debug_logger.setLevel(logging.INFO)
 _stdout_handler = logging.StreamHandler(sys.stdout)
@@ -120,7 +124,9 @@ _debug_logger.addHandler(_stdout_handler)
 _debug_logger.propagate = False
 try:
     _debug_log_path = BASE_DIR / "nps_debug.log"
-    _debug_handler = logging.FileHandler(str(_debug_log_path), encoding="utf-8")
+    _debug_handler = RotatingFileHandler(
+        _debug_log_path, maxBytes=2 * 1024 * 1024, backupCount=1, encoding="utf-8"
+    )
     _debug_handler.setFormatter(logging.Formatter("%(asctime)s %(name)s %(message)s"))
     _debug_logger.addHandler(_debug_handler)
 except Exception:
@@ -145,7 +151,6 @@ def save_json(path, data):
 
 
 def lan_ip():
-
     try:
         _s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
@@ -160,7 +165,6 @@ def lan_ip():
 def config():
     _b = read_json(CONFIG_PATH, {})
     _a = False
-
     _c = {
         "host": "127.0.0.1",
         "http_ports": [5050, 8282],
@@ -229,14 +233,44 @@ _UVICORN_SERVERS = []
 _SHUTDOWN_REQUESTED = False
 _SHUTDOWN_COMPLETE = threading.Event()
 _SHUTDOWN_COMPLETE.set()
+CRASH_REPORT_PATH = BASE_DIR / "crashes" / "msm_tombstones.jsonl"
+_MAX_CRASH_REPORT_BYTES = 256 * 1024
+
+
+async def msm_crash(request: Request):
+    client_host = request.client.host if request.client else ""
+    if client_host not in ("127.0.0.1", "::1"):
+        return JSONResponse({"ok": False, "error": "loopback_only"}, status_code=403)
+    raw = await request.body()
+    if not raw:
+        return JSONResponse({"ok": False, "error": "empty_report"}, status_code=400)
+    if len(raw) > _MAX_CRASH_REPORT_BYTES:
+        return JSONResponse({"ok": False, "error": "report_too_large"}, status_code=413)
+    record = {
+        "received_at": int(time.time()),
+        "source": "msm",
+        "report": raw.decode("utf-8", errors="replace"),
+    }
+    try:
+        CRASH_REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with CRASH_REPORT_PATH.open("a", encoding="utf-8") as output:
+            output.write(
+                json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n"
+            )
+        logger.warning("MSM client crash tombstone received (%d bytes)", len(raw))
+        return {"ok": True}
+    except Exception:
+        logger.exception("Could not persist MSM client crash tombstone")
+        return JSONResponse({"ok": False, "error": "persist_failed"}, status_code=500)
 
 
 class _SuppressShutdownCancelledError(logging.Filter):
+
     def filter(self, record):
         if (
             _SHUTDOWN_REQUESTED
             and record.exc_info
-            and record.exc_info[0] is asyncio.CancelledError
+            and (record.exc_info[0] is asyncio.CancelledError)
         ):
             return False
         return True
@@ -247,7 +281,6 @@ logging.getLogger("asyncio").addFilter(_SuppressShutdownCancelledError())
 
 
 def set_active_username(username):
-
     msm_handlers.set_active_username(username)
 
 
@@ -278,8 +311,21 @@ def request_shutdown(wait=True):
 
 
 async def _force_exit_watchdog(delay=5.0):
+    previous = time.monotonic()
+    expected = len(set(map(int, SETTINGS.get("http_ports") or [80])))
+    online = False
     while not _SHUTDOWN_REQUESTED:
         await asyncio.sleep(0.1)
+        now = time.monotonic()
+        if now - previous >= 10:
+            print(f"[Bridge health] event loop delayed {now - previous:.1f}s")
+        previous = now
+        ready = len(_UVICORN_SERVERS) == expected and all(
+            (server.started for server in _UVICORN_SERVERS)
+        )
+        if ready and (not online):
+            print("[Bridge health] all listeners ready")
+        online = ready
     await asyncio.sleep(delay)
     for server in list(_UVICORN_SERVERS):
         try:
@@ -305,11 +351,6 @@ DEFAULT_ACCOUNT = {
 }
 PUBLIC_CONTENT_PREFIX = "/MSM/GameAssets/"
 ZONE_NAME = "MySingingMonsters"
-_HTTP_PORTS_SETTING = SETTINGS.get("http_ports") or [5050, 8282]
-
-BLUEBOX_HTTP_PORT = int(
-    _HTTP_PORTS_SETTING[1] if len(_HTTP_PORTS_SETTING) > 1 else _HTTP_PORTS_SETTING[0]
-)
 BLUEBOX_HTTPS_PORT = 8543
 ACCESS_TOKEN_FALLBACK = "local-private-server-token"
 ERROR_MESSAGES = [
@@ -400,6 +441,7 @@ def message_for(error_id):
 
 def error(error_id, message=None):
     _code = AuthCode.GENERAL_ERROR if error_id is None else int(error_id)
+    print(f"[Bridge health] HTTP application error code={_code}")
     return {
         "ok": False,
         "error": _code,
@@ -510,9 +552,9 @@ def resolve_login_account(username, password):
     if accounts_require_password():
         _account = find_account(username, password)
         if _account is None:
-            return None, error(AuthCode.BAD_CREDENTIALS)
-        return _account, None
-    return find_account_by_username(username) or forced_account(), None
+            return (None, error(AuthCode.BAD_CREDENTIALS))
+        return (_account, None)
+    return (find_account_by_username(username) or forced_account(), None)
 
 
 def token(username, user_game_id, login_type, account_id_value, game_id, ttl=None):
@@ -556,11 +598,25 @@ def apply_normalized_path(request):
 @app.middleware("http")
 async def gate(request, call_next):
     _e, _d = apply_normalized_path(request)
+    stage = _d.rstrip("/")
+    login_stage = stage in {
+        "/pregame_setup.php",
+        "/auth/api/token",
+        "/auth/api/login",
+        "/auth/api/game_config",
+        "/auth/api/email_account",
+    }
+    if login_stage:
+        print(f"[Bridge health] HTTP received {stage}")
     _a = load_whitelist()
     _c = client_ip(request)
     if _a and _c not in _a:
+        if login_stage:
+            print(f"[Bridge health] HTTP {stage} rejected by whitelist (403)")
         return JSONResponse({"ok": False, "error": "forbidden"}, status_code=403)
     _h = await call_next(request)
+    if login_stage:
+        print(f"[Bridge health] HTTP {stage} handler returned {_h.status_code}")
     _f = str(request.url.query or "")
     _i = request.headers.get("user-agent", "")
     _g = request.headers.get("referer", "")
@@ -614,11 +670,12 @@ async def params(request):
     return _a
 
 
-def server_ip():
-
+def server_ip(local_address=None):
     _v = SETTINGS.get("server_ip")
     if _v and _v != "auto":
         return str(_v)
+    if local_address and local_address not in ("0.0.0.0", "::"):
+        return local_address
     return str(SETTINGS.get("resolved_server_ip") or lan_ip())
 
 
@@ -630,24 +687,29 @@ def content_port():
     return int(_a[0])
 
 
-def content_root():
+def content_root(address=None):
+    address = address or server_ip()
     if SETTINGS.get("content_url"):
         return str(SETTINGS["content_url"]).rstrip("/")
     _a = content_port()
-    _b = "" if _a == 80 else f":{_a }"
-    return f"http://{server_ip ()}{_b }{PUBLIC_CONTENT_PREFIX }"
+    _b = "" if _a == 80 else f":{_a}"
+    host = (
+        f"[{address}]" if ":" in address and (not address.startswith("[")) else address
+    )
+    return f"http://{host}{_b}{PUBLIC_CONTENT_PREFIX}"
 
 
-def sfs_block():
-    _a = server_ip()
+def sfs_block(address=None):
+    _a = address or server_ip()
     _b = int(SETTINGS.get("game_port", 9933))
-    _c = BLUEBOX_HTTP_PORT
+    ports = SETTINGS.get("http_ports") or [80]
+    _c = int(ports[1] if len(ports) > 1 else ports[0])
     _d = BLUEBOX_HTTPS_PORT
     _e = "/BlueBox/BlueBox.do"
-    _f = f"ws://{_a }:{_c }/msm/socket"
-    _g = f"http://{_a }:{_c }{_e }"
-    _h = f"https://{_a }:{_d }{_e }"
-    _i = f"http|websocket|{_a }|{_c }"
+    _f = f"ws://{_a}:{_c}/msm/socket"
+    _g = f"http://{_a}:{_c}{_e}"
+    _h = f"https://{_a}:{_d}{_e}"
+    _i = f"http|websocket|{_a}|{_c}"
     return {
         "host": _a,
         "ip": _a,
@@ -746,25 +808,19 @@ def server_id():
     return int(SETTINGS.get("server_id") or 1)
 
 
-def pregame_response_exact():
-
+def pregame_response_exact(local_address=None):
+    address = server_ip(local_address)
     return {
         "ok": True,
         "serverId": server_id(),
-        "serverIp": sfs_block()["serverIp"],
-        "contentUrl": content_root(),
+        "serverIp": sfs_block(address)["serverIp"],
+        "contentUrl": content_root(address),
     }
 
 
 def game_config_response_exact():
-
     _login_types = [
-        {
-            "type": "email",
-            "auto_create": False,
-            "can_bind_to": True,
-            "can_create": True,
-        },
+        {"type": "email", "auto_create": False, "can_bind_to": True, "can_create": True}
     ]
     return {
         "ok": True,
@@ -803,9 +859,8 @@ def token_response_exact(account, ttl=None):
 
 
 def short_id(length=10):
-
     _alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
-    return "".join(secrets.choice(_alphabet) for _ in range(length))
+    return "".join((secrets.choice(_alphabet) for _ in range(length)))
 
 
 def email_account_response_exact(
@@ -883,7 +938,7 @@ async def auth_handler(request: Request):
         msm_playerdata.set_client_lang(_b.get("username"), _d.get("lang"))
         _c = token_response_exact(_b, SETTINGS.get("auth_ttl", 1200))
         _l = JSONResponse(_c)
-        _l.headers["authorization"] = f'Bearer {_c ["access_token"]}'
+        _l.headers["authorization"] = f"Bearer {_c['access_token']}"
         _l.headers["content-type"] = "application/json; charset=utf-8"
         return _l
     except Exception as _f:
@@ -907,7 +962,7 @@ async def login_handler(request: Request):
         msm_playerdata.set_client_lang(_b.get("username"), _d.get("lang"))
         _c = token_response_exact(_b, SETTINGS.get("login_ttl", 7200))
         _i = JSONResponse(_c)
-        _i.headers["authorization"] = f'Bearer {_c ["access_token"]}'
+        _i.headers["authorization"] = f"Bearer {_c['access_token']}"
         _i.headers["content-type"] = "application/json; charset=utf-8"
         return _i
     except Exception as _e:
@@ -916,7 +971,6 @@ async def login_handler(request: Request):
 
 
 async def email_account_handler(request: Request):
-
     try:
         _d = await params(request)
         logger.info(
@@ -930,7 +984,9 @@ async def email_account_handler(request: Request):
         _password = str(_d.get("password") or _d.get("p") or "").strip()
         if not _username or not _password:
             return JSONResponse(error(AuthCode.MISSING_DATA), status_code=400)
-        if "@" in _username and not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", _username):
+        if "@" in _username and (
+            not re.match("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", _username)
+        ):
             return JSONResponse(error(AuthCode.INVALID_EMAIL), status_code=400)
         if find_account(_username, _password) or any(
             (str(_a.get("username", "")) == _username for _a in load_accounts())
@@ -954,7 +1010,7 @@ async def email_account_handler(request: Request):
             SETTINGS.get("auth_ttl", 1200),
         )
         _r = JSONResponse(_c)
-        _r.headers["authorization"] = f'Bearer {_c ["access_token"]}'
+        _r.headers["authorization"] = f"Bearer {_c['access_token']}"
         _r.headers["content-type"] = "application/json; charset=utf-8"
         return _r
     except Exception as _e:
@@ -1041,11 +1097,24 @@ async def game_config(request: Request):
 async def pregame_setup(request: Request):
     _c = await params(request)
     logger.info("pregame_setup params=%s", sorted(_c.keys()))
-    return pregame_response_exact()
+    local = request.scope.get("server")
+    return pregame_response_exact(local[0] if local else None)
 
 
 def _download_manifest_path():
     return FILES_DIR / "downloads.xml"
+
+
+_TOGGLE_SCRIPT_VARIANTS = {"scripts/StoreItem.lua": "dipster_dig_bypass_market_lock"}
+
+
+def _resolve_variant_path(file_name):
+    toggle_name = _TOGGLE_SCRIPT_VARIANTS.get(file_name)
+    if toggle_name is None:
+        return (FILES_DIR / file_name).resolve()
+    suffix = "patched" if msm_toggles.is_enabled(toggle_name) else "original"
+    variant = (FILES_DIR / f"{file_name}.{suffix}").resolve()
+    return variant if variant.is_file() else (FILES_DIR / file_name).resolve()
 
 
 def _download_entries():
@@ -1062,7 +1131,7 @@ def _download_entries():
         file_name = (node.get("file") or "").replace("\\", "/").lstrip("/")
         if not file_name:
             continue
-        local_path = (FILES_DIR / file_name).resolve()
+        local_path = _resolve_variant_path(file_name)
         try:
             local_path.relative_to(FILES_DIR.resolve())
         except Exception:
@@ -1072,24 +1141,20 @@ def _download_entries():
             continue
         checksum = hashlib.md5(local_path.read_bytes()).hexdigest()
         entries.append(
-            {
-                "localName": file_name,
-                "serverName": file_name,
-                "checksum": checksum,
-            }
+            {"localName": file_name, "serverName": file_name, "checksum": checksum}
         )
     return entries
 
 
-CLIENT_VERSION = "5.7.1"
-CLIENT_BUILD = "508"
+CLIENT_VERSION = "5.7.6"
+CLIENT_BUILD = "516"
 
 
 def _build_downloads_xml(entries):
     _major, _minor, _micro = (CLIENT_VERSION.split(".") + ["0", "0"])[:3]
     lines = [
         '<?xml version="1.0"?>',
-        f'<Downloads version="{CLIENT_VERSION }" build="{CLIENT_BUILD }">',
+        f'<Downloads version="{CLIENT_VERSION}" build="{CLIENT_BUILD}">',
     ]
     for entry in entries:
         name = (
@@ -1102,7 +1167,7 @@ def _build_downloads_xml(entries):
         if not name:
             continue
         lines.append(
-            f'    <Download file="{name }" checksum="{entry ["checksum"]}" major="{_major }" minor="{_minor }" micro="{_micro }" rev="0" />'
+            f"""    <Download file="{name}" checksum="{entry['checksum']}" major="{_major}" minor="{_minor}" micro="{_micro}" rev="0" />"""
         )
     lines.append("</Downloads>")
     return "\n".join(lines).encode("utf-8")
@@ -1127,21 +1192,53 @@ async def files_manifest(request: Request):
 
 async def downloads_xml(request: Request):
     entries = manifest()
+    print(f"[Bridge health] HTTP download manifest: {len(entries)} entries")
     logger.info(
         "downloads_xml path=%s entries=%d", request.scope.get("path"), len(entries)
     )
     return Response(_build_downloads_xml(entries), media_type="application/xml")
 
 
+class DownloadResponse(FileResponse):
+
+    async def __call__(self, scope, receive, send):
+        status = None
+        sent_bytes = 0
+        finished = False
+        delegated = False
+
+        async def observe(message):
+            nonlocal status, sent_bytes, finished, delegated
+            await send(message)
+            if message["type"] == "http.response.start":
+                status = message["status"]
+            elif message["type"] == "http.response.body":
+                sent_bytes += len(message.get("body", b""))
+                finished = not message.get("more_body", False)
+            elif message["type"] == "http.response.pathsend":
+                delegated = True
+
+        try:
+            await super().__call__(scope, receive, observe)
+        finally:
+            result = (
+                "delegated" if delegated else "finished" if finished else "interrupted"
+            )
+            print(
+                f"[Bridge health] asset {ascii(Path(self.path).name[:80])}: HTTP {status}, {scope['method']} {result}, {sent_bytes} body bytes handed off"
+            )
+
+
 async def serve_file(path: str):
-    _a = (FILES_DIR / path).resolve()
+    _a = _resolve_variant_path(path)
     try:
         _a.relative_to(FILES_DIR.resolve())
     except Exception:
         return JSONResponse({"ok": False, "error": "bad path"}, status_code=400)
     if not _a.is_file():
+        print(f"[Bridge health] asset {ascii(Path(path).name[:80])}: HTTP 404")
         return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
-    return FileResponse(_a)
+    return DownloadResponse(_a)
 
 
 async def catch_all(path: str, request: Request):
@@ -1153,7 +1250,7 @@ async def catch_all(path: str, request: Request):
         str(request.url.query),
         _a[:2000],
     )
-    return error(AuthCode.GENERAL_ERROR, message=f"not implemented: {path }")
+    return error(AuthCode.GENERAL_ERROR, message=f"not implemented: {path}")
 
 
 async def bluebox(request: Request):
@@ -1188,7 +1285,7 @@ def _encode_results(command, results):
             encoded.append(_safe_error_frame(_resp_cmd, str(_err)))
             continue
         encoded.append((_resp_cmd, _raw))
-        logger.info("%s -> %s payload=%.800r", command, _resp_cmd, _resp_payload)
+        logger.info("%s -> %s bytes=%d", command, _resp_cmd, len(_raw))
     return encoded
 
 
@@ -1197,6 +1294,9 @@ def _process_frame(command, params):
         try:
             _results = msm_handlers.handle_command(command, params)
         except Exception as _err:
+            print(
+                f"[Bridge health] command {str(command)[:64]!r} failed: {type(_err).__name__}"
+            )
             logger.exception("%s failed", command)
             _results = [
                 (
@@ -1212,12 +1312,64 @@ def _process_bootstrap():
         return _encode_results("login", msm_handlers.login_bootstrap_frames())
 
 
+async def _run_command_worker(label, function, *args):
+    slow = asyncio.get_running_loop().call_later(
+        10, print, f"[Bridge health] {label} pending for 10s"
+    )
+    try:
+        return await asyncio.to_thread(function, *args)
+    finally:
+        slow.cancel()
+
+
+def _record_msm_connection_lost(recent, last_keep_alive, detail):
+    if _SHUTDOWN_REQUESTED:
+        return
+    lines = [
+        "MSM WebSocket ended without a game logout",
+        detail,
+        "time=" + time.strftime("%Y-%m-%d %H:%M:%S"),
+        (
+            "last keep_alive %ds before disconnect" % int(time.time() - last_keep_alive)
+            if last_keep_alive
+            else "no keep_alive received"
+        ),
+        "last commands sent by the game (oldest first):",
+    ] + ["  %s  %s" % (stamp, command) for stamp, command in recent]
+    record = {
+        "received_at": int(time.time()),
+        "source": "msm (connection lost)",
+        "report": chr(10).join(lines),
+    }
+    try:
+        CRASH_REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with CRASH_REPORT_PATH.open("a", encoding="utf-8") as output:
+            output.write(
+                json.dumps(record, ensure_ascii=False, separators=(",", ":")) + chr(10)
+            )
+    except Exception:
+        logger.exception("Could not persist MSM connection-lost tombstone")
+
+
 async def sfs_websocket(websocket: WebSocket):
     await websocket.accept()
+    print("[Bridge health] WebSocket accepted")
+    last_input = "none"
+    last_output = "none"
+    phase = "waiting for first frame"
+    observed_queue = websocket.scope.get("nps_queue")
+    previous_token = None
+    close_code = None
+    _recent = []
+    _session = {"logged_in": False, "logged_out": False, "last_keep_alive": None}
     try:
         while True:
+            if observed_queue is not None:
+                observed_queue.finish(previous_token)
             _a = await websocket.receive()
+            previous_token = _a.get("nps_request")
             if _a.get("type") == "websocket.disconnect":
+                close_code = _a.get("code")
                 break
             _d = _a.get("bytes")
             if _d is None:
@@ -1225,27 +1377,66 @@ async def sfs_websocket(websocket: WebSocket):
             try:
                 _frame = msm_protocol.parse_raw_frame(_d)
             except Exception as _err:
+                phase = f"frame decode failed ({type(_err).__name__})"
                 logger.info("bad frame: %s", _err)
                 continue
             if _frame is None or _frame.command == "alive":
                 continue
-            logger.info("IN %s params=%.500r", _frame.command, _frame.params)
+            logger.info("IN %s bytes=%d", _frame.command, len(_d))
+            last_input = ascii(_frame.command[:64])
+            phase = "handling command"
+            if _frame.command in ("keep_alive", "client_keep_alive"):
+                _session["last_keep_alive"] = time.time()
+            else:
+                if _frame.command == "USER_LOGIN":
+                    _session["logged_in"] = True
+                elif _frame.command == "USER_LOGOUT":
+                    _session["logged_out"] = True
+                _recent.append((time.strftime("%H:%M:%S"), _frame.command))
+                del _recent[:-20]
             try:
-                _encoded = await asyncio.to_thread(
-                    _process_frame, _frame.command, _frame.params
+                _encoded = await _run_command_worker(
+                    f"command {str(_frame.command)[:64]!r}",
+                    _process_frame,
+                    _frame.command,
+                    _frame.params,
                 )
             except Exception as _err:
                 logger.exception("%s failed", _frame.command)
                 _encoded = [_safe_error_frame(_frame.command, str(_err))]
             for _name, _raw in _encoded:
+                phase = "sending command reply"
                 await websocket.send_bytes(_raw)
+                last_output = ascii(_name[:64])
+            replied = bool(_encoded)
             if _frame.command == "USER_LOGIN":
-                for _name, _raw in await asyncio.to_thread(_process_bootstrap):
+                phase = "building login bootstrap"
+                bootstrap = await _run_command_worker(
+                    "login bootstrap", _process_bootstrap
+                )
+                for _name, _raw in bootstrap:
+                    phase = "sending login bootstrap"
                     await websocket.send_bytes(_raw)
-    except WebSocketDisconnect:
-        pass
+                    last_output = ascii(_name[:64])
+                replied = replied or bool(bootstrap)
+            if observed_queue is not None:
+                observed_queue.record_result(replied)
+            phase = "waiting for next frame"
+    except WebSocketDisconnect as exc:
+        close_code = exc.code
     except Exception as _f:
+        print(f"[Bridge health] websocket failed: {type(_f).__name__}")
         logger.exception("websocket stopped: %s", _f)
+    finally:
+        if observed_queue is not None:
+            observed_queue.clear_pending()
+        if not _session["logged_out"] and (not _SHUTDOWN_REQUESTED):
+            detail = f"ASGI close={close_code}; {websocket.scope.get('nps_close', 'transport cause unknown')}; phase={phase}; last received={last_input}; last sent={last_output}"
+            print(f"[Bridge health] {detail}")
+            if _session["logged_in"] or close_code != 1000:
+                _record_msm_connection_lost(
+                    _recent, _session["last_keep_alive"], detail
+                )
 
 
 for route in ["/purchases/steam/my_singing_monsters/ProcessInitializedPurchases.php"]:
@@ -1291,65 +1482,127 @@ for route in [
 ]:
     app.add_api_route(route, waf_handler, methods=["GET", "POST", "PUT"])
 app.add_api_route(
-    f"/{FILES_DIR .name }/files.json", files_manifest, methods=["GET", "POST"]
+    f"/{FILES_DIR.name}/files.json", files_manifest, methods=["GET", "HEAD", "POST"]
 )
 app.add_api_route(
-    f"/{FILES_DIR .name }/downloads.xml", downloads_xml, methods=["GET", "POST"]
-)
-app.add_api_route(f"/{FILES_DIR .name }/{{path:path}}", serve_file, methods=["GET"])
-app.add_api_route(
-    PUBLIC_CONTENT_PREFIX.rstrip("/"), files_manifest, methods=["GET", "POST"]
-)
-app.add_api_route(PUBLIC_CONTENT_PREFIX, files_manifest, methods=["GET", "POST"])
-app.add_api_route(
-    f"{PUBLIC_CONTENT_PREFIX }files.json", files_manifest, methods=["GET", "POST"]
+    f"/{FILES_DIR.name}/downloads.xml", downloads_xml, methods=["GET", "HEAD", "POST"]
 )
 app.add_api_route(
-    f"{PUBLIC_CONTENT_PREFIX }downloads.xml", downloads_xml, methods=["GET", "POST"]
+    f"/{FILES_DIR.name}/{{path:path}}", serve_file, methods=["GET", "HEAD"]
 )
-app.add_api_route("/content/files.json", files_manifest, methods=["GET", "POST"])
-app.add_api_route("/content/downloads.xml", downloads_xml, methods=["GET", "POST"])
-app.add_api_route(f"{PUBLIC_CONTENT_PREFIX }{{path:path}}", serve_file, methods=["GET"])
+app.add_api_route(
+    PUBLIC_CONTENT_PREFIX.rstrip("/"), files_manifest, methods=["GET", "HEAD", "POST"]
+)
+app.add_api_route(
+    PUBLIC_CONTENT_PREFIX, files_manifest, methods=["GET", "HEAD", "POST"]
+)
+app.add_api_route(
+    f"{PUBLIC_CONTENT_PREFIX}files.json",
+    files_manifest,
+    methods=["GET", "HEAD", "POST"],
+)
+app.add_api_route(
+    f"{PUBLIC_CONTENT_PREFIX}downloads.xml",
+    downloads_xml,
+    methods=["GET", "HEAD", "POST"],
+)
+app.add_api_route(
+    "/content/files.json", files_manifest, methods=["GET", "HEAD", "POST"]
+)
+app.add_api_route(
+    "/content/downloads.xml", downloads_xml, methods=["GET", "HEAD", "POST"]
+)
+app.add_api_route("/content/{path:path}", serve_file, methods=["GET", "HEAD"])
+app.add_api_route(
+    f"{PUBLIC_CONTENT_PREFIX}{{path:path}}", serve_file, methods=["GET", "HEAD"]
+)
 app.add_api_route("/nps_server_config", nps_server_config, methods=["GET"])
 app.add_api_route("/BlueBox/BlueBox.do", bluebox, methods=["GET", "POST"])
 app.add_api_route("/msm/socket", bluebox, methods=["GET", "POST"])
+app.add_api_route("/msm-crash", msm_crash, methods=["POST"])
 app.add_api_websocket_route("/BlueBox/BlueBox.do", sfs_websocket)
 app.add_api_websocket_route("/msm/socket", sfs_websocket)
 app.add_api_websocket_route("/websocket", sfs_websocket)
 for route in ["/auth/api/email_account", "/auth/api/email_account/"]:
     app.add_api_route(route, email_account_handler, methods=["GET", "POST"])
-
 app.add_api_route("/{path:path}", catch_all, methods=["GET", "POST", "PUT", "DELETE"])
 
 
-async def _serve_with_retry(host, port, log_level, max_attempts=10, delay=1.0):
+class BridgeWebSocketProtocol(WebSocketsSansIOProtocol):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.queue = bridge_watch.ObservedQueue()
+
+    def handle_connect(self, event):
+        super().handle_connect(event)
+        if hasattr(self, "scope"):
+            self.scope["nps_queue"] = self.queue
+
+    def send_receive_event_to_app(self):
+        small = sum(map(len, self.frames)) <= 4096
+        super().send_receive_event_to_app()
+        if (
+            bridge_watch.watch.page is not None
+            and small
+            and self.read_paused
+            and (not self.close_sent)
+            and (self.queue.qsize() < 8)
+        ):
+            self.read_paused = False
+            self.transport.resume_reading()
+
+    def connection_lost(self, exc):
+        sent = self.conn.close_sent
+        if (
+            getattr(self, "scope", None)
+            and sent
+            and (sent.code == 1011)
+            and (sent.reason == "keepalive ping timeout")
+            and (not self.conn.close_rcvd_then_sent)
+        ):
+            self.scope["nps_close"] = "server sent 1011: keepalive ping timeout"
+        super().connection_lost(exc)
+
+
+async def _serve_with_retry(host, port, log_level, max_attempts=10, delay=1.0):
     last_exc = None
     for attempt in range(1, max_attempts + 1):
-        config = uvicorn.Config(app, host=host, port=port, log_level=log_level)
+        if _SHUTDOWN_REQUESTED:
+            return
+        config = uvicorn.Config(
+            bridge_watch.observe_http(app),
+            host=host,
+            port=port,
+            log_level=log_level,
+            ws=BridgeWebSocketProtocol,
+            ws_ping_timeout=90.0,
+        )
         server = uvicorn.Server(config)
         _UVICORN_SERVERS.append(server)
         try:
             await server.serve()
-            if server.started:
+            if _SHUTDOWN_REQUESTED:
                 return
-            last_exc = OSError(f"port {port } failed to bind")
-        except asyncio.CancelledError:
-            return
+            last_exc = RuntimeError(
+                "listener exited" if server.started else "listener never started"
+            )
         except (OSError, SystemExit) as e:
-            last_exc = e
+            last_exc = (
+                e.__context__
+                if isinstance(e, SystemExit) and isinstance(e.__context__, OSError)
+                else e
+            )
         finally:
             if server in _UVICORN_SERVERS:
                 _UVICORN_SERVERS.remove(server)
-        if _SHUTDOWN_REQUESTED or attempt >= max_attempts:
-            raise last_exc
-        logger.warning(
-            "port %s bind failed (attempt %s/%s): %s; retrying",
-            port,
-            attempt,
-            max_attempts,
-            last_exc,
+        if _SHUTDOWN_REQUESTED:
+            return
+        print(
+            f"[Bridge health] port {port} failed (attempt {attempt}/{max_attempts}): {last_exc}"
         )
+        if attempt >= max_attempts:
+            raise RuntimeError(f"port {port} failed: {last_exc}") from last_exc
         await asyncio.sleep(delay)
     if last_exc:
         raise last_exc
@@ -1359,10 +1612,8 @@ async def main():
     global _SHUTDOWN_REQUESTED
     _SHUTDOWN_REQUESTED = False
     _SHUTDOWN_COMPLETE.clear()
-
     SETTINGS.clear()
     SETTINGS.update(config())
-
     import msm_toggles
 
     logger.info(
@@ -1371,27 +1622,26 @@ async def main():
         msm_store.players_dir,
         msm_toggles.is_enabled("functioning_currencies"),
     )
-
     msm_store.clear_db_cache()
+    import msm_quests
+
+    msm_quests.reset_idle_check()
     msm_gamedata.reset_caches()
     mod_api.load_mods(str(MODS_DIR))
     _tasks = []
     _UVICORN_SERVERS.clear()
     host = str(SETTINGS.get("host", "127.0.0.1"))
     log_level = str(SETTINGS.get("log_level", "info")).lower()
-    for _b in SETTINGS.get("http_ports") or [80]:
-        _tasks.append(_serve_with_retry(host, int(_b), log_level))
+    for port in dict.fromkeys(map(int, SETTINGS.get("http_ports") or [80])):
+        _tasks.append(asyncio.create_task(_serve_with_retry(host, port, log_level)))
     watchdog = asyncio.ensure_future(_force_exit_watchdog())
     try:
-
-        results = await asyncio.gather(*_tasks, return_exceptions=True)
-        for _r in results:
-            if isinstance(_r, BaseException) and not isinstance(
-                _r, asyncio.CancelledError
-            ):
-                logger.error("bridge server task failed permanently: %s", _r)
+        await asyncio.gather(*_tasks)
     finally:
+        request_shutdown(wait=False)
+        await asyncio.gather(*_tasks, return_exceptions=True)
         watchdog.cancel()
+        await asyncio.gather(watchdog, return_exceptions=True)
         _UVICORN_SERVERS.clear()
         _SHUTDOWN_COMPLETE.set()
 

@@ -2,13 +2,11 @@ import json
 import logging
 import random
 import time
-
 from msm_playerdata import create_player_properties, load_player, save_player
 from msm_protocol import SFSIntArray, SFSLong
 from msm_store import load_db_json
 
 logger = logging.getLogger("msm.cardalbum")
-
 CARDS_PER_PACK = 3
 CURRENCY_REWARD_TYPES = {
     "COINS": "coins",
@@ -23,7 +21,6 @@ CURRENCY_REWARD_TYPES = {
     "CLUBBOX_TOKENS": "clubbox_tokens",
     "XP": "xp",
 }
-
 _cache = {}
 
 
@@ -39,9 +36,7 @@ def _json_list(value):
 def _cards():
     if "cards" not in _cache:
         data = load_db_json("db_cards") or {}
-        _cache["cards"] = {
-            c["id"]: c for c in (data.get("card_data") or []) if "id" in c
-        }
+        _cache["cards"] = {c["id"]: c for c in data.get("card_data") or [] if "id" in c}
     return _cache["cards"]
 
 
@@ -102,7 +97,6 @@ def _album_entry(player_object, album_id):
     albums = player_object.setdefault("card_albums", [])
     for entry in albums:
         if entry.get("card_album_id") == album_id:
-
             entry.setdefault("data", {}).setdefault("currency", 0)
             return entry
     entry = {"card_album_id": album_id, "data": {"cards": [], "currency": 0}}
@@ -138,7 +132,7 @@ def _grant_cards(player_object, card_ids):
 
 def _current_album_id():
     data = load_db_json("db_card_albums") or {}
-    albums = [a for a in (data.get("card_album_data") or []) if isinstance(a, dict)]
+    albums = [a for a in data.get("card_album_data") or [] if isinstance(a, dict)]
     if not albums:
         return 1
     newest = max(albums, key=lambda a: (a.get("last_changed") or 0, a.get("id") or 0))
@@ -186,7 +180,7 @@ def _grant_packs(player_object, amount, pack_type=1):
     if not defs:
         return
     exponent = 1.0 / pack_type
-    weights = [1.0 / (max(1, c.get("rarity", 1)) ** exponent) for c in defs]
+    weights = [1.0 / max(1, c.get("rarity", 1)) ** exponent for c in defs]
     sticker_count = _STICKERS_PER_PACK.get(pack_type, CARDS_PER_PACK)
     entry = _album_entry(player_object, album_id)
     data = entry.setdefault("data", {})
@@ -269,7 +263,7 @@ def _loot_payload(rewards):
         entry = _loot_entry(reward)
         if entry is not None:
             loot.append(entry)
-    has_costume = any(str(r.get("type", "")).upper() == "COSTUME" for r in rewards)
+    has_costume = any((str(r.get("type", "")).upper() == "COSTUME" for r in rewards))
     return {"updateCostumes": has_costume, "loot": loot}
 
 
@@ -296,7 +290,7 @@ def _grant_currency_rewards(player_object, rewards):
             player_object[key] = (player_object.get(key, 0) or 0) + (
                 reward.get("amount", 0) or 0
             )
-            player_object[f"{key }_actual"] = player_object[key]
+            player_object[f"{key}_actual"] = player_object[key]
         elif reward_type == "PROFILE_ITEM":
             item_id = reward.get("id")
             if item_id is not None:
@@ -324,7 +318,6 @@ def _safe_int(value, default=0):
 def _wire_album(entry):
     wired = dict(entry)
     data = dict(wired.get("data") or {})
-
     album_id = _safe_int(wired.get("card_album_id"))
     cards = data.get("cards")
     cards = cards if isinstance(cards, list) else []
@@ -333,7 +326,6 @@ def _wire_album(entry):
         if first:
             cards = [{"i": first, "n": 1}]
     data["cards"] = cards
-
     owned = {c["i"] for c in cards if isinstance(c, dict) and (c.get("n", 0) or 0) > 0}
     collected = data.get("page_rewards_collected")
     if not isinstance(collected, list):
@@ -344,7 +336,6 @@ def _wire_album(entry):
     data["album_reward_collected"] = bool(data.get("album_reward_collected"))
     data["prestige_level"] = _safe_int(data.get("prestige_level"))
     wired["data"] = data
-
     start = _safe_int(wired.get("event_start_time"))
     if not start:
         start = card_album_window()[0]
@@ -357,8 +348,8 @@ CARD_ALBUM_WINDOW_MS = 8467200000
 
 def card_album_window():
     now = int(time.time() * 1000)
-    start = now - (now % CARD_ALBUM_WINDOW_MS)
-    return start, start + CARD_ALBUM_WINDOW_MS
+    start = now - now % CARD_ALBUM_WINDOW_MS
+    return (start, start + CARD_ALBUM_WINDOW_MS)
 
 
 def _album_event_start(album_id):
@@ -435,12 +426,12 @@ def _page_complete(album_id, page_id, owned_ids):
     for page in _albums().get(album_id) or []:
         if page.get("id") == page_id:
             page_cards = page.get("cards") or []
-            return bool(page_cards) and all(c in owned_ids for c in page_cards)
+            return bool(page_cards) and all((c in owned_ids for c in page_cards))
     return False
 
 
 def _all_page_ids(album_id):
-    return [p["id"] for p in (_albums().get(album_id) or []) if p.get("id") is not None]
+    return [p["id"] for p in _albums().get(album_id) or [] if p.get("id") is not None]
 
 
 def _fill_album_cards(album_id, cards):
@@ -467,7 +458,7 @@ def _first_card_id(album_id):
                 if isinstance(cards, str):
                     cards = json.loads(cards)
                 if cards:
-                    return min(_safe_int(c) for c in cards)
+                    return min((_safe_int(c) for c in cards))
     except Exception:
         logger.exception("could not read the album card list")
     return 0
@@ -489,7 +480,7 @@ def _defined_album_ids():
         data = load_db_json("db_card_albums") or {}
         ids = [
             _safe_int(a.get("id"))
-            for a in (data.get("card_album_data") or [])
+            for a in data.get("card_album_data") or []
             if isinstance(a, dict) and _safe_int(a.get("id"))
         ]
         return sorted(set(ids))
@@ -504,11 +495,9 @@ def card_albums_wire(player_object):
     for entry in player_object.get("card_albums") or []:
         if isinstance(entry, dict):
             existing.setdefault(_safe_int(entry.get("card_album_id")), entry)
-
     defined = _defined_album_ids()
     if not defined:
         return [_wire_album(e) for e in existing.values()]
-
     wired = []
     for album_id in defined:
         entry = existing.get(album_id)
@@ -558,7 +547,6 @@ def buy_card_album_store_item(username, params):
     entry = _album_entry(player_object, album_id)
     data = entry.setdefault("data", {})
     currency = _sync_sticker_star_currency(player_object, album_id)
-
     data["currency"] = max(0, currency - item["cost"])
     player_object["sticker_stars"] = data["currency"]
     player_object["sticker_stars_actual"] = data["currency"]
@@ -618,18 +606,17 @@ def _collect(
         pages = [p for p in pages if p["id"] == page_id]
     if not pages:
         return {"success": False}
-
     entry = _album_entry(player_object, album_id)
     data = entry.setdefault("data", {})
     already = (
         bool(data.get("album_reward_collected"))
         if whole_album
-        else (pages[0]["id"] in (data.get("page_rewards_collected") or []))
+        else pages[0]["id"] in (data.get("page_rewards_collected") or [])
     )
     data.pop("collected_pages", None)
     data.pop("collected_album", None)
     owned = _owned_card_ids(player_object, album_id)
-    complete = all(card_id in owned for page in pages for card_id in page["cards"])
+    complete = all((card_id in owned for page in pages for card_id in page["cards"]))
     if already or not complete:
         save_player(username, root)
         return [
@@ -649,7 +636,6 @@ def _collect(
                 {"properties": _card_albums_properties(player_object)},
             ),
         ]
-
     if whole_album:
         data["album_reward_collected"] = True
     else:

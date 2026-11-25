@@ -113,9 +113,9 @@ def current_tunable_genes():
         }
     )
     if not genes:
-        return [], 0, 0
+        return ([], 0, 0)
     now = int(time.time() * 1000)
-    return genes, now, _TUNE_UP_ROTATION_MS
+    return (genes, now, _TUNE_UP_ROTATION_MS)
 
 
 def _build_monster_defs():
@@ -133,7 +133,7 @@ def _load_db_chunk_chain(name):
     if data is not None:
         yield data
     for i in range(2, 10):
-        data = load_db_json(f"{name }_{i }")
+        data = load_db_json(f"{name}_{i}")
         if data is None:
             break
         yield data
@@ -160,10 +160,31 @@ def get_costume_id_for_monster(monster_id):
                 if (
                     mid is not None
                     and cid is not None
-                    and mid not in _costume_by_monster_cache
+                    and (mid not in _costume_by_monster_cache)
                 ):
                     _costume_by_monster_cache[mid] = cid
     return _costume_by_monster_cache.get(monster_id)
+
+
+_weighted_costumes_by_monster_cache = None
+
+
+def get_weighted_costumes_for_monster(monster_id):
+    global _weighted_costumes_by_monster_cache
+    if _weighted_costumes_by_monster_cache is None:
+        by_monster = {}
+        for data in _load_db_chunk_chain("db_costumes"):
+            for entry in data.get("costume_data") or []:
+                mid = entry.get("monster_id")
+                cid = entry.get("id")
+                if mid is None or cid is None:
+                    continue
+                weight = max(
+                    0.0, _decode_db_number(entry.get("breed_chance"), 0.0) or 0.0
+                )
+                by_monster.setdefault(mid, []).append((cid, weight))
+        _weighted_costumes_by_monster_cache = by_monster
+    return _weighted_costumes_by_monster_cache.get(monster_id) or []
 
 
 _costume_defs_cache = None
@@ -185,7 +206,6 @@ _monster_entity_id_index_cache = None
 
 
 def get_monster_id_for_entity_id(entity_id):
-
     global _monster_entity_id_index_cache
     if _monster_entity_id_index_cache is None:
         _monster_entity_id_index_cache = {
@@ -194,6 +214,24 @@ def get_monster_id_for_entity_id(entity_id):
             if entry.get("entity_id") is not None
         }
     return _monster_entity_id_index_cache.get(entity_id, 0)
+
+
+_dipster_entity_ids_cache = None
+
+
+def get_dipster_entity_ids():
+    global _dipster_entity_ids_cache
+    if _dipster_entity_ids_cache is None:
+        _dipster_entity_ids_cache = sorted(
+            (
+                entry.get("entity_id")
+                for entry in _all_monster_defs().values()
+                if "DIPSTER"
+                in str(entry.get("class") or entry.get("fam") or "").upper()
+                and entry.get("entity_id") is not None
+            )
+        )
+    return _dipster_entity_ids_cache
 
 
 _monster_genes_index_cache = None
@@ -221,8 +259,7 @@ def _all_monster_defs():
 def reset_caches(db_name=None):
     global _structure_defs_cache, _monster_defs_cache, _gene_instability_cache
     global _monster_entity_id_index_cache, _battle_campaign_defs_cache, _island_book_cache
-    global _monster_genes_index_cache, _canonical_monster_id_cache
-
+    global _monster_genes_index_cache, _canonical_monster_id_cache, _dipster_entity_ids_cache
     global _island_catalog_cache, _scratch_payload_cache, _ethereal_islet_defs_cache
     global _breeding_data_cache, _bakery_defs_cache, _island_theme_defs_cache
     global _user_game_settings_cache, _paironormal_starpower_rates_cache
@@ -234,6 +271,7 @@ def reset_caches(db_name=None):
         _monster_genes_index_cache = None
         _island_book_cache = None
         _canonical_monster_id_cache = None
+        _dipster_entity_ids_cache = None
     if not name or name.startswith("db_costume"):
         _costume_by_monster_cache = None
         _costume_defs_cache = None
@@ -378,7 +416,7 @@ def _build_canonical_monster_ids():
         plain_id = None
         for monster_id, common_name in entries:
             if not any(
-                common_name.endswith(suffix) for suffix in _REGIONAL_VARIANT_SUFFIXES
+                (common_name.endswith(suffix) for suffix in _REGIONAL_VARIANT_SUFFIXES)
             ):
                 plain_id = monster_id
                 break
@@ -386,7 +424,7 @@ def _build_canonical_monster_ids():
             continue
         for monster_id, common_name in entries:
             if any(
-                common_name.endswith(suffix) for suffix in _REGIONAL_VARIANT_SUFFIXES
+                (common_name.endswith(suffix) for suffix in _REGIONAL_VARIANT_SUFFIXES)
             ):
                 canonical[monster_id] = plain_id
     return canonical
@@ -409,7 +447,7 @@ def is_paironormal_multimodal(definition):
     name = definition.get("name") or ""
     common_name = definition.get("common_name") or ""
     class_name = definition.get("class") or ""
-    combined = f"{name } {common_name } {class_name }".lower()
+    combined = f"{name} {common_name} {class_name}".lower()
     if "titansoul" in combined:
         return False
     graphic = definition.get("graphic") or {}
@@ -420,20 +458,20 @@ def is_paironormal_multimodal(definition):
 
 def _paironormal_sibling_ids(definition):
     if not definition:
-        return None, None, None
+        return (None, None, None)
     extra = definition.get("extra") or {}
     modes = extra.get("modes")
     if isinstance(modes, list) and len(modes) >= 2:
-        major_id, minor_id = int(modes[0]), int(modes[1])
-        return None, major_id, minor_id
+        major_id, minor_id = (int(modes[0]), int(modes[1]))
+        return (None, major_id, minor_id)
     major_id = extra.get("major")
     minor_id = extra.get("minor")
     monster_id = definition.get("monster_id")
     if major_id:
-        return monster_id, int(major_id), None
+        return (monster_id, int(major_id), None)
     if minor_id:
-        return monster_id, None, int(minor_id)
-    return None, None, None
+        return (monster_id, None, int(minor_id))
+    return (None, None, None)
 
 
 def resolve_paironormal_stored_monster_id(monster_id, island_type_id):
@@ -444,7 +482,6 @@ def resolve_paironormal_stored_monster_id(monster_id, island_type_id):
         return monster_id
     if is_paironormal_multimodal(definition):
         return monster_id
-
     for candidate_id, candidate in _all_monster_defs().items():
         if not is_paironormal_multimodal(candidate):
             continue
@@ -476,7 +513,6 @@ def resolve_paironormal_renderable_monster_id(monster_id, island_type_id, island
         return stored_id
     want_major = island_mode == 0
     if not is_paironormal_multimodal(definition):
-
         self_id, major_id, minor_id = _paironormal_sibling_ids(definition)
         if want_major:
             return major_id or stored_id
@@ -486,12 +522,11 @@ def resolve_paironormal_renderable_monster_id(monster_id, island_type_id, island
 
 
 def _paironormal_starpower_owed(level, last_collection, now):
-
     rate_table = _paironormal_starpower_rates()
     row = rate_table[0] if rate_table else [1.0]
     multiplier = row[min(len(row) - 1, max(0, level - 1))] if row else 1.0
     elapsed_seconds = max(0, (now - last_collection) // 1000) if last_collection else 0
-    return min(9999.0, (elapsed_seconds / 60.0) * float(multiplier))
+    return min(9999.0, elapsed_seconds / 60.0 * float(multiplier))
 
 
 def _uid_of(record):
@@ -557,7 +592,6 @@ def repair_duplicate_monster_ids(player_object):
 def _paironormal_mode_entry(
     form_id, mode_value, is_active, unique_id, now, base_monster=None
 ):
-
     base = base_monster or {}
     level = max(1, base.get("level", 1) or 1)
     last_collection = base.get("last_collection", now) or now
@@ -604,11 +638,10 @@ def _paironormal_mode_unique_ids(monster):
     existing["major"] = major_uid
     existing["minor"] = minor_uid
     monster["paironormal_mode_user_ids"] = existing
-    return major_uid, minor_uid
+    return (major_uid, minor_uid)
 
 
 def build_paironormal_modes(monster, island_type_id, island_mode, player_object=None):
-
     source_id = monster.get("monster", 0)
     stored_id = resolve_paironormal_stored_monster_id(source_id, island_type_id)
     render_id = resolve_paironormal_renderable_monster_id(
@@ -619,32 +652,39 @@ def build_paironormal_modes(monster, island_type_id, island_mode, player_object=
     stored_definition = get_monster_definition(stored_id)
     if not stored_definition or not is_paironormal_multimodal(stored_definition):
         return
+    if not monster_allowed_on_island(stored_definition, island_type_id):
+        return
     major_id = find_paironormal_form_id(stored_id, island_type_id, True)
     minor_id = find_paironormal_form_id(stored_id, island_type_id, False)
     now = int(time.time() * 1000)
     base_uid = int(monster.get("user_monster_id", 0) or 0)
     existing_modes = monster.get("modes")
     if isinstance(existing_modes, list) and existing_modes:
-
         has_major = any(
-            isinstance(e, dict) and e.get("monster") == major_id for e in existing_modes
+            (
+                isinstance(e, dict) and e.get("monster") == major_id
+                for e in existing_modes
+            )
         )
         has_minor = any(
-            isinstance(e, dict) and e.get("monster") == minor_id for e in existing_modes
+            (
+                isinstance(e, dict) and e.get("monster") == minor_id
+                for e in existing_modes
+            )
         )
         placeholder_idx = next(
             (
                 i
                 for i, e in enumerate(existing_modes)
-                if isinstance(e, dict) and not e.get("monster")
+                if isinstance(e, dict) and (not e.get("monster"))
             ),
             None,
         )
         if placeholder_idx is not None:
             missing_id = None
-            if has_major and not has_minor and minor_id and minor_id > 0:
+            if has_major and (not has_minor) and minor_id and (minor_id > 0):
                 missing_id = minor_id
-            elif has_minor and not has_major and major_id and major_id > 0:
+            elif has_minor and (not has_major) and major_id and (major_id > 0):
                 missing_id = major_id
             if missing_id:
                 if player_object is not None:
@@ -666,14 +706,12 @@ def build_paironormal_modes(monster, island_type_id, island_mode, player_object=
                     monster["modes"] = existing_modes
                     return new_entry
         return None
-
     if render_id <= 0:
         return
     monster["monster"] = stored_id
     known_id = major_id if render_id == major_id else minor_id
     if not known_id or known_id <= 0 or base_uid <= 0:
         return
-
     previous_modes = monster.get("modes")
     previous_uids = [
         _uid_of(e) if isinstance(e, dict) else 0
@@ -702,7 +740,7 @@ def build_paironormal_modes(monster, island_type_id, island_mode, player_object=
         and previous_modes[0].get("a")
     )
     placing_minor = bool(minor_id and render_id == minor_id)
-    if major_id and major_id > 0 and minor_id and minor_id > 0:
+    if major_id and major_id > 0 and minor_id and (minor_id > 0):
         major_entry = _paironormal_mode_entry(
             major_id, 0, major_owned or not placing_minor, slot0_uid, now, monster
         )
@@ -766,13 +804,13 @@ def _infer_monster_collection_type(existing_type, island_type, level_def):
         return "starpower"
     if island_type == 25:
         return "egg_wildcards"
-    if island_type in (7, 24, 26, 27, 28, 29):
+    if island_type in (7, 19, 24, 26, 27, 28, 29):
         return "ethereal_currency"
     max_coins = max(0, (level_def or {}).get("max_coins", 0) or 0)
     max_ethereal = max(0, (level_def or {}).get("max_ethereal", 0) or 0)
     max_relics = max(0, _decode_db_number((level_def or {}).get("max_relics"), 0) or 0)
     if island_type == AMBER_ISLAND_TYPE or (
-        max_coins <= 0 and max_ethereal <= 0 and max_relics > 0
+        max_coins <= 0 and max_ethereal <= 0 and (max_relics > 0)
     ):
         return "relics"
     if max_coins <= 0 and max_ethereal > 0:
@@ -806,7 +844,7 @@ _CELESTIAL_YOUNG_WEIGHTS = [
     ("coins", 33.96),
     ("food", 33.08),
     ("ethereal_currency", 28.67),
-    ("diamonds", 4.30),
+    ("diamonds", 4.3),
 ]
 _CELESTIAL_ADULT_WEIGHTS = [
     ("coins", 30.93),
@@ -824,7 +862,7 @@ def _rare_monster_ids():
         data = load_db_json("gs_rare_monster_data") or {}
         _rare_monster_id_set_cache = {
             entry.get("rare_id")
-            for entry in (data.get("rare_monster_data") or [])
+            for entry in data.get("rare_monster_data") or []
             if entry.get("rare_id")
         }
     return _rare_monster_id_set_cache
@@ -839,7 +877,7 @@ def _epic_monster_ids():
         data = load_db_json("gs_epic_monster_data") or {}
         _epic_monster_id_set_cache = {
             entry.get("epic_id")
-            for entry in (data.get("epic_monster_data") or [])
+            for entry in data.get("epic_monster_data") or []
             if entry.get("epic_id")
         }
     return _epic_monster_id_set_cache
@@ -877,7 +915,7 @@ def _is_dormant_box_monster(monster, definition):
 
 
 def _roll_monster_production(monster_id, definition, island_type):
-    duration_hours = random.uniform(6.0, 12.0)
+    duration_hours = 12.0
     duration_min = max(1, int(round(duration_hours * 60)))
     if island_type == CELESTIAL_ISLAND_TYPE:
         tier = "adult" if _is_adult_celestial(definition) else "young"
@@ -912,21 +950,21 @@ def _production_economy(monster, monster_id, definition, island_type):
     amount = max(1, int(production.get("amount", 1) or 1))
     duration_min = max(1, int(production.get("duration_min", 360) or 360))
     income_rate = max(1, -(-amount // duration_min))
-    return currency, amount, income_rate
+    return (currency, amount, income_rate)
 
 
 def compute_monster_economy(monster, island_type):
     monster_id = monster.get("monster", 0)
     if not monster_id:
-        return "coins", 225, 5
+        return ("coins", 225, 5)
     if island_type in (WUBLIN_ISLAND_TYPE, CELESTIAL_ISLAND_TYPE):
         definition = get_monster_definition(monster_id)
-        if definition and not _is_dormant_box_monster(monster, definition):
+        if definition and (not _is_dormant_box_monster(monster, definition)):
             return _production_economy(monster, monster_id, definition, island_type)
     level = max(1, monster.get("level", 1) or 1)
     level_def = get_monster_level_definition(monster_id, level)
-    max_coins, income_rate, max_ethereal, ethereal_rate = 225, 5, 0, 0
-    max_relics, relics_rate = 0, 0
+    max_coins, income_rate, max_ethereal, ethereal_rate = (225, 5, 0, 0)
+    max_relics, relics_rate = (0, 0)
     if level_def:
         max_coins = max(0, level_def.get("max_coins", max_coins) or max_coins)
         income_rate = max(0, level_def.get("coins", income_rate) or income_rate)
@@ -934,18 +972,32 @@ def compute_monster_economy(monster, island_type):
         ethereal_rate = max(0, level_def.get("ethereal_currency", 0) or 0)
         max_relics = max(0, _decode_db_number(level_def.get("max_relics"), 0) or 0)
         relics_rate = max(0, _decode_db_number(level_def.get("relics"), 0) or 0)
+    happiness_mult = (
+        1.0 + max(0, min(100, int(monster.get("happiness", 0) or 0))) / 100.0
+    )
+    income_rate *= happiness_mult
+    ethereal_rate *= happiness_mult
+    relics_rate *= happiness_mult
     collection_type = _infer_monster_collection_type("", island_type, level_def)
     if collection_type == "relics":
-        return "relics", max(1, int(round(max_relics))), max(1, int(round(relics_rate)))
+        return (
+            "relics",
+            max(1, int(round(max_relics))),
+            max(1, int(round(relics_rate))),
+        )
     if collection_type == "ethereal_currency":
-        return "ethereal_currency", max(1, max_ethereal), max(1, ethereal_rate)
+        return (
+            "ethereal_currency",
+            max(1, max_ethereal),
+            max(1, int(round(ethereal_rate))),
+        )
     if collection_type == "starpower":
         rate_table = _paironormal_starpower_rates()
         row = rate_table[0] if rate_table else [1.0]
         multiplier = row[min(len(row) - 1, max(0, level - 1))]
         starpower_rate = max(1, int(round(multiplier)))
-        return "starpower", max(1, max_coins), starpower_rate
-    return collection_type, max(1, max_coins), max(1, income_rate)
+        return ("starpower", max(1, max_coins), starpower_rate)
+    return (collection_type, max(1, max_coins), max(1, int(round(income_rate))))
 
 
 _user_game_settings_cache = None
@@ -1020,7 +1072,7 @@ def _parse_allowed_islands(raw):
     if not raw:
         return set()
     try:
-        return set(int(x) for x in raw.strip("[] ").split(",") if x.strip() != "")
+        return set((int(x) for x in raw.strip("[] ").split(",") if x.strip() != ""))
     except ValueError:
         return set()
 
@@ -1204,7 +1256,7 @@ def _breeding_boost_multiplier():
             etype = str(event.get("event_type", "")).lower()
             start = int(event.get("start_date", 0) or 0)
             end = int(event.get("end_date", 0) or 0)
-            if not (start <= now <= end):
+            if not start <= now <= end:
                 continue
             if etype == "breedingchanceboost":
                 entries = event.get("data") or []
@@ -1227,7 +1279,7 @@ def _breedable_rare_for_common(common_id):
         data = load_db_json("gs_rare_monster_data") or {}
         _breedable_rares_cache = {
             entry.get("common_id"): entry.get("rare_id")
-            for entry in (data.get("rare_monster_data") or [])
+            for entry in data.get("rare_monster_data") or []
             if entry.get("can_rarify")
             and entry.get("common_id")
             and entry.get("rare_id")
@@ -1241,7 +1293,7 @@ def _epic_for_common(common_id):
         data = load_db_json("gs_epic_monster_data") or {}
         _epics_cache = {
             entry.get("common_id"): entry.get("epic_id")
-            for entry in (data.get("epic_monster_data") or [])
+            for entry in data.get("epic_monster_data") or []
             if entry.get("common_id") and entry.get("epic_id")
         }
     return _epics_cache.get(common_id)
@@ -1256,7 +1308,7 @@ def common_id_for_rare(rare_id):
         data = load_db_json("gs_rare_monster_data") or {}
         _common_for_rare_cache = {
             entry.get("rare_id"): entry.get("common_id")
-            for entry in (data.get("rare_monster_data") or [])
+            for entry in data.get("rare_monster_data") or []
             if entry.get("can_rarify")
             and entry.get("common_id")
             and entry.get("rare_id")
@@ -1289,7 +1341,7 @@ def _apply_breeding_luck(result_id):
         choices.append((rare_id, rare))
     if epic_id:
         choices.append((epic_id, epic))
-    total = sum(weight for _mid, weight in choices)
+    total = sum((weight for _mid, weight in choices))
     if total <= 0:
         return result_id
     roll = random.randrange(total)
@@ -1303,11 +1355,11 @@ def _apply_breeding_luck(result_id):
 def _breeding_result_candidates(monster_a, monster_b):
     rows = []
     boost = _breeding_boost_multiplier()
-    boost_factor = 1 + (boost / 100.0) * 24
+    boost_factor = 1 + boost / 100.0 * 24
     for row in _breeding_data():
-        a, b = row.get("a", 0), row.get("b", 0)
+        a, b = (row.get("a", 0), row.get("b", 0))
         if not (
-            (a == monster_a and b == monster_b) or (a == monster_b and b == monster_a)
+            a == monster_a and b == monster_b or (a == monster_b and b == monster_a)
         ):
             continue
         result_id = row.get("c", 0)
@@ -1323,7 +1375,7 @@ def _breeding_result_candidates(monster_a, monster_b):
 
 
 def _choose_weighted(weighted):
-    total = sum(max(0, weight) for _monster_id, weight in weighted)
+    total = sum((max(0, weight) for _monster_id, weight in weighted))
     if total <= 0:
         return None
     roll = random.random() * total

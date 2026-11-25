@@ -6,11 +6,7 @@ import urllib.request
 
 AUTH_BASE = "https://auth.bbbgame.net/auth/api/"
 GAME_BASE = "https://dof.bbbgame.net/crap-app/"
-
-UA_WEB = (
-    "Mozilla/5.0 (Linux; Android 9; V2241A Build/PQ3A.190605.06171433; wv) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/124.0.6367.82 Safari/537.36"
-)
+UA_WEB = "Mozilla/5.0 (Linux; Android 9; V2241A Build/PQ3A.190605.06171433; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/124.0.6367.82 Safari/537.36"
 UA_UNITY = "UnityPlayer/6000.3.9f1 (UnityWebRequest/1.0, libcurl/8.10.1-DEV)"
 
 
@@ -52,7 +48,6 @@ def _post_data_json(url, obj, bearer, timeout=15):
 def export_save_json(email: str, password: str) -> str:
     if not email or not password:
         raise DofExportError("Email and password are required.")
-
     login = _post_form(
         AUTH_BASE + "token",
         {
@@ -73,12 +68,11 @@ def export_save_json(email: str, password: str) -> str:
             "gpg_version": "2",
         },
     )
-    if not login.get("ok", True) is True and not login.get("access_token"):
+    if not login.get("ok", True) is True and (not login.get("access_token")):
         raise DofExportError("Login failed - check the email and password.")
     access_token = login.get("access_token")
     if not access_token:
         raise DofExportError("Server did not return an access token.")
-
     bbb_device_id = secrets.token_hex(16)
     login_resp = _post_data_json(
         GAME_BASE + "msm2auth",
@@ -101,10 +95,8 @@ def export_save_json(email: str, password: str) -> str:
         },
         bearer=access_token,
     )
-
     entries = login_resp if isinstance(login_resp, list) else []
     sync_entry = next((e for e in entries if e.get("type") == 16), None)
     if sync_entry is None or "sync_data" not in sync_entry:
         raise DofExportError("Login succeeded but no save data was returned.")
-
     return json.dumps(sync_entry["sync_data"])

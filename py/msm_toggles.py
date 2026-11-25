@@ -6,7 +6,7 @@ from pathlib import Path
 _DEFAULTS = {
     "level20_spawns": False,
     "monster_spawn_level": 20,
-    "instant_timers": False,
+    "instant_timers": True,
     "wubbox_auto_awaken": False,
     "premium_account": True,
     "unlock_all_bakery_foods": False,
@@ -18,6 +18,13 @@ _DEFAULTS = {
     "breeding_rate_normal": 100,
     "breeding_rate_rare": 0,
     "breeding_rate_epic": 0,
+    "harmonization_luck": False,
+    "harmonization_rate_common": 100,
+    "harmonization_rate_rare": 0,
+    "harmonization_rate_single": 100,
+    "harmonization_rate_double": 0,
+    "harmonization_rate_triple": 0,
+    "harmonization_rate_quad": 0,
     "minigame_theme": "anniversary",
     "clubbox_enabled": True,
     "clubbox_hours_enabled": False,
@@ -27,6 +34,7 @@ _DEFAULTS = {
     "dipster_dig_hours_enabled": False,
     "dipster_dig_start_hour": 0,
     "dipster_dig_end_hour": 24,
+    "dipster_dig_bypass_market_lock": True,
 }
 
 

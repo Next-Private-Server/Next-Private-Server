@@ -1,5 +1,4 @@
 import struct
-
 from msm_gamedata import get_structure_definition
 from msm_protocol import SFSFloat, SFSLong
 from msm_store import load_db_json, load_user_data, save_user_data
@@ -8,7 +7,6 @@ _level_thresholds_cache = None
 
 
 def _level_thresholds():
-
     global _level_thresholds_cache
     if _level_thresholds_cache is None:
         data = load_db_json("db_level") or {}
@@ -44,7 +42,6 @@ def recalculate_level(player_object):
         xp = 0
     computed = level_for_xp(xp)
     current = player_object.get("level", 0) or 0
-
     if computed != current:
         player_object["level"] = computed
 
@@ -91,7 +88,6 @@ _WIRE_FLOAT_KEYS = {"scale", "volume", "warp_speed"}
 
 
 def _decode_wire_bits(value):
-
     if not isinstance(value, dict) or len(value) != 1:
         return None
     hex_bits = value.get("__double_bits")
@@ -128,7 +124,6 @@ def coerce_wire_types(value):
         decoded = _decode_wire_bits(value)
         if decoded is not None:
             return decoded
-
         crucible = _is_crucible_dict(value)
         coerced = {}
         for key, sub in value.items():
@@ -137,20 +132,20 @@ def coerce_wire_types(value):
             elif (
                 key in _WIRE_LONG_KEYS
                 and isinstance(sub, int)
-                and not isinstance(sub, bool)
+                and (not isinstance(sub, bool))
             ):
                 coerced[key] = SFSLong(sub)
             elif (
                 key == "scale"
                 and crucible
                 and isinstance(sub, (int, float))
-                and not isinstance(sub, bool)
+                and (not isinstance(sub, bool))
             ):
                 coerced[key] = float(sub)
             elif (
                 key in _WIRE_FLOAT_KEYS
                 and isinstance(sub, (int, float))
-                and not isinstance(sub, bool)
+                and (not isinstance(sub, bool))
             ):
                 coerced[key] = float(sub)
             else:
@@ -179,7 +174,6 @@ PROPERTY_ALIASES = [
 
 
 def diamond_speedup_cost(remaining_ms):
-
     if remaining_ms <= 0:
         return 1
     import math
@@ -196,7 +190,6 @@ def _clamp_i32(value):
 
 
 def _currency_value(value):
-
     try:
         return int(value)
     except (TypeError, ValueError, OverflowError):
@@ -205,7 +198,7 @@ def _currency_value(value):
 
 def load_player(username):
     root = load_user_data(username)
-    return root, root.get("player_object") or {}
+    return (root, root.get("player_object") or {})
 
 
 def save_player(username, root):
@@ -274,20 +267,20 @@ def find_island_by_structure(player_object, structure_id):
     for island in player_object.get("islands") or []:
         structure = find_structure(island, structure_id)
         if structure is not None:
-            return island, structure
-    return None, None
+            return (island, structure)
+    return (None, None)
 
 
 def find_monster_with_island(player_object, monster_id, preferred_island=None):
     if preferred_island is not None:
         monster = find_monster(preferred_island, monster_id)
         if monster is not None:
-            return preferred_island, monster
+            return (preferred_island, monster)
     for island in player_object.get("islands") or []:
         monster = find_monster(island, monster_id)
         if monster is not None:
-            return island, monster
-    return None, None
+            return (island, monster)
+    return (None, None)
 
 
 _DAILY_RESET_HOUR_UTC = 15
@@ -298,7 +291,7 @@ def next_daily_reset_timestamp(now_ms=None):
 
     now_ms = now_ms if now_ms is not None else int(_time.time() * 1000)
     day_ms = 86400000
-    today_start = (now_ms // day_ms) * day_ms
+    today_start = now_ms // day_ms * day_ms
     reset = today_start + _DAILY_RESET_HOUR_UTC * 3600000
     if reset <= now_ms:
         reset += day_ms
@@ -326,7 +319,6 @@ def create_player_properties(player_object):
             )
         }
     )
-
     properties.append(
         {"reward_day": _clamp_i32(player_object.get("reward_day", 0) or 0)}
     )
@@ -381,7 +373,6 @@ def create_player_properties(player_object):
         properties.append(
             {"currency_level_scale": player_object.get("currency_level_scale")}
         )
-
     if "encore_points" in player_object:
         properties.append(
             {"encore_points": SFSFloat(player_object.get("encore_points", 0.0) or 0.0)}

@@ -3,6 +3,8 @@ import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+
 sys.path.insert(0, HERE)
 os.environ.setdefault("NPS_BASE_DIR", HERE)
 
@@ -17,6 +19,7 @@ async def _nps_health():
 
 bridge_core.app.add_api_route("/nps_health", _nps_health, methods=["GET"])
 bridge_core.app.router.routes.insert(0, bridge_core.app.router.routes.pop())
+
 
 _inner_build_raw_frame = msm_protocol.build_raw_frame
 

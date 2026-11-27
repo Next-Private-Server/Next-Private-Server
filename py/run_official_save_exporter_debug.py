@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from pathlib import Path
 import runpy
 import sys
@@ -10,7 +11,8 @@ def find_repo_root(start: Path) -> Path:
         if debug_script.exists():
             return folder
     raise FileNotFoundError(
-        "Could not find tools/debug_official_save_exporter.py above this file. Run this from inside the Launcher repo."
+        "Could not find tools/debug_official_save_exporter.py above this file. "
+        "Run this from inside the Launcher repo."
     )
 
 

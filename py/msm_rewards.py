@@ -25,7 +25,7 @@ logger = logging.getLogger("msm.rewards")
 def _weighted_pick(prizes):
     if not prizes:
         return None
-    total = sum((max(0, p.get("probability", 0) or 0) for p in prizes))
+    total = sum(max(0, p.get("probability", 0) or 0) for p in prizes)
     if total <= 0:
         return random.choice(prizes)
     roll = random.uniform(0, total)
@@ -93,6 +93,7 @@ def _scratch_available(player_object, request_type):
 
 
 def _has_pending_scratch_egg(player_object):
+
     for island in player_object.get("islands") or []:
         if island is None:
             continue
@@ -116,6 +117,7 @@ _SCRATCH_PRICE_SETTING = {
 def play_scratch_off(username, params):
     request_type = str(params.get("type") or "M").upper()
     root, player_object = load_player(username)
+
     is_purchase = params.get("requestFree") is False
     if is_purchase:
         from msm_gamedata import get_user_game_setting_int
@@ -128,6 +130,7 @@ def play_scratch_off(username, params):
             if diamonds < price:
                 return {"success": False}
             player_object["diamonds"] = diamonds - price
+
     prizes = (
         get_spin_wheel_prizes()
         if request_type == "S"
@@ -152,6 +155,7 @@ def play_scratch_off(username, params):
     if request_type != "M":
         result["scaled_prizes"] = _scaled_prizes_payload(prizes)
     if is_purchase:
+
         full_properties = {
             list(p.keys())[0]: p for p in create_player_properties(player_object)
         }
@@ -163,6 +167,7 @@ def play_scratch_off(username, params):
                 {"properties": [diamonds_property] if diamonds_property else []},
             ),
         ]
+
     return result
 
 
@@ -181,6 +186,7 @@ def collect_scratch_off(username, params):
     request_type = str(ticket.get("type") or request_type).upper()
     prize_type = ticket.get("prize", "coins")
     amount = int(ticket.get("amount", 0) or 0)
+
     rare = False
     epic = False
     if prize_type != "monster":
@@ -195,6 +201,7 @@ def collect_scratch_off(username, params):
         rare = won_common_name.startswith("Rare ")
         epic = won_common_name.startswith("Epic ")
         active_island = find_island(player_object, get_active_island_id(player_object))
+
         island = None
         if definition and requires_direct_placement(
             definition, island_type_of(active_island) if active_island else 0
@@ -209,13 +216,14 @@ def collect_scratch_off(username, params):
                     candidates.append(isl)
             for isl in candidates:
                 itype = island_type_of(isl)
-                if definition and (not monster_allowed_on_island(definition, itype)):
+                if definition and not monster_allowed_on_island(definition, itype):
                     continue
                 if _find_nursery(isl, 0) is not None:
                     island = isl
                     break
         user_egg = None
         if island is not None:
+
             user_egg, _nursery = place_egg(
                 player_object, island, amount, "scratch_off", ready=True
             )
@@ -244,7 +252,8 @@ def collect_scratch_off(username, params):
         if user_egg is not None:
             ticket["user_egg"] = user_egg
         else:
-            player_object[f"_pending_scratch_ticket_{request_type}"] = ticket
+
+            player_object[f"_pending_scratch_ticket_{request_type }"] = ticket
     save_player(username, root)
     properties = create_player_properties(player_object)
     now = SFSLong(int(player_object.get(_scratch_time_key(request_type), 0) or 0))
@@ -262,6 +271,7 @@ def collect_scratch_off(username, params):
         result["user_egg"] = won_egg
     frames = [("gs_collect_scratch_off", result)]
     if won_egg is not None:
+
         frames.append(
             (
                 "gs_buy_egg",
@@ -300,7 +310,7 @@ def get_prize_wheel(username, params):
 def spin_prize_wheel(username, params):
     root, player_object = load_player(username)
     pending = player_object.get("_pending_prize_wheel_ticket")
-    if isinstance(pending, dict) and (not pending.get("consumed")):
+    if isinstance(pending, dict) and not pending.get("consumed"):
         return {
             "success": False,
             "available": False,
@@ -359,6 +369,7 @@ def _flip_prize_pool():
 
 
 def _add_currency(player_object, prize_type, amount):
+
     key = {
         "food": "food",
         "diamonds": "diamonds",
@@ -374,9 +385,9 @@ def _add_currency(player_object, prize_type, amount):
         "coins": "coins",
     }.get(prize_type, "coins")
     if amount <= 0:
-        return (key, 0)
+        return key, 0
     player_object[key] = (player_object.get(key, 0) or 0) + amount
-    return (key, amount)
+    return key, amount
 
 
 def _flip_level(player_object):
@@ -423,6 +434,7 @@ def purchase_flip_mini_game(username, params):
         "type": prize.get("prize", "coins"),
     }
     scaled = [{"level": i} for i in range(1, _FLIP_LEVEL_COUNT + 1)]
+
     player_object["_pending_flip_prize"] = reward
     player_object["flip_level"] = 1
     save_player(username, root)

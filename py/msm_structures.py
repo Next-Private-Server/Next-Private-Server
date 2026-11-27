@@ -106,7 +106,7 @@ def _locate(player_object, structure_id):
     structure = find_structure(island, structure_id)
     if structure is None:
         island, structure = find_island_by_structure(player_object, structure_id)
-    return (island, structure)
+    return island, structure
 
 
 def _structure_update(structure, mode="full"):
@@ -254,7 +254,7 @@ def move_structure(username, params):
     result["properties"] = create_player_properties(player_object)
     result["monster_happy_effects"] = happy_effects
     add_actual_currencies(result, player_object)
-    return (result, _structure_update(structure, "move"))
+    return result, _structure_update(structure, "move")
 
 
 def flip_structure(username, params):
@@ -274,7 +274,7 @@ def flip_structure(username, params):
     save_player(username, root)
     result = action_result(True, "user_structure_id", structure_id)
     result["properties"] = create_player_properties(player_object)
-    return (result, _structure_update(structure, "flip"))
+    return result, _structure_update(structure, "flip")
 
 
 def sell_structure(username, params):
@@ -283,6 +283,7 @@ def sell_structure(username, params):
     island = find_island(player_object, get_active_island_id(player_object))
     if island is not None:
         structures = island.get("structures") or []
+
         if msm_toggles.is_enabled("functioning_currencies"):
             sold_structure = next(
                 (
@@ -294,6 +295,7 @@ def sell_structure(username, params):
             )
             if sold_structure is not None:
                 book_value = sold_structure.get("book_value") or 0
+
                 refund = int(
                     book_value
                     * (
@@ -314,6 +316,7 @@ def sell_structure(username, params):
             ):
                 del structures[i]
                 break
+
         eggs = island.get("eggs")
         if eggs:
             island["eggs"] = [
@@ -429,7 +432,7 @@ def start_obstacle(username, params):
     result["user_structure"] = _obstacle_user_structure_snapshot(structure)
     result["properties"] = create_player_properties(player_object)
     add_actual_currencies(result, player_object)
-    return (result, {})
+    return result, {}
 
 
 def clear_obstacle_speed_up(username, params):
@@ -464,7 +467,7 @@ def clear_obstacle_speed_up(username, params):
     structure["date_created"] = SFSLong(started_on)
     structure["building_completed"] = SFSLong(now)
     save_player(username, root)
-    return ({"success": True}, _upgrade_timing_update(structure, player_object))
+    return {"success": True}, _upgrade_timing_update(structure, player_object)
 
 
 def finish_structure(username, params):
@@ -493,10 +496,11 @@ def finish_structure(username, params):
     result = action_result(True, "user_structure_id", structure_id)
     result["properties"] = create_player_properties(player_object)
     add_actual_currencies(result, player_object)
-    return (result, _structure_update(structure, "upgrade"))
+    return result, _structure_update(structure, "upgrade")
 
 
 def clear_obstacle(username, params):
+
     structure_id = _first_param(
         params,
         ("user_structure_id", "userStructureId", "structure_id", "structureId", "id"),
@@ -547,6 +551,7 @@ def clear_obstacle(username, params):
 
 
 def mute_structure(username, params):
+
     structure_id = params.get("user_structure_id", 0)
     root, player_object = load_player(username)
     island, structure = _locate(player_object, structure_id)
@@ -704,6 +709,7 @@ def update_structure(username, params):
 
 
 def _charge_speedup(player_object, remaining_ms):
+
     if not msm_toggles.is_enabled("functioning_currencies"):
         return
     cost = diamond_speedup_cost(remaining_ms)
@@ -724,7 +730,7 @@ def speed_up_structure(username, params):
         structure["finishing_time"] = now
         save_player(username, root)
         update = _upgrade_timing_update(structure, player_object)
-    return ({"success": True}, update)
+    return {"success": True}, update
 
 
 def _charge_upgrade_cost(player_object, definition):
@@ -775,7 +781,7 @@ def start_upgrade_structure(username, params):
         build_ms = (
             INSTANT_TIMER_FLOOR_MS
             if msm_toggles.is_enabled("instant_timers")
-            else max(0, definition.get("build_time", 0) if definition else 0) * 1000
+            else max(0, (definition.get("build_time", 0) if definition else 0)) * 1000
         )
         complete_on = now + build_ms
         structure["is_upgrading"] = 1
@@ -793,7 +799,7 @@ def start_upgrade_structure(username, params):
     if success:
         result["user_structure"] = _flat_structure_snapshot(structure)
         update = _upgrade_properties_update(structure, player_object)
-    return (result, update)
+    return result, update
 
 
 def speed_up_upgrade_structure(username, params):
@@ -820,7 +826,7 @@ def speed_up_upgrade_structure(username, params):
     result["properties"] = create_player_properties(player_object)
     result["building_completed"] = SFSLong(finished_at)
     update = _upgrade_timing_update(structure, player_object)
-    return (result, update)
+    return result, update
 
 
 def finish_upgrade_structure(username, params):
@@ -861,7 +867,7 @@ def finish_upgrade_structure(username, params):
             result["user_crucible"] = msm_islands._crucible_wire_object(
                 island, structure
             )
-    return (result, {})
+    return result, {}
 
 
 def _fugue_target_mode(player_object, monster_id, fallback_island):
@@ -876,29 +882,26 @@ def _fugue_target_mode(player_object, monster_id, fallback_island):
     minor_id = find_paironormal_form_id(stored, island_type, False)
     modes = mon.get("modes") or []
     has_major = any(
-        (
-            isinstance(e, dict) and e.get("monster") == major_id and e.get("a")
-            for e in modes
-        )
+        isinstance(e, dict) and e.get("monster") == major_id and e.get("a")
+        for e in modes
     )
     has_minor = any(
-        (
-            isinstance(e, dict) and e.get("monster") == minor_id and e.get("a")
-            for e in modes
-        )
+        isinstance(e, dict) and e.get("monster") == minor_id and e.get("a")
+        for e in modes
     )
-    if not has_major and (not has_minor):
+
+    if not has_major and not has_minor:
         own_id = mon.get("monster", 0)
-        if own_id and own_id == major_id and (own_id != minor_id):
+        if own_id and own_id == major_id and own_id != minor_id:
             has_major = True
-        elif own_id and own_id == minor_id and (own_id != major_id):
+        elif own_id and own_id == minor_id and own_id != major_id:
             has_minor = True
-    if has_minor and (not has_major):
+    if has_minor and not has_major:
         return 0
-    if has_major and (not has_minor):
+    if has_major and not has_minor:
         return 1
     current = (
-        fallback_island.get("mode", fallback_island.get("island_mode", 0)) or 0
+        (fallback_island.get("mode", fallback_island.get("island_mode", 0)) or 0)
         if fallback_island
         else 0
     )
@@ -918,11 +921,13 @@ def start_fuguing(username, params):
             {},
         )
     now = int(time.time() * 1000)
+
     activated_mode = params.get("activated_mode")
     if activated_mode is None:
         activated_mode = _fugue_target_mode(player_object, monster_id, island)
     success = True
     if success:
+
         island_type = island_type_of(island) or 0
         _fugue_monster_island, fugue_monster = find_monster_with_island(
             player_object, monster_id
@@ -934,9 +939,11 @@ def start_fuguing(username, params):
         monster_definition = get_monster_definition(stored_id) or {}
         duration_ms = max(0, monster_definition.get("build_time", 0) or 0) * 1000
     else:
+
         definition = get_structure_definition(structure.get("structure", 0)) or {}
         duration_ms = max(0, definition.get("build_time", 0) or 0) * 1000
         if duration_ms <= 0:
+
             upgrade_id = definition.get("upgrades_to") or _upgrade_target(
                 structure.get("structure", 0)
             )
@@ -950,7 +957,7 @@ def start_fuguing(username, params):
     structure["obj_end"] = complete_on
     fuguing_entries = [
         e
-        for e in island.get("fuguing") or []
+        for e in (island.get("fuguing") or [])
         if not (isinstance(e, dict) and e.get("structure") == structure_id)
     ]
     fuguing_entries.append(
@@ -980,7 +987,8 @@ def start_fuguing(username, params):
         "properties": create_player_properties(player_object),
     }
     add_actual_currencies(result, player_object)
-    return (result, {})
+
+    return result, {}
 
 
 def speed_up_fuguing(username, params):
@@ -1003,6 +1011,7 @@ def speed_up_fuguing(username, params):
             _charge_speedup(player_object, remaining)
             break
     structure["obj_end"] = finished_at
+
     for entry in island.get("fuguing") or []:
         if isinstance(entry, dict) and entry.get("structure") == structure_id:
             entry["complete_on"] = SFSLong(finished_at)
@@ -1011,7 +1020,8 @@ def speed_up_fuguing(username, params):
     result["properties"] = create_player_properties(player_object)
     add_actual_currencies(result, player_object)
     save_player(username, root)
-    return (result, {})
+
+    return result, {}
 
 
 def finish_fuguing(username, params):
@@ -1032,14 +1042,15 @@ def finish_fuguing(username, params):
     player_object["total_starpower_collected"] = (
         player_object.get("total_starpower_collected", 0) or 0
     ) + reward
-    fuguing_entries = island.get("fuguing") or [] if island else []
+
+    fuguing_entries = (island.get("fuguing") or []) if island else []
     pending = None
     remaining = []
     for entry in fuguing_entries:
         if (
             pending is None
             and isinstance(entry, dict)
-            and (entry.get("structure") == structure_id)
+            and entry.get("structure") == structure_id
         ):
             pending = entry
             continue
@@ -1048,6 +1059,7 @@ def finish_fuguing(username, params):
         island["fuguing"] = remaining
     extra_frames = []
     if pending is not None and pending.get("success"):
+
         monster_id = pending.get("monster") or 0
         activated_mode = pending.get("activated_mode", 1)
         if monster_id:
@@ -1082,6 +1094,7 @@ def finish_fuguing(username, params):
                         now,
                     )
                     monster["last_collection"] = now
+
                     filled_mode = 0 if new_entry.get("monster") == major_id else 1
                     extra_frames.append(
                         (
@@ -1115,6 +1128,7 @@ def finish_fuguing(username, params):
                         )
                     )
     elif pending is not None:
+
         monster_id = pending.get("monster") or 0
         if monster_id:
             _failed_island, failed_monster = find_monster_with_island(
@@ -1124,7 +1138,10 @@ def finish_fuguing(username, params):
                 import msm_monsters
 
                 feed_update = msm_monsters.apply_feed(
-                    player_object, failed_monster, monster_id, charge_food=False
+                    player_object,
+                    failed_monster,
+                    monster_id,
+                    charge_food=False,
                 )
                 if feed_update:
                     extra_frames.append(("gs_update_monster", feed_update))
@@ -1137,11 +1154,13 @@ def finish_fuguing(username, params):
         "user_structure_id": SFSLong(structure_id),
         "properties": create_player_properties(player_object),
     }
+
     add_actual_currencies(result, player_object)
-    return (result, {}, extra_frames)
+    return result, {}, extra_frames
 
 
 def viewed_fugued_monster(username, params):
+
     structure_id = params.get("user_structure_id", 0) or 0
     root, player_object = load_player(username)
     island, structure = (
@@ -1157,6 +1176,7 @@ def viewed_fugued_monster(username, params):
 
 
 def merge_fugue(username, params):
+
     structure_id = params.get("user_structure_id", 0) or 0
     requested_monster_id = params.get("user_monster_id", 0) or 0
     root, player_object = load_player(username)
@@ -1184,8 +1204,7 @@ def merge_fugue(username, params):
             isinstance(entry, dict)
             and pending is None
             and (
-                structure_id
-                and entry.get("structure") == structure_id
+                (structure_id and entry.get("structure") == structure_id)
                 or (
                     requested_monster_id
                     and entry.get("monster") == requested_monster_id
@@ -1215,7 +1234,7 @@ def merge_fugue(username, params):
         "properties": create_player_properties(player_object),
     }
     add_actual_currencies(result, player_object)
-    return (result, {})
+    return result, {}
 
 
 def buy_structure(username, params):
@@ -1237,6 +1256,7 @@ def buy_structure(username, params):
     if island_type >= 1000 and island_id >= 1000:
         island_type = island_id - 1000
     definition = get_structure_definition(structure_id)
+
     if definition and (definition.get("structure_type") or "").lower() == "crucible":
         result = action_result(False, "user_structure_id", 0, with_properties=True)
         add_actual_currencies(result, player_object)
@@ -1270,6 +1290,7 @@ def buy_structure(username, params):
     }
     if definition:
         new_structure["level"] = definition.get("level", 1) or 1
+
         new_structure["book_value"] = definition.get("cost_coins", 0) or 0
         cost_diamonds = definition.get("cost_diamonds", 0) or 0
         cost_coins = definition.get("cost_coins", 0) or 0
@@ -1397,6 +1418,7 @@ def find_awakener_structure(island):
 
 
 def update_awakener(username, params):
+
     titansoul_id = params.get("titansoul_id", 0) or 0
     requested_state = 1 if params.get("awakened_state") else 0
     root, player_object = load_player(username)
@@ -1404,7 +1426,7 @@ def update_awakener(username, params):
     if titansoul_id:
         island, monster = find_monster_with_island(player_object, titansoul_id)
         if monster is None:
-            return ({"success": False}, None)
+            return {"success": False}, None
         import msm_monsters
 
         titansoul = monster.setdefault(
@@ -1415,7 +1437,8 @@ def update_awakener(username, params):
         island = find_island(player_object, get_active_island_id(player_object))
     structure = find_awakener_structure(island) if island is not None else None
     if structure is None:
-        return ({"success": False, "error_msg": "MSG_AWAKENER_NONE"}, None)
+        return {"success": False, "error_msg": "MSG_AWAKENER_NONE"}, None
+
     awakener_definition = (
         get_structure_definition(
             structure.get("structure", structure.get("structure_id", 0))
@@ -1428,20 +1451,17 @@ def update_awakener(username, params):
         calendar.get("calendar_id", 0) or 0 if isinstance(calendar, dict) else 0
     )
     if calendar_id and player_calendar_id <= calendar_id:
-        return ({"success": False, "error_msg": "MSG_AWAKENER_LOCKED"}, None)
+        return {"success": False, "error_msg": "MSG_AWAKENER_LOCKED"}, None
     ext = structure.setdefault("ext", {})
     ext["awakened_state"] = requested_state
     update = _structure_update(structure, "full")
     update["ext"] = ext
     save_player(username, root)
-    return (
-        {
-            "success": True,
-            "titansoul_id": SFSLong(titansoul_id),
-            "awakened_state": requested_state,
-        },
-        update,
-    )
+    return {
+        "success": True,
+        "titansoul_id": SFSLong(titansoul_id),
+        "awakened_state": requested_state,
+    }, update
 
 
 def _allowed_island_types(definition):
@@ -1460,17 +1480,18 @@ def _allowed_island_types(definition):
 
 
 def encode_tile(pos_x, pos_y, flip, scale):
+
     try:
-        scale_bits = int((float(scale) - 0.7) * 127.0 / 0.4)
+        scale_bits = int(((float(scale) - 0.7) * 127.0) / 0.4)
     except (TypeError, ValueError):
         scale_bits = 95
     packed = (
-        (int(pos_x) & 255) << 16
-        | (int(pos_y) & 255) << 8
-        | max(0, min(127, scale_bits)) & 127
+        ((int(pos_x) & 0xFF) << 16)
+        | ((int(pos_y) & 0xFF) << 8)
+        | (max(0, min(127, scale_bits)) & 0x7F)
     )
     if flip:
-        packed |= 128
+        packed |= 0x80
     return packed
 
 
@@ -1586,6 +1607,7 @@ def buy_tile(username, params):
 
 
 def save_paintstate(username, params):
+
     tiles = params.get("t") or params.get("tiles") or {}
     root, player_object = load_player(username)
     island = None
@@ -1705,7 +1727,7 @@ def collect_mine(username, params):
     if structure is None:
         structure = _find_collectable_mine(player_object)
     if structure is None:
-        return ({"success": False}, None)
+        return {"success": False}, None
     now = int(time.time() * 1000)
     definition = get_structure_definition(structure.get("structure", 0)) or {}
     extra = definition.get("extra") or {}
@@ -1713,13 +1735,13 @@ def collect_mine(username, params):
     cooldown_seconds = max(1, int(extra.get("time", 720) or 720)) * 60
     last_collection = structure.get("last_collection", 0) or 0
     if last_collection > 0 and now < last_collection + cooldown_seconds * 1000:
-        return ({"success": False, "message": "Mine is not ready yet"}, None)
+        return {"success": False, "message": "Mine is not ready yet"}, None
     diamonds = (player_object.get("diamonds", 0) or 0) + payout
     player_object["diamonds"] = diamonds
     player_object["diamonds_actual"] = diamonds
     structure["last_collection"] = now
     save_player(username, root)
-    return ({"success": True}, _collected_structure_update(structure, player_object))
+    return {"success": True}, _collected_structure_update(structure, player_object)
 
 
 def collect_structure(username, params):
@@ -1731,7 +1753,7 @@ def collect_structure(username, params):
         else (None, None)
     )
     if structure is None:
-        return ({"success": False, "message": "Structure not found"}, None)
+        return {"success": False, "message": "Structure not found"}, None
     payout = structure.get("obj_data", 0) or 0
     if payout > 0:
         if structure.get("structure", 0) == 801:
@@ -1748,7 +1770,7 @@ def collect_structure(username, params):
     result["coins"] = payout
     result["properties"] = create_player_properties(player_object)
     add_actual_currencies(result, player_object)
-    return (result, _collected_structure_update(structure, player_object))
+    return result, _collected_structure_update(structure, player_object)
 
 
 def start_baking(username, params):
@@ -1779,6 +1801,7 @@ def start_baking(username, params):
     structure["last_food_option_id"] = food_id
     player_object["last_rebake_structure_id"] = structure_id
     player_object["last_rebake_food_option_id"] = food_id
+
     properties = create_player_properties(player_object)
     save_player(username, root)
     result = action_result(True, "user_structure_id", structure_id)
@@ -1798,6 +1821,7 @@ def start_baking(username, params):
 
 
 def start_rebake(username, params):
+
     root, player_object = load_player(username)
     requested_structure_id = (
         params.get("user_structure_id") or params.get("user_baking_id") or 0
@@ -1812,7 +1836,7 @@ def start_rebake(username, params):
             seen.add(id(structure))
             fid = requested_food_id or structure.get("last_food_option_id")
             obj_end = structure.get("obj_end", 0) or 0
-            if fid and (not (obj_end and obj_end > now)):
+            if fid and not (obj_end and obj_end > now):
                 candidates.append(structure)
     for candidate_island in player_object.get("islands") or []:
         for candidate in candidate_island.get("structures") or []:
@@ -1842,6 +1866,7 @@ def start_rebake(username, params):
             if structure_id == requested_structure_id and requested_food_id
             else structure.get("last_food_option_id")
         )
+
         if structure.get("obj_data"):
             finish_baking(username, {"user_structure_id": structure_id})
         result = start_baking(
@@ -1942,7 +1967,7 @@ def _harmonization_dish_count(max_available):
         )
         for key, count in _HARMONIZATION_DISH_COUNT_KEYS
     ]
-    total = sum((weight for _count, weight in choices))
+    total = sum(weight for _count, weight in choices)
     if total <= 0:
         return min(2, max_available)
     roll = random.randrange(total)
@@ -1980,7 +2005,7 @@ def _grant_num(num_genes):
             "USER_DISH_HARMONIZER_TARGET_GRANT_NUM_PRIMORDIAL", 28
         )
     return get_user_game_setting_int(
-        f"USER_DISH_HARMONIZER_TARGET_GRANT_NUM_{num_genes}_GENE",
+        f"USER_DISH_HARMONIZER_TARGET_GRANT_NUM_{num_genes }_GENE",
         6 if num_genes == 2 else 9,
     )
 
@@ -2002,6 +2027,7 @@ def _target_state(structure):
 
 
 def ensure_dish_harmonizer_targets(island, structure):
+
     definition = (
         get_ethereal_islet_definition(
             island.get("island", 0) if island is not None else 0
@@ -2030,9 +2056,34 @@ def _target_list(structure):
     ]
 
 
-def _dish_harmonizer_gene_inventory(player_object):
-    genes = player_object.get("attuner_genes") or {}
-    return [{"g": g, "n": n} for g, n in genes.items() if n]
+def _dish_harmonizer_gene_inventory(player_object, structure=None):
+
+    island = None
+    if isinstance(structure, dict):
+        island_id = structure.get("island", structure.get("user_island_id", 0))
+        island = find_island(player_object, island_id)
+        if island is None:
+            island = next(
+                (
+                    candidate
+                    for candidate in player_object.get("islands") or []
+                    if isinstance(candidate, dict)
+                    and any(s is structure for s in candidate.get("structures") or [])
+                ),
+                None,
+            )
+    result = []
+    for entry in (island or {}).get("attuned_critters") or []:
+        if not isinstance(entry, dict) or not entry.get("gene"):
+            continue
+        count = max(
+            entry.get("num", 0) or 0,
+            entry.get("count", 0) or 0,
+            entry.get("amount", 0) or 0,
+        )
+        if count:
+            result.append({"g": entry["gene"], "n": count})
+    return result
 
 
 def _pick_results(definition, structure):
@@ -2051,7 +2102,7 @@ def _pick_results(definition, structure):
         if (
             isinstance(entry, dict)
             and int(entry.get("c", 0) or 0) >= _grant_num(g)
-            and (entry.get("t") not in chosen)
+            and entry.get("t") not in chosen
         ):
             chosen.append(entry["t"])
     target_count = _harmonization_dish_count(len(pool))
@@ -2100,12 +2151,12 @@ def dish_harmonizer_wire_data(player_object, structure):
     results = structure.get("dish_harmonizer_targets") or []
     claimed = set(structure.get("dish_harmonizer_claimed") or [])
     pending = [r for r in results if r.get("_i") not in claimed]
-    if not targets and (not pending):
+    if not targets and not pending:
         return None
     complete_on = int(structure.get("dish_harmonizer_complete_on", 0) or 0)
     started_on = int(structure.get("dish_harmonizer_started_on", 0) or 0)
     data = {
-        "genes": _dish_harmonizer_gene_inventory(player_object),
+        "genes": _dish_harmonizer_gene_inventory(player_object, structure),
         "started_on": SFSLong(started_on if pending else 0),
         "complete_on": SFSLong(complete_on if pending else 0),
         "time_required": (
@@ -2141,7 +2192,7 @@ def _dish_reply(player_object, structure, structure_id):
     data = dish_harmonizer_wire_data(player_object, structure)
     if data is None:
         data = {
-            "genes": _dish_harmonizer_gene_inventory(player_object),
+            "genes": _dish_harmonizer_gene_inventory(player_object, structure),
             "started_on": SFSLong(0),
             "complete_on": SFSLong(0),
             "time_required": 0,
@@ -2191,7 +2242,7 @@ def start_dish_harmonizing(username, params):
     num_genes = min(3, max(1, num_genes))
     island_id = island.get("island", 0) if island is not None else 0
     definition = get_ethereal_islet_definition(island_id) or {}
-    cost = int(definition.get(f"target_cost_{num_genes}_gene", 0) or 0)
+    cost = int(definition.get(f"target_cost_{num_genes }_gene", 0) or 0)
     time_per_gene = int(definition.get("dish_harmonizing_time_per_gene", 0) or 0)
     base_time = int(definition.get("dish_harmonizing_base_time", 0) or 0)
     now = int(time.time() * 1000)
@@ -2227,7 +2278,7 @@ def start_dish_harmonizing(username, params):
         result["used_monster"] = SFSLong(used_monster_id)
     result["properties"] = create_player_properties(player_object)
     add_actual_currencies(result, player_object)
-    return (result, _structure_update(structure, "full"))
+    return result, _structure_update(structure, "full")
 
 
 def update_dish_harmonizer_target(username, params):
@@ -2255,11 +2306,7 @@ def update_dish_harmonizer_target(username, params):
         num_genes = int(params.get("num_genes", 0) or 0)
     except (TypeError, ValueError):
         num_genes = 0
-    if (
-        monster
-        and num_genes in (2, 3)
-        and (monster in _pool_for(definition, num_genes))
-    ):
+    if monster and num_genes in (2, 3) and monster in _pool_for(definition, num_genes):
         entry = state.get(str(num_genes))
         if not isinstance(entry, dict) or entry.get("t") != monster:
             state[str(num_genes)] = {"t": monster, "c": 0}
@@ -2270,7 +2317,7 @@ def update_dish_harmonizer_target(username, params):
     )
     result["properties"] = create_player_properties(player_object)
     add_actual_currencies(result, player_object)
-    return (result, _structure_update(structure, "full"))
+    return result, _structure_update(structure, "full")
 
 
 def speed_up_dish_harmonizing(username, params):
@@ -2295,7 +2342,7 @@ def speed_up_dish_harmonizing(username, params):
     result["finished_at"] = SFSLong(finished_at)
     result["properties"] = create_player_properties(player_object)
     add_actual_currencies(result, player_object)
-    return (result, _structure_update(structure, "full"))
+    return result, _structure_update(structure, "full")
 
 
 def incubate_dish_harmonizer_egg(username, params):
@@ -2306,7 +2353,7 @@ def incubate_dish_harmonizer_egg(username, params):
     root, player_object = load_player(username)
     island, structure = _locate(player_object, structure_id)
     if structure is None:
-        return ({"success": False}, None)
+        return {"success": False}, None
     results = structure.get("dish_harmonizer_targets") or []
     claimed = set(structure.get("dish_harmonizer_claimed") or [])
     monster_result_id = params.get("monster_result_id")
@@ -2346,10 +2393,10 @@ def incubate_dish_harmonizer_egg(username, params):
             structure["dish_harmonizer_claimed"] = [
                 v for v in claimed if chosen is None or v != chosen.get("_i")
             ]
-            return (
-                {"success": False, "error": "NO_AVAILABLE_EGG_HOLDER"},
-                _structure_update(structure, "full"),
-            )
+            return {
+                "success": False,
+                "error": "NO_AVAILABLE_EGG_HOLDER",
+            }, _structure_update(structure, "full")
     if chosen is not None and chosen.get("_b"):
         base = chosen["_b"]
         g = len(_monster_genes(base))
@@ -2380,7 +2427,7 @@ def incubate_dish_harmonizer_egg(username, params):
     }
     if user_egg is not None:
         result["user_egg"] = user_egg
-    return (result, _structure_update(structure, "full"))
+    return result, _structure_update(structure, "full")
 
 
 def finish_dish_harmonizing(username, params):
@@ -2411,17 +2458,17 @@ def finish_dish_harmonizing(username, params):
             ready=True,
         )
         if user_egg is None:
-            return (
-                {"success": False, "error": "NO_AVAILABLE_EGG_HOLDER"},
-                _structure_update(structure, "full"),
-            )
+            return {
+                "success": False,
+                "error": "NO_AVAILABLE_EGG_HOLDER",
+            }, _structure_update(structure, "full")
     save_player(username, root)
     result = action_result(True, "user_structure_id", structure_id)
     if user_egg is not None:
         result["user_egg"] = user_egg
     result["properties"] = create_player_properties(player_object)
     add_actual_currencies(result, player_object)
-    return (result, _structure_update(structure, "full"))
+    return result, _structure_update(structure, "full")
 
 
 def finish_baking(username, params):
@@ -2434,12 +2481,14 @@ def finish_baking(username, params):
         )
     food_id = structure.get("obj_data", 0)
     food = get_bakery_food(food_id)
+
     quantity = max(0, (food.get("food", 0) if food else 0) or 0)
     player_object["food"] = (player_object.get("food", 0) or 0) + quantity
     structure["obj_data"] = 0
     structure["obj_end"] = 0
     structure["building_completed"] = 0
     structure["finishing_time"] = 0
+
     properties = create_player_properties(player_object)
     save_player(username, root)
     result = action_result(True, "user_baking_id", structure_id)

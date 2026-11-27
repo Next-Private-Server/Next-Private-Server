@@ -1,6 +1,7 @@
 import json
 import struct
 import time
+
 from msm_playerdata import (
     create_player_properties,
     find_island,
@@ -51,6 +52,7 @@ CURRENCY_LOOT_KEYS = {
     "medals",
     "xp",
 }
+
 _LOOT_WIRE_TYPES = {
     "coins": 4,
     "food": 7,
@@ -66,6 +68,7 @@ _LOOT_WIRE_TYPES = {
 
 
 def _wire_loot_item(item):
+
     resource = item.get("resource")
     amount = item.get("amount", 0)
     if resource == "card_pack":
@@ -80,6 +83,7 @@ def _wire_loot_item(item):
             "extra": {"pack_type": pack_type},
         }
     if resource == "monster":
+
         return {
             "amount": 1,
             "premium": False,
@@ -102,6 +106,7 @@ ENCORE_SECONDS_PER_POINT = 900.0
 
 
 def points_for_duration(seconds):
+
     return max(0.0, float(seconds or 0)) / ENCORE_SECONDS_PER_POINT
 
 
@@ -127,7 +132,7 @@ _ENCORE_WINDOW_MS = 1036800000
 
 def _encore_window_start():
     now = int(time.time() * 1000)
-    return now - now % _ENCORE_WINDOW_MS
+    return now - (now % _ENCORE_WINDOW_MS)
 
 
 def _encore_window_end():
@@ -155,11 +160,13 @@ def encore_timed_event_entry():
 
 
 def active_encore_event():
-    return (None, None)
+
+    return None, None
 
 
 def player_encore_state(username, params):
     root, player_object = load_player(username)
+
     event_id, track_id = active_encore_event()
     event_id = event_id or 0
     state = _ensure_encore_state(player_object, event_id)
@@ -177,6 +184,7 @@ def _ensure_encore_state(player_object, event_id):
 
 
 def _level_sort_key(lv):
+
     return (lv.get("level", 0) or 0, lv.get("points", 0) or 0)
 
 
@@ -185,7 +193,7 @@ def _current_level_number(track, claimed):
     for lv in levels:
         if lv.get("id") not in claimed:
             return lv.get("level", 1) or 1
-    return levels[-1].get("level", 1) or 1 if levels else 1
+    return (levels[-1].get("level", 1) or 1) if levels else 1
 
 
 def _sync_encore_player_fields(player_object, track_id, total_points, track=None):
@@ -217,6 +225,7 @@ def _repair_claimed_gaps(player_object, track):
     claimed = _claimed_ids(player_object)
     if not claimed:
         return
+
     last_claimed_rank = -1
     for i, lv in enumerate(levels):
         if lv.get("id") in claimed:
@@ -248,13 +257,15 @@ def _grant_all_eligible_levels(player_object, track, points):
         _mark_claimed(player_object, next_level.get("id"))
         points = max(0.0, points - threshold)
         if _next_unclaimed_level(track, _claimed_ids(player_object)) is None:
+
             player_object["encore_claimed_levels"] = []
             points = 0.0
             break
-    return (points, all_loot)
+    return points, all_loot
 
 
 def encore_progress(player_object, track_id, points, action_kind=None):
+
     if points <= 0:
         return None
     event_id, active_track_id = active_encore_event()
@@ -266,7 +277,9 @@ def encore_progress(player_object, track_id, points, action_kind=None):
     track = _reward_tracks().get(track_id)
     after, all_items = _grant_all_eligible_levels(player_object, track, after)
     entry = {}
+
     entry["previous_points"] = SFSFloat(before)
+
     entry["delay"] = SFSFloat(0.0)
     if all_items:
         entry["loot"] = [
@@ -274,10 +287,12 @@ def encore_progress(player_object, track_id, points, action_kind=None):
             for it in all_items
             if it.get("resource") in _LOOT_WIRE_TYPES
         ]
-        if any((it.get("resource") == "card_pack" for it in all_items)):
+
+        if any(it.get("resource") == "card_pack" for it in all_items):
             entry["updateCardAlbum"] = True
     state["total_points"] = after
     entry["current_points"] = SFSFloat(after)
+
     entry["current_encore_state"] = {
         "event_id": event_id,
         "total_points": SFSFloat(after),
@@ -305,6 +320,7 @@ def _mark_claimed(player_object, level_id):
 
 
 def _grant_monster_reward(player_object, monster_id):
+
     from msm_gamedata import get_monster_definition, monster_allowed_on_island
     from msm_box import requires_direct_placement
     from msm_monsters import place_egg, _find_nursery
@@ -325,7 +341,7 @@ def _grant_monster_reward(player_object, monster_id):
                 candidates.append(isl)
         for isl in candidates:
             itype = island_type_of(isl)
-            if definition and (not monster_allowed_on_island(definition, itype)):
+            if definition and not monster_allowed_on_island(definition, itype):
                 continue
             if _find_nursery(isl, 0) is not None:
                 island = isl
@@ -342,6 +358,7 @@ def _apply_loot(player_object, loot_json):
         loot = {}
     for key, amount in loot.items():
         amount = amount or 0
+
         if key == "card_pack" or key.startswith("card_pack."):
             pack_type = 1
             if "." in key:
@@ -363,7 +380,7 @@ def _apply_loot(player_object, loot_json):
         elif (
             key == "sfs_object"
             and isinstance(amount, dict)
-            and (str(amount.get("type", "")) == "MONSTER")
+            and str(amount.get("type", "")) == "MONSTER"
         ):
             monster_id = int(amount.get("id") or 0)
             if monster_id:
@@ -371,7 +388,7 @@ def _apply_loot(player_object, loot_json):
                 items.append({"amount": monster_id, "resource": "monster"})
         elif key in CURRENCY_LOOT_KEYS:
             player_object[key] = (player_object.get(key, 0) or 0) + amount
-            player_object[f"{key}_actual"] = player_object[key]
+            player_object[f"{key }_actual"] = player_object[key]
             items.append({"amount": amount, "resource": key})
         else:
             items.append({"amount": amount, "resource": key})
@@ -388,9 +405,11 @@ def collect_rewards(username, params):
     track = _reward_tracks().get(track_id)
     if track is None:
         return {"success": False, "notificationOnFail": False}
+
     points, raw_items = _grant_all_eligible_levels(player_object, track, points)
     if not raw_items:
         return {"success": False, "notificationOnFail": False}
+
     items = [
         _wire_loot_item(it)
         for it in raw_items

@@ -29,6 +29,7 @@ def _effective_build_ms(monster_id):
 
 
 def _sell_refund(book_value):
+
     if book_value <= 0:
         return 0
     percentage = (
@@ -38,6 +39,7 @@ def _sell_refund(book_value):
 
 
 def _charge_speedup(player_object, remaining_ms):
+
     if not msm_toggles.is_enabled("functioning_currencies"):
         return
     cost = diamond_speedup_cost(remaining_ms)
@@ -254,9 +256,7 @@ def repair_magical_paironormal_ghosts(island):
         if (
             not form
             or form == parent_id
-            or (
-                not monster_allowed_on_island(get_monster_definition(form), island_type)
-            )
+            or not monster_allowed_on_island(get_monster_definition(form), island_type)
         ):
             continue
         monster["monster"] = form
@@ -290,6 +290,7 @@ def repair_magical_nexus_layout(island):
         if default_id is None:
             continue
         old_id = _safe_int(structure.get("user_structure_id"))
+
         desired_id = old_id if old_id > 0 else default_id
         if old_id and old_id != desired_id:
             remapped[old_id] = desired_id
@@ -320,6 +321,7 @@ def repair_magical_nexus_layout(island):
             )
             changed = True
         if is_nursery_structure(structure_type):
+
             held_egg = next(
                 (
                     e
@@ -393,6 +395,7 @@ def _default_battle_loadout(player_object):
 
 
 def backfill_battle_state(player_object):
+
     loadout = _default_battle_loadout(player_object)
     loadout_json = json.dumps(loadout)
     if not isinstance(player_object.get("battle"), dict):
@@ -427,6 +430,7 @@ def backfill_battle_state(player_object):
             }
         ]
     else:
+
         now = int(time.time() * 1000)
         for entry in player_object["battle_versus"]:
             if isinstance(entry, dict) and now >= (entry.get("refreshes_on", 0) or 0):
@@ -462,6 +466,7 @@ def _ensure_battle_island_layout(island):
     )
     island.setdefault("costume_data", {"costumes": []})
     island.setdefault("costumes_owned", "[]")
+
     if island.get("structures"):
         return
     island["structures"] = [
@@ -516,7 +521,7 @@ def _mark_monster_sold(island, monster_type):
     for entry in _paironormal_sold_ids(island, monster_type):
         if entry and entry not in sold:
             sold.append(entry)
-    island["monsters_sold"] = "[" + ",".join((str(v) for v in sold)) + "]"
+    island["monsters_sold"] = "[" + ",".join(str(v) for v in sold) + "]"
     return {
         "island_id": SFSLong(island.get("user_island_id", 0)),
         "monsters_sold": island["monsters_sold"],
@@ -540,7 +545,7 @@ def _paironormal_sold_ids(island, monster_type):
         find_paironormal_form_id(parent, PAIRONORMAL_ISLAND_TYPE, True),
         find_paironormal_form_id(parent, PAIRONORMAL_ISLAND_TYPE, False),
     ):
-        if candidate and candidate > 0 and (candidate not in ids):
+        if candidate and candidate > 0 and candidate not in ids:
             ids.append(candidate)
     return ids
 
@@ -550,7 +555,7 @@ def _mark_monster_viewed_in_sold(island, monster_type):
     for entry in _paironormal_sold_ids(island, monster_type):
         if entry and entry not in sold:
             sold.append(entry)
-    island["monsters_sold"] = "[" + ",".join((str(v) for v in sold)) + "]"
+    island["monsters_sold"] = "[" + ",".join(str(v) for v in sold) + "]"
     return {
         "island_id": SFSLong(island.get("user_island_id", 0)),
         "monsters_sold": island["monsters_sold"],
@@ -569,6 +574,7 @@ def _buyback_monster_id(monster):
 
 
 def _build_buyback_data(monster):
+
     if monster is None:
         return {}
     monster_id = _buyback_monster_id(monster)
@@ -639,7 +645,7 @@ def purchase_buyback(username, params):
         "monster": monster,
         "monster_happy_effects": happy_effects,
     }
-    return (result, sold_update)
+    return result, sold_update
 
 
 def _mark_monster_reacquired(island, monster_type):
@@ -647,7 +653,7 @@ def _mark_monster_reacquired(island, monster_type):
     if monster_type not in sold:
         return None
     sold = [v for v in sold if v != monster_type]
-    island["monsters_sold"] = "[" + ",".join((str(v) for v in sold)) + "]"
+    island["monsters_sold"] = "[" + ",".join(str(v) for v in sold) + "]"
     return {
         "island_id": SFSLong(island.get("user_island_id", 0)),
         "monsters_sold": island["monsters_sold"],
@@ -767,11 +773,13 @@ def _monster_update(monster, mode="full"):
         )
         update["last_collection"] = SFSLong(monster.get("last_collection", 0) or 0)
     elif mode == "training_start":
+
         update["is_training"] = monster.get("is_training", 0)
         update["training_complete_on"] = SFSLong(
             monster.get("training_complete_on", 0) or 0
         )
     elif mode == "training":
+
         update["level"] = monster.get("level", 1)
         update["is_training"] = monster.get("is_training", 0)
         update["training_complete_on"] = SFSLong(
@@ -830,7 +838,7 @@ def move_monster(username, params):
     save_player(username, root)
     result = action_result(True, "user_monster_id", monster_id, with_properties=True)
     result["monster_happy_effects"] = happy_effects
-    return (result, _monster_update(monster, "move"))
+    return result, _monster_update(monster, "move")
 
 
 _MEGA_MONSTER_DURATION_MS = 24 * 60 * 60 * 1000
@@ -864,8 +872,9 @@ def biggify_monster(username, params):
             finished_at = now + _MEGA_MONSTER_DURATION_MS
     else:
         enabled = True
+
     was_mega = bool(existing_mega.get("currently_mega", False))
-    if enabled and (not was_mega) and msm_toggles.is_enabled("functioning_currencies"):
+    if enabled and not was_mega and msm_toggles.is_enabled("functioning_currencies"):
         cost = get_user_game_setting_int(
             (
                 "USER_DIAMOND_COST_PER_PERMALIT_MEGAMONSTER"
@@ -890,8 +899,8 @@ def biggify_monster(username, params):
         "mega_end_time": finished_at,
         "expires": finished_at,
         "expiration": finished_at,
-        "time_remaining": finished_at - now if finished_at > now else 0,
-        "mega_time_remaining": finished_at - now if finished_at > now else 0,
+        "time_remaining": (finished_at - now) if finished_at > now else 0,
+        "mega_time_remaining": (finished_at - now) if finished_at > now else 0,
     }
     monster["biggified"] = 1 if enabled else 0
     monster["is_big"] = 1 if enabled else 0
@@ -904,7 +913,7 @@ def biggify_monster(username, params):
         "megamonster": mega,
         "properties": create_player_properties(player_object),
     }
-    return (result, update)
+    return result, update
 
 
 def flip_monster(username, params):
@@ -919,11 +928,12 @@ def flip_monster(username, params):
             {},
         )
     if island is not None and island_type_of(island) == GOLD_ISLAND_TYPE:
+
         flip = 1 - flip
     monster["flip"] = flip
     save_player(username, root)
     result = action_result(True, "user_monster_id", monster_id, with_properties=True)
-    return (result, _monster_update(monster, "flip"))
+    return result, _monster_update(monster, "flip")
 
 
 def sell_monster(username, params):
@@ -934,6 +944,7 @@ def sell_monster(username, params):
     if island is not None:
         monsters = island.get("monsters") or []
         monster_type = monster.get("monster", 0) if monster is not None else 0
+
         if monster is not None and msm_toggles.is_enabled("functioning_currencies"):
             book_value = (
                 monster.get("book_value")
@@ -945,7 +956,7 @@ def sell_monster(username, params):
                 player_object["coins"] = (player_object.get("coins", 0) or 0) + refund
         pure_destroy = bool(params.get("pure_destroy"))
         buyback_data = {}
-        if monster is not None and (not pure_destroy):
+        if monster is not None and not pure_destroy:
             buyback_data = _build_buyback_data(monster)
             if buyback_data:
                 island["buyback"] = buyback_data
@@ -970,7 +981,7 @@ def sell_monster(username, params):
     result["properties"] = create_player_properties(player_object)
     result["buyback_properties"] = buyback_data
     result["monster_happy_effects"] = happy_effects
-    return (result, sold_update)
+    return result, sold_update
 
 
 def name_monster(username, params):
@@ -988,15 +999,16 @@ def name_monster(username, params):
 
 
 def mute_monster(username, params):
+
     monster_id = params.get("user_monster_id", 0)
     root, player_object = load_player(username)
     island, monster = find_monster_with_island(player_object, monster_id)
     if monster is None:
-        return ({"success": False}, {})
+        return {"success": False}, {}
     muted = 0 if monster.get("muted", 0) else 1
     monster["muted"] = muted
     save_player(username, root)
-    return ({"success": True}, _monster_update(monster, "mute"))
+    return {"success": True}, _monster_update(monster, "mute")
 
 
 def _monster_rarity(definition):
@@ -1029,10 +1041,10 @@ def _recompute_titansoul_unlocks(island, titansoul):
     titansoul["epic_unlocked"] = counts["rare"] >= 1
     was_can_awaken = bool(titansoul.get("can_awaken"))
     can_awaken_now = (
-        counts["common"] >= 4 and counts["rare"] >= 4 and (counts["epic"] >= 4)
+        counts["common"] >= 4 and counts["rare"] >= 4 and counts["epic"] >= 4
     )
     titansoul["can_awaken"] = can_awaken_now
-    if can_awaken_now and (not was_can_awaken):
+    if can_awaken_now and not was_can_awaken:
         from msm_structures import find_awakener_structure
 
         awakener = find_awakener_structure(island)
@@ -1075,10 +1087,8 @@ def add_soul_link(username, params):
         )
         soul_links = titansoul.setdefault("soul_links", [])
         if not any(
-            (
-                isinstance(link, dict) and link.get("id") == linked_monster_id
-                for link in soul_links
-            )
+            isinstance(link, dict) and link.get("id") == linked_monster_id
+            for link in soul_links
         ):
             _charge_soul_link_cost(player_object, len(soul_links))
             soul_links.append({"id": linked_monster_id})
@@ -1096,7 +1106,7 @@ def add_soul_link(username, params):
         "user_monster_id": SFSLong(linked_monster_id),
         "properties": create_player_properties(player_object),
     }
-    return (result, monster_update)
+    return result, monster_update
 
 
 def remove_soul_link(username, params):
@@ -1129,7 +1139,7 @@ def remove_soul_link(username, params):
         _recompute_titansoul_unlocks(island, titansoul)
         save_player(username, root)
         monster_update = _monster_update(titansoul_monster, "titansoul")
-    return (result, monster_update)
+    return result, monster_update
 
 
 def toggle_titansoul_fx(username, params):
@@ -1144,13 +1154,10 @@ def toggle_titansoul_fx(username, params):
         titansoul["show_fx"] = not titansoul.get("show_fx", True)
         save_player(username, root)
         monster_update = _monster_update(titansoul_monster, "titansoul")
-    return (
-        {
-            "success": titansoul_monster is not None,
-            "titansoul_id": SFSLong(titansoul_id),
-        },
-        monster_update,
-    )
+    return {
+        "success": titansoul_monster is not None,
+        "titansoul_id": SFSLong(titansoul_id),
+    }, monster_update
 
 
 def apply_feed(player_object, monster, user_monster_id, charge_food=True):
@@ -1171,6 +1178,7 @@ def apply_feed(player_object, monster, user_monster_id, charge_food=True):
     monster["last_fed"] = int(time.time() * 1000)
     if charge_food:
         player_object["food"] = max(0, (player_object.get("food", 0) or 0) - food_cost)
+
     update = {"user_monster_id": SFSLong(user_monster_id), "times_fed": times_fed}
     if leveled_up:
         update["level"] = level
@@ -1194,9 +1202,9 @@ def feed_monster(username, params):
         )
     update = apply_feed(player_object, monster, monster_id)
     if update is None:
-        return ({"success": True}, {})
+        return {"success": True}, {}
     save_player(username, root)
-    return ({"success": True}, update)
+    return {"success": True}, update
 
 
 _battle_training_cache = {}
@@ -1240,14 +1248,13 @@ def _battle_training_levels(monster_id):
 
 
 def battle_start_training(username, params):
+
     monster_id = params.get("monster_id", params.get("user_monster_id", 0))
     root, player_object = load_player(username)
     island, monster = find_monster_with_island(player_object, monster_id)
     if monster is None:
-        return (
-            action_result(False, "monster_id", monster_id, with_properties=True),
-            {},
-        )
+        return action_result(False, "monster_id", monster_id, with_properties=True), {}
+
     current_level = max(1, monster.get("level", 1) or 1)
     levels = _battle_training_levels(monster.get("monster", 0))
     next_def = next(
@@ -1257,13 +1264,13 @@ def battle_start_training(username, params):
         result = action_result(False, "monster_id", monster_id)
         result["message"] = "max_battle_level"
         result["properties"] = create_player_properties(player_object)
-        return (result, {})
+        return result, {}
     cost = max(0, _safe_int(next_def.get("training_cost")))
     if (player_object.get("coins", 0) or 0) < cost:
         result = action_result(False, "monster_id", monster_id)
         result["message"] = "not_enough_coins"
         result["properties"] = create_player_properties(player_object)
-        return (result, {})
+        return result, {}
     now = int(time.time() * 1000)
     training_ms = (
         0
@@ -1279,18 +1286,17 @@ def battle_start_training(username, params):
     result = action_result(True, "monster_id", monster_id)
     result["properties"] = create_player_properties(player_object)
     add_actual_currencies(result, player_object)
-    return (result, _monster_update(monster, "training_start"))
+    return result, _monster_update(monster, "training_start")
 
 
 def battle_finish_training(username, params):
+
     monster_id = params.get("monster_id", params.get("user_monster_id", 0))
     root, player_object = load_player(username)
     island, monster = find_monster_with_island(player_object, monster_id)
     if monster is None or not monster.get("is_training"):
-        return (
-            action_result(False, "monster_id", monster_id, with_properties=True),
-            {},
-        )
+        return action_result(False, "monster_id", monster_id, with_properties=True), {}
+
     new_level = monster.get(
         "pending_battle_level", max(1, monster.get("level", 1) or 1) + 1
     )
@@ -1303,7 +1309,7 @@ def battle_finish_training(username, params):
     result["level"] = new_level
     result["properties"] = create_player_properties(player_object)
     result["is_training"] = 0
-    return (result, _monster_update(monster, "training"))
+    return result, _monster_update(monster, "training")
 
 
 _COLLECTION_PLAYER_KEY = {
@@ -1362,6 +1368,7 @@ def _stored_collection_amount(monster, collection_type):
 
 
 def _production_payout(monster):
+
     production = monster.get("production") or {}
     amount = max(0, int(production.get("amount", 0) or 0))
     duration_min = max(1, int(production.get("duration_min", 360) or 360))
@@ -1384,7 +1391,7 @@ def _monster_stored_coins(monster, max_coins, income_rate):
     if 0 < last_collection < now:
         elapsed_seconds = max(0, (now - last_collection) // 1000)
         per_minute = max(1, income_rate)
-        stored += elapsed_seconds * per_minute // 60
+        stored += (elapsed_seconds * per_minute) // 60
     stored = max(stored, _safe_int(monster.get("collected_coins")))
     cap = max_coins if max_coins > 0 else 2147483647
     return min(stored, cap)
@@ -1394,13 +1401,15 @@ def _add_collected_currency(player_object, collection_type, amount):
     if amount <= 0:
         return
     player_key = _collection_player_key(collection_type)
+
     updated = (player_object.get(player_key, 0) or 0) + amount
     player_object[player_key] = updated
-    actual_key = f"{player_key}_actual"
+    actual_key = f"{player_key }_actual"
     if actual_key in player_object:
         player_object[actual_key] = updated
     if player_key == "egg_wildcards":
         player_object["playerEggWildcards"] = updated
+
     player_object["xp"] = _safe_int(player_object.get("xp")) + max(1, amount // 100)
 
 
@@ -1416,18 +1425,25 @@ def _find_paironormal_mode_owner(player_object, mode_unique_id):
                     isinstance(mode, dict)
                     and mode.get("user_monster_id") == mode_unique_id
                 ):
-                    return (island, monster, mode, mode_index)
-    return (None, None, None, None)
+                    return island, monster, mode, mode_index
+    return None, None, None, None
 
 
 def _paironormal_collectible_mode(monster):
     modes = monster.get("modes") or []
+
+    for mode_index, mode in enumerate(modes):
+        if (
+            isinstance(mode, dict)
+            and float(mode.get("collected_starpower", 0.0) or 0.0) > 0
+        ):
+            return mode, mode_index
     if modes and isinstance(modes[0], dict):
-        return (modes[0], 0)
+        return modes[0], 0
     for mode_index, mode in enumerate(modes):
         if isinstance(mode, dict):
-            return (mode, mode_index)
-    return (None, None)
+            return mode, mode_index
+    return None, None
 
 
 def _paironormal_mode_update(monster, mode, mode_index, player_object=None):
@@ -1475,14 +1491,11 @@ def _collect_paironormal_monster(username, params, monster):
     mode["last_collection"] = now
     save_player(username, root)
     result = {"star": payout, "success": True, "user_monster_id": SFSLong(monster_id)}
-    return (
-        result,
-        {
-            "monster_updates": [
-                _paironormal_mode_update(fresh_monster, mode, mode_index, player_object)
-            ]
-        },
-    )
+    return result, {
+        "monster_updates": [
+            _paironormal_mode_update(fresh_monster, mode, mode_index, player_object)
+        ]
+    }
 
 
 def _paironormal_mode_update_legacy(mode, mode_index):
@@ -1495,6 +1508,7 @@ def _paironormal_mode_update_legacy(mode, mode_index):
 
 
 def _collect_paironormal_mode(username, params, mode_unique_id):
+
     now = int(time.time() * 1000)
     root, player_object = load_player(username)
     island, monster, mode, mode_index = _find_paironormal_mode_owner(
@@ -1524,10 +1538,9 @@ def _collect_paironormal_mode(username, params, mode_unique_id):
         "success": True,
         "user_monster_id": SFSLong(mode_unique_id),
     }
-    return (
-        result,
-        {"monster_updates": [_paironormal_mode_update_legacy(mode, mode_index)]},
-    )
+    return result, {
+        "monster_updates": [_paironormal_mode_update_legacy(mode, mode_index)]
+    }
 
 
 def collect_monster(username, params):
@@ -1543,8 +1556,10 @@ def collect_monster(username, params):
         )
         if mode is not None:
             return _collect_paironormal_mode(username, params, monster_id)
+
     if monster_id == -1:
         return collect_multi_monster(username, params)
+
     island, monster = find_monster_with_island(player_object, monster_id, active_island)
     if monster is None:
         return action_result(False, "user_monster_id", monster_id, with_properties=True)
@@ -1573,11 +1588,12 @@ def collect_monster(username, params):
             "message": "Normal monster: nothing to collect",
             "user_monster_id": SFSLong(monster_id),
         }
-        return (result, {})
+        return result, {}
     monster["collected_coins"] = 0
     stored_field = _collection_stored_field(collection_type)
     monster[stored_field] = 0.0 if stored_field == "collected_relics" else 0
     monster["last_collection"] = now
+
     monster.pop("production", None)
     _add_collected_currency(player_object, collection_type, payout)
     save_player(username, root)
@@ -1589,10 +1605,11 @@ def collect_monster(username, params):
     if result_key == "wildcard":
         result["egg_wildcards_actual"] = _safe_int(player_object.get("egg_wildcards"))
     update = _monster_update(monster, "collect")
+
     update["properties"] = [
         p for p in create_player_properties(player_object) if "xp" not in p
     ]
-    return (result, {"monster_updates": [update]})
+    return result, {"monster_updates": [update]}
 
 
 def collect_multi_monster(username, params):
@@ -1677,7 +1694,7 @@ def collect_multi_monster(username, params):
         "last_collect_all": SFSLong(now),
         "properties": create_player_properties(player_object),
     }
-    return (result, {"monster_updates": update_monster_list})
+    return result, {"monster_updates": update_monster_list}
 
 
 def _register_bought_synthesis(island, synthesizer, user_egg):
@@ -1749,11 +1766,9 @@ def repair_synthesizer_eggs(island):
         ):
             continue
         synthesizer = next(
-            (
-                s
-                for s in synthesizers
-                if s.get("user_structure_id") == egg.get("structure")
-            )
+            s
+            for s in synthesizers
+            if s.get("user_structure_id") == egg.get("structure")
         )
         entries.append(_register_bought_synthesis_entry(synthesizer, egg))
         covered.add(egg.get("structure"))
@@ -1843,14 +1858,15 @@ def _find_nursery(island, requested_structure_id, allow_synthesizer=False):
             continue
         if (
             not holder.get("occupied")
-            and (not holder.get("has_egg"))
-            and (holder_id not in occupied_holder_ids)
+            and not holder.get("has_egg")
+            and holder_id not in occupied_holder_ids
         ):
             return holder
     return None
 
 
 def _roll_random_breed_costume(player_object, monster_id):
+
     min_level = get_user_game_setting_int("MIN_PLAYER_COSTUME_BREED_LEVEL", 10)
     if (player_object.get("level", 0) or 0) < min_level:
         return 0
@@ -1858,7 +1874,7 @@ def _roll_random_breed_costume(player_object, monster_id):
     if random.random() >= chance:
         return 0
     weighted = get_weighted_costumes_for_monster(monster_id)
-    total = sum((w for _, w in weighted))
+    total = sum(w for _, w in weighted)
     if total <= 0:
         return 0
     roll = random.random() * total
@@ -1883,10 +1899,10 @@ def place_egg(
     costume=None,
 ):
     if island is None or not monster_id:
-        return (None, None)
+        return None, None
     nursery = _find_nursery(island, preferred_holder_id or 0, allow_synthesizer)
     if nursery is None:
-        return (None, None)
+        return None, None
     next_egg_id = int(player_object.get("last_user_egg_id", 0) or 0) + 1
     player_object["last_user_egg_id"] = next_egg_id
     island_type = island_type_of(island) or 1
@@ -1894,7 +1910,7 @@ def place_egg(
     nursery_sid = nursery.get("user_structure_id", 0)
     now = int(time.time() * 1000)
     build_ms = _effective_build_ms(monster_id)
-    hatches_on = now if ready or build_ms <= 0 else now + build_ms
+    hatches_on = now if (ready or build_ms <= 0) else now + build_ms
     egg_costume = (
         costume
         if isinstance(costume, dict) and costume.get("eq")
@@ -1929,7 +1945,7 @@ def place_egg(
         nursery["obj_end"] = hatches_on
         nursery["finishing_time"] = hatches_on
         nursery["building_completed"] = hatches_on
-    return (user_egg, nursery)
+    return user_egg, nursery
 
 
 def _find_fallback_egg(eggs):
@@ -1952,19 +1968,20 @@ def _find_island_with_egg(player_object, user_egg_id):
 
 def _find_egg_record(player_object, user_egg_id, params=None):
     if not user_egg_id:
-        return (None, None)
+        return None, None
     preferred_ids = _candidate_island_ids(player_object, params or {})
     for island_id in preferred_ids:
         island = find_island(player_object, island_id)
         egg = _find_egg(island, user_egg_id) if island is not None else None
         if egg is not None:
-            return (island, egg)
+            return island, egg
     island = _find_island_with_egg(player_object, user_egg_id)
     egg = _find_egg(island, user_egg_id) if island is not None else None
-    return (island, egg)
+    return island, egg
 
 
 def extract_egg_costumes(username, params):
+
     user_egg_id = params.get("egg", 0) or 0
     requested_island_type = params.get("island", 0) or 0
     root, player_object = load_player(username)
@@ -2022,18 +2039,20 @@ def buy_egg(username, params):
     if island is None:
         if process_refs_repaired:
             save_player(username, root)
-        return ({"success": False}, {})
+        return {"success": False}, {}
     island_type = island_type_of(island) or 1
     definition = get_monster_definition(monster_id)
+
     if (
         definition is not None
         and island_type != MAGICAL_NEXUS_ISLAND_TYPE
-        and (not monster_allowed_on_island(definition, island_type))
+        and not monster_allowed_on_island(definition, island_type)
     ):
         resolved = resolve_monster_for_island(monster_id, island_type)
         if resolved != monster_id:
             monster_id = resolved
             definition = get_monster_definition(monster_id)
+
         if not monster_allowed_on_island(definition, island_type):
             home_type = _home_island_type_for(definition)
             if home_type and home_type != island_type:
@@ -2042,7 +2061,8 @@ def buy_egg(username, params):
                         island = candidate
                         island_type = home_type
                         break
-    requested_extra = definition.get("extra") or {} if definition else {}
+
+    requested_extra = (definition.get("extra") or {}) if definition else {}
     requested_paironormal_mode = None
     if requested_extra.get("minor"):
         requested_paironormal_mode = 0
@@ -2056,6 +2076,7 @@ def buy_egg(username, params):
             requested_paironormal_mode = 0
         elif "(minor)" in requested_common_name:
             requested_paironormal_mode = 1
+
     if requires_direct_placement(get_monster_definition(monster_id), island_type):
         _deduct_egg_purchase_cost(player_object, monster_id)
         island_uid = island.get("user_island_id", 1000 + island_type)
@@ -2082,6 +2103,7 @@ def buy_egg(username, params):
         if requested_paironormal_mode is not None:
             user_egg["requested_paironormal_mode"] = requested_paironormal_mode
         island.setdefault("eggs", []).append(user_egg)
+
         properties = create_player_properties(player_object)
         append_inventory_property(properties, player_object)
         save_player(username, root)
@@ -2091,7 +2113,8 @@ def buy_egg(username, params):
             "properties": properties,
             "user_egg": user_egg,
         }
-        return (result, {})
+        return result, {}
+
     requested_structure_id = params.get("nursery_id") or params.get("structure_id") or 0
     nursery = _find_nursery(island, requested_structure_id, True)
     if nursery is None:
@@ -2102,8 +2125,9 @@ def buy_egg(username, params):
             "error": "NO_AVAILABLE_EGG_HOLDER",
             "message": "No egg holder is available.",
         }
-        return (result, {})
+        return result, {}
     build_ms = _effective_build_ms(monster_id)
+
     egg_modes = None
     buy_paironormal_mode = None
     paironormal_parent = (
@@ -2139,7 +2163,7 @@ def buy_egg(username, params):
     if user_egg is None or nursery is None:
         if process_refs_repaired:
             save_player(username, root)
-        return ({"success": False, "error": "NO_AVAILABLE_EGG_HOLDER"}, {})
+        return {"success": False, "error": "NO_AVAILABLE_EGG_HOLDER"}, {}
     synthesis_data = (
         _register_bought_synthesis(island, nursery, user_egg)
         if _is_synthesizer_structure(nursery)
@@ -2158,7 +2182,7 @@ def buy_egg(username, params):
     if synthesis_data is not None:
         result["user_synthesizing_data"] = synthesis_data
     nursery_update = _nursery_touch_payload(nursery, player_object)
-    return (result, nursery_update)
+    return result, nursery_update
 
 
 def _is_titansoul_definition(definition):
@@ -2195,6 +2219,7 @@ def _default_titansoul_state():
 
 
 def _default_monster_name(definition):
+
     if msm_toggles.is_enabled("random_monster_names"):
         names = definition.get("names")
         if isinstance(names, list) and names:
@@ -2222,7 +2247,9 @@ def _build_hatched_monster(
     spawn_level = 1
     if msm_toggles.is_enabled("level20_spawns"):
         spawn_level = msm_toggles.get_int("monster_spawn_level", 20, 1, 100)
+
     if is_box_monster_entity(definition) and island_type in BOX_SIMPLE_ISLAND_TYPES:
+
         monster = {
             "user_monster_id": SFSLong(user_monster_id),
             "island": SFSLong(island_uid),
@@ -2247,7 +2274,7 @@ def _build_hatched_monster(
             apply_underling_box_state(monster, definition, island_type)
     elif (
         island_type == AMBER_ISLAND_TYPE
-        and (not reawakened_name)
+        and not reawakened_name
         and is_box_monster_entity(definition)
     ):
         monster = build_placeholder_box_monster(
@@ -2263,7 +2290,7 @@ def _build_hatched_monster(
             force_locked=True,
             level=spawn_level,
         )
-    elif is_box_monster_entity(definition) and (not reawakened_name):
+    elif is_box_monster_entity(definition) and not reawakened_name:
         monster = build_placeholder_box_monster(
             monster_id,
             definition,
@@ -2296,6 +2323,7 @@ def _build_hatched_monster(
             "costume": {"eq": 0, "p": []},
             "book_value": definition.get("cost_coins", 0) or 0,
         }
+
         if (
             definition.get("evolve_into")
             or definition.get("evolve_requirements")
@@ -2305,8 +2333,10 @@ def _build_hatched_monster(
             monster["has_evolve_flexeggs"] = "[]"
         if _is_titansoul_definition(definition):
             monster["titansoul"] = _default_titansoul_state()
+
         if reawakened_name and is_box_monster_entity(definition):
             apply_awakened_box_state(monster, definition, island_type)
+
         if island_mode_override is not None:
             island_mode = island_mode_override
         else:
@@ -2319,9 +2349,11 @@ def _build_hatched_monster(
                 PAIRONORMAL_ISLAND_TYPE,
                 MAGICAL_NEXUS_ISLAND_TYPE,
             ):
+
                 is_mirror_island = (island.get("user_island_id", 0) or 0) >= 100000000
                 island_mode = 1 if is_mirror_island else 0
             else:
+
                 stored_mode = island.get("mode", island.get("island_mode"))
                 island_mode = stored_mode if stored_mode is not None else 0
         build_paironormal_modes(monster, island_type, island_mode, player_object)
@@ -2368,7 +2400,7 @@ def _entity_rect(record, definition):
 
 def _rects_touch(a, b):
     return not (
-        a[2] < b[0] - 1 or b[2] < a[0] - 1 or a[3] < b[1] - 1 or (b[3] < a[1] - 1)
+        a[2] < b[0] - 1 or b[2] < a[0] - 1 or a[3] < b[1] - 1 or b[3] < a[1] - 1
     )
 
 
@@ -2385,9 +2417,10 @@ def _has_happiness_tree(island):
 def recompute_island_happiness(island):
     if island is None:
         return []
-    monsters = [m for m in island.get("monsters") or [] if m is not None]
-    structures = [s for s in island.get("structures") or [] if s is not None]
+    monsters = [m for m in (island.get("monsters") or []) if m is not None]
+    structures = [s for s in (island.get("structures") or []) if s is not None]
     island_wide = _has_happiness_tree(island)
+
     placed = []
     for m in monsters:
         definition = get_monster_definition(m.get("monster", 0))
@@ -2399,6 +2432,7 @@ def recompute_island_happiness(island):
         entity_id = _safe_int_or_none((definition or {}).get("entity_id"))
         if entity_id is not None:
             placed.append((entity_id, _entity_rect(s, definition), None))
+
     changed = []
     for m in monsters:
         definition = get_monster_definition(m.get("monster", 0))
@@ -2433,6 +2467,7 @@ def _monster_happiness_increments():
 def _calculate_monster_happiness_from_neighbors(
     definition, my_monster_id, neighbor_entity_ids, increments
 ):
+
     liked_values = _liked_entity_values(definition)
     if not liked_values:
         return 0
@@ -2452,6 +2487,7 @@ def _calculate_monster_happiness_from_neighbors(
 
 
 def process_multi_neighbor_change(username, params):
+
     root, player_object = load_player(username)
     island = find_island(player_object, get_active_island_id(player_object))
     if island is None:
@@ -2486,11 +2522,14 @@ def process_multi_neighbor_change(username, params):
             definition = get_monster_definition(monster.get("monster", 0))
             neighbor_ids = [
                 n.get("id")
-                for n in entity.get("neighbors") or []
+                for n in (entity.get("neighbors") or [])
                 if isinstance(n, dict)
             ]
             new_happiness = _calculate_monster_happiness_from_neighbors(
-                definition, monster.get("monster", 0), neighbor_ids, increments
+                definition,
+                monster.get("monster", 0),
+                neighbor_ids,
+                increments,
             )
             monster["happiness"] = new_happiness
             updates.append(_monster_update(monster, "collect"))
@@ -2540,7 +2579,7 @@ def hatch_egg(username, params):
     if (
         not reawakened_name
         and matched_egg is not None
-        and (matched_egg.get("source") == "wake_wubbox")
+        and matched_egg.get("source") == "wake_wubbox"
     ):
         reawakened_name = (
             get_monster_definition(matched_egg.get("monster", 0)) or {}
@@ -2563,6 +2602,7 @@ def hatch_egg(username, params):
             or is_box_monster_entity(candidate_definition)
         ):
             monster_id = direct_monster_id
+
             for pending_egg in list(eggs):
                 if (
                     pending_egg is not None
@@ -2602,6 +2642,7 @@ def hatch_egg(username, params):
             ):
                 nursery = structure
                 break
+
         if nursery is not None and is_nursery_structure(
             nursery.get("structure", nursery.get("structure_id", 0))
         ):
@@ -2660,7 +2701,7 @@ def hatch_egg(username, params):
         island_mode_override=requested_paironormal_mode,
         player_object=player_object,
         reawakened_name=reawakened_name,
-        egg_costume=matched_egg.get("costume") if matched_egg is not None else None,
+        egg_costume=(matched_egg.get("costume") if matched_egg is not None else None),
     )
     monsters = island.setdefault("monsters", [])
     monsters.append(monster)
@@ -2668,6 +2709,7 @@ def hatch_egg(username, params):
     island["num_monsters"] = island_monster_count
     _mark_monster_collected_in_book(island, monster_id)
     happy_effects = recompute_island_happiness(island)
+
     import mod_api
 
     mod_api.fire_event(
@@ -2685,6 +2727,7 @@ def hatch_egg(username, params):
         island=island,
         egg=matched_egg or {"user_egg_id": user_egg_id},
     )
+
     xp_gain = definition.get("xp", 0) or 0
     if xp_gain > 0:
         player_object["xp"] = (player_object.get("xp", 0) or 0) + xp_gain
@@ -2731,10 +2774,10 @@ def sell_egg(username, params):
         "properties": create_player_properties(player_object),
     }
     if island is None:
-        return (result, {})
+        return result, {}
     eggs = island.get("eggs") or []
     if matched_egg is None:
-        return (result, {})
+        return result, {}
     nursery_id = matched_egg.get("structure", 0)
     nursery = None
     for structure in island.get("structures") or []:
@@ -2742,6 +2785,7 @@ def sell_egg(username, params):
             nursery = structure
             break
     cleared_nursery = _clear_egg_holder_state(nursery)
+
     if msm_toggles.is_enabled("functioning_currencies"):
         egg_monster_id = (
             matched_egg.get("monster") or matched_egg.get("monster_id") or 0
@@ -2763,7 +2807,7 @@ def sell_egg(username, params):
         if cleared_nursery is not None
         else {}
     )
-    return (result, nursery_update)
+    return result, nursery_update
 
 
 def speed_up_hatching(username, params):
@@ -2772,7 +2816,7 @@ def speed_up_hatching(username, params):
     result = {"success": False, "properties": create_player_properties(player_object)}
     add_actual_currencies(result, player_object)
     if not user_egg_id:
-        return (result, {})
+        return result, {}
     island, egg = _find_egg_record(player_object, user_egg_id, params)
     if island is not None and egg is not None:
         now = int(time.time() * 1000)
@@ -2789,7 +2833,7 @@ def speed_up_hatching(username, params):
             ):
                 nursery = structure
                 break
-        if nursery is not None and (not _is_synthesizer_structure(nursery)):
+        if nursery is not None and not _is_synthesizer_structure(nursery):
             nursery["occupied"] = True
             nursery["has_egg"] = True
             nursery["obj_data"] = 1
@@ -2805,11 +2849,11 @@ def speed_up_hatching(username, params):
         add_actual_currencies(result, player_object)
         nursery_update = (
             _nursery_touch_payload(nursery, player_object)
-            if nursery is not None and (not _is_synthesizer_structure(nursery))
+            if nursery is not None and not _is_synthesizer_structure(nursery)
             else {}
         )
-        return (result, nursery_update)
-    return (result, {})
+        return result, nursery_update
+    return result, {}
 
 
 def viewed_egg(username, params):
@@ -2832,14 +2876,14 @@ def viewed_egg(username, params):
                 break
         if nursery is None:
             nursery = _find_nursery(island, nursery_id)
-        if nursery is not None and (not _is_synthesizer_structure(nursery)):
+        if nursery is not None and not _is_synthesizer_structure(nursery):
             nursery["viewed"] = True
             nursery["has_egg"] = True
             nursery["occupied"] = True
         elif nursery is not None:
             _clear_egg_holder_state(nursery)
         save_player(username, root)
-    return ({"success": True}, sold_update)
+    return {"success": True}, sold_update
 
 
 def claim_hatched_egg(username, params):
@@ -2886,13 +2930,13 @@ def unstore_monster(username, params):
 def _find_monster_or_form(player_object, monster_id):
     island, monster = find_monster_with_island(player_object, monster_id)
     if monster is not None:
-        return (island, monster)
+        return island, monster
     for island in player_object.get("islands") or []:
         for candidate in (island or {}).get("monsters") or []:
             for mode in (candidate or {}).get("modes") or []:
                 if isinstance(mode, dict) and mode.get("user_monster_id") == monster_id:
-                    return (island, mode)
-    return (None, None)
+                    return island, mode
+    return None, None
 
 
 def _island_costumes_owned(island):
@@ -2902,7 +2946,7 @@ def _island_costumes_owned(island):
             raw = json.loads(raw or "[]")
         except ValueError:
             raw = []
-    return [int(c) for c in raw or [] if isinstance(c, (int, float)) and c]
+    return [int(c) for c in (raw or []) if isinstance(c, (int, float)) and c]
 
 
 def record_island_costume(island, costume_id):
@@ -2979,7 +3023,7 @@ def costume_action(username, params, command):
                 if isinstance(monster.get("costume"), dict)
                 else {}
             )
-            purchased = [c for c in existing.get("p") or [] if c]
+            purchased = [c for c in (existing.get("p") or []) if c]
             equipped = existing.get("eq", 0) or 0
             if costume_id and costume_id not in purchased:
                 purchased.append(costume_id)
@@ -3025,7 +3069,7 @@ def _candidate_island_ids(player_object, params):
 
 def _find_breeding_record(player_object, breeding_id, params=None):
     if not breeding_id:
-        return (None, None)
+        return None, None
     preferred_ids = _candidate_island_ids(player_object, params or {})
     if preferred_ids:
         for island in player_object.get("islands") or []:
@@ -3033,33 +3077,33 @@ def _find_breeding_record(player_object, breeding_id, params=None):
                 continue
             for record in island.get("breeding") or []:
                 if record is not None and record.get("user_breeding_id") == breeding_id:
-                    return (island, record)
+                    return island, record
     for island in player_object.get("islands") or []:
         if island is None:
             continue
         for record in island.get("breeding") or []:
             if record is not None and record.get("user_breeding_id") == breeding_id:
-                return (island, record)
-    return (None, None)
+                return island, record
+    return None, None
 
 
 def _find_breeding_record_by_structure(player_object, structure_id):
     if not structure_id:
-        return (None, None)
+        return None, None
     for island in player_object.get("islands") or []:
         if island is None:
             continue
         for record in island.get("breeding") or []:
             if record is not None and record.get("structure") == structure_id:
-                return (island, record)
-    return (None, None)
+                return island, record
+    return None, None
 
 
 def _locate_breeding_structure(player_object, structure_id):
     island, structure = (None, None)
     if structure_id:
         island, structure = find_island_by_structure(player_object, structure_id)
-    return (island, structure)
+    return island, structure
 
 
 def breed_monsters(username, params):
@@ -3076,7 +3120,7 @@ def breed_monsters(username, params):
     island, structure = _locate_breeding_structure(player_object, structure_id)
     if island is None:
         island = find_island(player_object, get_active_island_id(player_object))
-    if structure is None and structure_id and (island is not None):
+    if structure is None and structure_id and island is not None:
         structure = find_structure(island, structure_id)
     if island is None or structure is None:
         if process_refs_repaired:
@@ -3126,6 +3170,7 @@ def breed_monsters(username, params):
         "monster_1": parent_a.get("monster", 0),
         "monster_2": parent_b.get("monster", 0),
     }
+
     rolled_costume_id = _roll_random_breed_costume(player_object, monster_id)
     if rolled_costume_id:
         record["costume"] = {"eq": rolled_costume_id, "p": [rolled_costume_id]}
@@ -3172,7 +3217,7 @@ def speed_up_breeding(username, params):
             "success": False,
             "properties": create_player_properties(player_object),
         }
-        return (result, {})
+        return result, {}
     now = int(time.time() * 1000)
     remaining = (record.get("complete_on", now) or now) - now
     _charge_speedup(player_object, remaining)
@@ -3186,7 +3231,7 @@ def speed_up_breeding(username, params):
         "userBreedingId": record.get("user_breeding_id"),
         "properties": create_player_properties(player_object),
     }
-    return (result, {})
+    return result, {}
 
 
 def finish_breeding(username, params, force_complete=False):
@@ -3259,6 +3304,7 @@ def finish_breeding(username, params, force_complete=False):
     breeding_list = island.get("breeding") or []
     if record in breeding_list:
         breeding_list.remove(record)
+
     result = {
         "success": True,
         "user_structure_id": SFSLong(nursery_sid),
@@ -3276,7 +3322,7 @@ def finish_breeding(username, params, force_complete=False):
 def _resolve_teleport_target_island(
     player_object, requested_island_id, requested_island_type, send_home
 ):
-    if not send_home and (not requested_island_id) and (not requested_island_type):
+    if not send_home and not requested_island_id and not requested_island_type:
         requested_island_type = 20
     for island in player_object.get("islands") or []:
         if island is None:
@@ -3295,18 +3341,19 @@ def _resolve_teleport_target_island(
                 or (
                     not requested_island_id
                     and requested_island_type
-                    and (island_type == requested_island_type)
+                    and island_type == requested_island_type
                 )
                 or (
                     not requested_island_id
-                    and (not requested_island_type)
-                    and (island_type == 20)
+                    and not requested_island_type
+                    and island_type == 20
                 )
             ):
                 return island
         elif matches_requested or user_island_id == requested_island_id:
             return island
     if not send_home and requested_island_type == 20:
+
         user_island_id = random.randint(100000000, 999999999)
         existing_ids = {
             isl.get("user_island_id")
@@ -3373,9 +3420,9 @@ def move_battle_monster(username, params, send_home):
     )
     raw_island = params.get("island") or params.get("to_island") or 0
     if raw_island:
-        if raw_island >= 1000 and (not requested_island_id):
+        if raw_island >= 1000 and not requested_island_id:
             requested_island_id = raw_island
-        if raw_island < 1000 and (not requested_island_type):
+        if raw_island < 1000 and not requested_island_type:
             requested_island_type = raw_island
     if not monster_id:
         return {"success": False}
@@ -3419,11 +3466,12 @@ def move_battle_monster(username, params, send_home):
     source_island_id = source_island.get("user_island_id", 0)
     target_type = island_type_of(target_island)
     if source_island is not target_island:
+
         monster["pos_x"] = 10
         monster["pos_y"] = 10
         target_island.setdefault("monsters", []).append(monster)
         source_island["monsters"] = [
-            m for m in source_island.get("monsters") or [] if m is not monster
+            m for m in (source_island.get("monsters") or []) if m is not monster
         ]
         if not send_home:
             monster["battle_home_island_id"] = source_island_id
@@ -3431,6 +3479,7 @@ def move_battle_monster(username, params, send_home):
     monster["island"] = target_island.get("user_island_id", 0)
     monster["island_type"] = target_type
     monster["user_island_id"] = target_island.get("user_island_id", 0)
+
     _costume = (
         monster.get("costume") if isinstance(monster.get("costume"), dict) else {}
     )
@@ -3458,18 +3507,20 @@ def send_monster_to_home_island(username, params):
         or 0
     )
     if not monster_id:
-        return ({"success": False}, None)
+        return {"success": False}, None
     root, player_object = load_player(username)
     _source, monster = find_monster_with_island(player_object, monster_id)
     if monster is None:
-        return ({"success": False}, None)
+        return {"success": False}, None
     definition = get_monster_definition(monster.get("monster", 0)) or {}
     home_id = _safe_int(monster.get("battle_home_island_id"))
     forwarded = dict(params)
     if home_id:
         forwarded["destination_user_island_id"] = home_id
         return teleport_monster_to_island(username, forwarded)
+
     home_type = _home_island_type_for(definition)
+
     if island_type_of(_source) in (7, 24):
         islet_types = [
             island_type
@@ -3481,11 +3532,12 @@ def send_monster_to_home_island(username, params):
     if home_type:
         forwarded["destination_island"] = home_type
         return teleport_monster_to_island(username, forwarded)
+
     current = _safe_int(params.get("user_island_id"))
     if current:
         forwarded["destination_user_island_id"] = current
         return teleport_monster_to_island(username, forwarded)
-    return ({"success": False}, None)
+    return {"success": False}, None
 
 
 SEASONAL_ISLAND_TYPE = 21
@@ -3496,7 +3548,8 @@ MAGICAL_SANCTUM_ISLAND_TYPE = 19
 
 
 def _home_island_type_for(definition):
-    family = f"{definition.get('fam', '')} {definition.get('class', '')}".upper()
+
+    family = f"{definition .get ('fam','')} {definition .get ('class','')}".upper()
     levelup_island = str(definition.get("levelup_island") or "").strip().lower()
     if levelup_island == "ethereal":
         return ETHEREAL_ISLAND_TYPE
@@ -3525,7 +3578,7 @@ def _complete_egg_teleport(
     username, root, source_island, target_island, monster, user_egg, nursery
 ):
     source_island["monsters"] = [
-        m for m in source_island.get("monsters") or [] if m is not monster
+        m for m in (source_island.get("monsters") or []) if m is not monster
     ]
     island_uid = target_island.get("user_island_id", 0)
     nursery_sid = nursery.get("user_structure_id", 0)
@@ -3540,22 +3593,20 @@ def _complete_egg_teleport(
         "user_island_id",
     ):
         user_egg.pop(key, None)
+
     nursery.pop("finishing_time", None)
     nursery["building_completed"] = _safe_int(
         nursery.get("date_created"), int(time.time() * 1000)
     )
     save_player(username, root)
-    return (
-        {
-            "success": True,
-            "user_monster_id": SFSLong(monster.get("user_monster_id", 0)),
-            "sent_to_island": island_type_of(target_island),
-            "dest_nursery": SFSLong(nursery_sid),
-            "user_island_id": SFSLong(island_uid),
-            "user_egg": user_egg,
-        },
-        nursery,
-    )
+    return {
+        "success": True,
+        "user_monster_id": SFSLong(monster.get("user_monster_id", 0)),
+        "sent_to_island": island_type_of(target_island),
+        "dest_nursery": SFSLong(nursery_sid),
+        "user_island_id": SFSLong(island_uid),
+        "user_egg": user_egg,
+    }, nursery
 
 
 def teleport_monster_to_island(username, params):
@@ -3567,7 +3618,8 @@ def teleport_monster_to_island(username, params):
         or 0
     )
     if not monster_id:
-        return ({"success": False}, None)
+        return {"success": False}, None
+
     requested_island_id = (
         params.get("destination_user_island_id")
         or params.get("target_user_island_id")
@@ -3587,29 +3639,35 @@ def teleport_monster_to_island(username, params):
     )
     raw_island = params.get("island") or params.get("to_island") or 0
     if raw_island:
-        if raw_island >= 1000 and (not requested_island_id):
+        if raw_island >= 1000 and not requested_island_id:
             requested_island_id = raw_island
-        if raw_island < 1000 and (not requested_island_type):
+        if raw_island < 1000 and not requested_island_type:
             requested_island_type = raw_island
+
     root, player_object = load_player(username)
     source_island, monster = find_monster_with_island(player_object, monster_id)
     if monster is None:
-        return ({"success": False}, None)
+        return {"success": False}, None
+
     target_island = _resolve_teleport_target_island(
         player_object, requested_island_id, requested_island_type, False
     )
     if target_island is None:
-        return ({"success": False}, None)
+        return {"success": False}, None
+
     target_type = island_type_of(target_island)
     monster_type = monster.get("monster", 0)
+
     if target_type == MAGICAL_NEXUS_ISLAND_TYPE:
         return send_to_magical_nexus(username, params)
     if target_type == PAIRONORMAL_ISLAND_TYPE:
         return send_to_paironormal(username, params)
+
     resolved_type = resolve_monster_for_island(monster_type, target_type)
     definition = get_monster_definition(resolved_type)
     if definition is None or not monster_allowed_on_island(definition, target_type):
-        return ({"success": False, "error": "MONSTER_NOT_ALLOWED_ON_ISLAND"}, None)
+        return {"success": False, "error": "MONSTER_NOT_ALLOWED_ON_ISLAND"}, None
+
     previous_name = monster.get("name")
     user_egg, nursery = place_egg(
         player_object,
@@ -3619,7 +3677,8 @@ def teleport_monster_to_island(username, params):
         previous_name=previous_name,
     )
     if user_egg is None or nursery is None:
-        return ({"success": False, "error": "NO_AVAILABLE_EGG_HOLDER"}, None)
+        return {"success": False, "error": "NO_AVAILABLE_EGG_HOLDER"}, None
+
     return _complete_egg_teleport(
         username, root, source_island, target_island, monster, user_egg, nursery
     )
@@ -3634,18 +3693,18 @@ def send_to_magical_nexus(username, params):
         or 0
     )
     if not monster_id:
-        return ({"success": False}, None)
+        return {"success": False}, None
     root, player_object = load_player(username)
     source_island, monster = find_monster_with_island(player_object, monster_id)
     if monster is None:
-        return ({"success": False}, None)
+        return {"success": False}, None
     target_island = None
     for island in player_object.get("islands") or []:
         if island is not None and island_type_of(island) == MAGICAL_NEXUS_ISLAND_TYPE:
             target_island = island
             break
     if target_island is None:
-        return ({"success": False}, None)
+        return {"success": False}, None
     repair_magical_nexus_layout(target_island)
     monster_type = monster.get("monster", 0)
     previous_name = monster.get("name")
@@ -3657,7 +3716,7 @@ def send_to_magical_nexus(username, params):
         previous_name=previous_name,
     )
     if user_egg is None or nursery is None:
-        return ({"success": False, "error": "NO_AVAILABLE_EGG_HOLDER"}, None)
+        return {"success": False, "error": "NO_AVAILABLE_EGG_HOLDER"}, None
     return _complete_egg_teleport(
         username, root, source_island, target_island, monster, user_egg, nursery
     )
@@ -3672,18 +3731,18 @@ def send_to_paironormal(username, params):
         or 0
     )
     if not monster_id:
-        return ({"success": False}, None)
+        return {"success": False}, None
     root, player_object = load_player(username)
     source_island, monster = find_monster_with_island(player_object, monster_id)
     if monster is None:
-        return ({"success": False}, None)
+        return {"success": False}, None
     target_island = None
     for island in player_object.get("islands") or []:
         if island is not None and island_type_of(island) == PAIRONORMAL_ISLAND_TYPE:
             target_island = island
             break
     if target_island is None:
-        return ({"success": False}, None)
+        return {"success": False}, None
     monster_type = monster.get("monster", 0)
     arriving_extra = (get_monster_definition(monster_type) or {}).get("extra") or {}
     arriving_mode = None
@@ -3702,7 +3761,7 @@ def send_to_paironormal(username, params):
         player_object, target_island, monster_type, "paironormal", modes=egg_modes
     )
     if user_egg is None or nursery is None:
-        return ({"success": False, "error": "NO_AVAILABLE_EGG_HOLDER"}, None)
+        return {"success": False, "error": "NO_AVAILABLE_EGG_HOLDER"}, None
     if arriving_mode is not None:
         user_egg["requested_paironormal_mode"] = arriving_mode
     nursery["viewed"] = True
@@ -3759,7 +3818,9 @@ def place_on_gold_island(username, params):
     now = int(time.time() * 1000)
     source_monster_id = monster.get("monster", 0)
     source_definition = get_monster_definition(source_monster_id) or {}
+
     target_monster_id = source_monster_id
+
     if _is_source_epic_wubbox(source_definition):
         gold_target = _gold_epic_wubbox_start_id()
         if gold_target:
@@ -3785,6 +3846,7 @@ def place_on_gold_island(username, params):
         "costume": monster.get("costume", {"eq": 0, "p": []}),
         "user_monster_id": SFSLong(next_id),
     }
+
     if is_box_monster_entity(target_definition):
         if msm_toggles.is_enabled("wubbox_auto_awaken"):
             apply_awakened_box_state(clone, target_definition, GOLD_ISLAND_TYPE)
@@ -3792,6 +3854,7 @@ def place_on_gold_island(username, params):
             apply_inactive_box_state(clone, target_definition)
     gold_island.setdefault("monsters", []).append(clone)
     save_player(username, root)
+
     wire_monster = {
         key: value
         for key, value in clone.items()
@@ -3832,19 +3895,20 @@ def cancel_breeding(username, params):
 
 
 FUZER_BUDDY_STRUCTURE_ID = 284
+
 _FUZING_DEFAULT_COLOR = 0.7071067690849304
 
 
 def _find_fuzing_record(player_object, structure_id):
     if not structure_id:
-        return (None, None)
+        return None, None
     for island in player_object.get("islands") or []:
         if island is None:
             continue
         for record in island.get("fuzer") or []:
             if record is not None and record.get("structure_id") == structure_id:
-                return (island, record)
-    return (None, None)
+                return island, record
+    return None, None
 
 
 def store_buddy(username, params):
@@ -3882,7 +3946,7 @@ def unstore_buddy(username, params):
     root, player_object = load_player(username)
     island = find_island(player_object, get_active_island_id(player_object))
     if island is None:
-        return ({"success": False, "user_structure_id": SFSLong(structure_id)}, {})
+        return {"success": False, "user_structure_id": SFSLong(structure_id)}, {}
     stored = island.get("fuzer_input_buddies") or []
     entry = next(
         (
@@ -3893,7 +3957,7 @@ def unstore_buddy(username, params):
         None,
     )
     if entry is None:
-        return ({"success": False, "user_structure_id": SFSLong(structure_id)}, {})
+        return {"success": False, "user_structure_id": SFSLong(structure_id)}, {}
     island["fuzer_input_buddies"] = [b for b in stored if b is not entry]
     existing = find_structure(island, structure_id)
     if existing is not None:
@@ -3905,7 +3969,7 @@ def unstore_buddy(username, params):
             "properties": create_player_properties(player_object),
         }
         add_actual_currencies(result, player_object)
-        return (result, msm_structures_update(existing))
+        return result, msm_structures_update(existing)
     record = entry.get("record")
     if isinstance(record, dict):
         structure = dict(record)
@@ -3917,10 +3981,8 @@ def unstore_buddy(username, params):
             if value is not None:
                 structure[key] = value
         already = any(
-            (
-                s is not None and s.get("user_structure_id") == structure_id
-                for s in island.get("structures") or []
-            )
+            s is not None and s.get("user_structure_id") == structure_id
+            for s in island.get("structures") or []
         )
         if not already:
             island.setdefault("structures", []).append(structure)
@@ -3933,7 +3995,7 @@ def unstore_buddy(username, params):
         "properties": create_player_properties(player_object),
     }
     add_actual_currencies(result, player_object)
-    return (result, msm_structures_update(structure) if structure is not None else {})
+    return result, (msm_structures_update(structure) if structure is not None else {})
 
 
 def msm_structures_update(structure):
@@ -3943,6 +4005,7 @@ def msm_structures_update(structure):
 
 
 def _fuze_rms(v1, v2):
+
     return math.sqrt(((v1 or 0.0) ** 2 + (v2 or 0.0) ** 2) / 2.0)
 
 
@@ -3957,7 +4020,9 @@ def start_fuzing(username, params):
     if island is None or structure is None:
         return action_result(False, "structure_id", structure_id, with_properties=True)
     structure_sid = structure.get("user_structure_id", 0)
+
     if create:
+
         color_r = params.get("colorR", 1.0)
         color_y = params.get("colorY", 0.0)
         color_b = params.get("colorB", 0.0)
@@ -3967,7 +4032,7 @@ def start_fuzing(username, params):
             (0.0, 0.0, 1.0),
         )
         if not is_primary:
-            color_r, color_y, color_b = (1.0, 0.0, 0.0)
+            color_r, color_y, color_b = 1.0, 0.0, 0.0
     else:
         fuzer_inputs = (island.get("fuzer_input_buddies") or [])[:2]
         buddy1 = fuzer_inputs[0] if len(fuzer_inputs) > 0 else {}
@@ -4017,10 +4082,10 @@ def speed_up_fuzing(username, params):
     root, player_object = load_player(username)
     island, record = _find_fuzing_record(player_object, structure_id)
     if record is None:
-        return (
-            {"success": False, "properties": create_player_properties(player_object)},
-            {},
-        )
+        return {
+            "success": False,
+            "properties": create_player_properties(player_object),
+        }, {}
     now = int(time.time() * 1000)
     remaining = (record.get("finished_on", now) or now) - now
     _charge_speedup(player_object, remaining)
@@ -4034,7 +4099,7 @@ def speed_up_fuzing(username, params):
         "structure_id": SFSLong(structure_id),
         "properties": create_player_properties(player_object),
     }
-    return (result, {})
+    return result, {}
 
 
 def finish_fuzing(username, params, force_complete=False):
@@ -4054,8 +4119,9 @@ def finish_fuzing(username, params, force_complete=False):
     fuzer_list = island.get("fuzer") or []
     if record in fuzer_list:
         fuzer_list.remove(record)
+
     fuzer_inputs = island.get("fuzer_input_buddies") or []
-    if fuzer_inputs and (not record.get("create")):
+    if fuzer_inputs and not record.get("create"):
         delete_ids = [
             {"id": SFSLong(b.get("user_structure_id", 0))} for b in fuzer_inputs
         ]
@@ -4076,6 +4142,7 @@ def finish_fuzing(username, params, force_complete=False):
         delete_ids = []
     fuzer_structure = find_structure(island, structure_id)
     new_structure_id = 10000 + random.randint(0, 989999)
+
     pos_x = params.get("pos_x", (fuzer_structure or {}).get("pos_x", 0))
     pos_y = params.get("pos_y", (fuzer_structure or {}).get("pos_y", 0))
     flip = params.get("flip", 0) or 0

@@ -5,7 +5,6 @@ import struct
 
 
 class RequestWatch:
-
     def __init__(self):
         self.page = None
         self.ids = itertools.count(1)
@@ -30,7 +29,7 @@ class RequestWatch:
         self.skipped_runs = 0
 
     def publish(self):
-        self.sequence = self.sequence + 2 & 2147483646
+        self.sequence = (self.sequence + 2) & 0x7FFFFFFE
         struct.pack_into(">I", self.page, 0, self.sequence | 1)
         oldest = next(iter(self.pending), 0)
         label = self.pending[oldest][1] if oldest else b""
@@ -49,7 +48,7 @@ class RequestWatch:
     def begin(self, label, http=False):
         if self.page is None:
             return None
-        token = next(self.ids) % 2147483647 + 1
+        token = next(self.ids) % 0x7FFFFFFF + 1
         self.pending[token] = (http, label)
         self.http += int(http)
         self.publish()
@@ -65,7 +64,6 @@ watch = RequestWatch()
 
 
 class ObservedQueue(asyncio.Queue):
-
     def __init__(self):
         super().__init__()
         self.tokens = set()
@@ -81,7 +79,7 @@ class ObservedQueue(asyncio.Queue):
 
     def put_nowait(self, event):
         data = event.get("bytes")
-        if data and len(data) >= 10 and (data[0] == 0):
+        if data and len(data) >= 10 and data[0] == 0:
             size = data[9]
             if 0 < size <= len(data) - 10 and data[10 : 10 + size] != b"alive":
                 name = data[10 : 10 + size]
@@ -103,7 +101,6 @@ class ObservedQueue(asyncio.Queue):
 
 
 def observe_http(app):
-
     async def serve(scope, receive, send):
         if scope["type"] != "http" or scope["path"] == "/nps_server_config":
             return await app(scope, receive, send)

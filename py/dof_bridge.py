@@ -7,6 +7,7 @@ import threading
 import time
 import logging
 import sys
+import tempfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs
@@ -17,9 +18,12 @@ _dof_stdout = logging.StreamHandler(sys.stdout)
 _dof_stdout.setFormatter(logging.Formatter("%(asctime)s [DOF] %(message)s"))
 logger.addHandler(_dof_stdout)
 logger.propagate = False
+
 PORT = 8090
+
 CURRENCY_COINS = 4
 CURRENCY_DIAMONDS = 5
+
 _server = None
 _active_device_id = None
 
@@ -78,14 +82,18 @@ def _load_static_auth_data():
     path = _base_dir() / "known_responses" / "msm2auth_10.json"
     try:
         capture = json.loads(path.read_text(encoding="utf-8"))
-        coupons = next((i["coupon_list"] for i in capture if i.get("type") == 1003))
-        server_text = next((i["server_text"] for i in capture if i.get("type") == 1004))
+        coupons = next(i["coupon_list"] for i in capture if i.get("type") == 1003)
+        server_text = next(i["server_text"] for i in capture if i.get("type") == 1004)
         schedule = next(
-            (i["schedule_instances"] for i in capture if i.get("type") == 1005)
+            i["schedule_instances"] for i in capture if i.get("type") == 1005
         )
-        return (coupons, server_text, schedule)
+        return coupons, server_text, schedule
     except Exception:
-        return ({"dataFormat": 1, "couponsVersionId": 0, "coupons": []}, {}, {"rs": []})
+        return (
+            {"dataFormat": 1, "couponsVersionId": 0, "coupons": []},
+            {},
+            {"rs": []},
+        )
 
 
 STATIC_COUPON_LIST, STATIC_SERVER_TEXT, STATIC_SCHEDULE_INSTANCES = (
@@ -99,7 +107,21 @@ def _static_auth_data():
         STATIC_COUPON_LIST, STATIC_SERVER_TEXT, STATIC_SCHEDULE_INSTANCES = (
             _load_static_auth_data()
         )
-    return (STATIC_COUPON_LIST, STATIC_SERVER_TEXT, STATIC_SCHEDULE_INSTANCES)
+    return STATIC_COUPON_LIST, STATIC_SERVER_TEXT, STATIC_SCHEDULE_INSTANCES
+
+
+def _starter_quest_data():
+    path = _base_dir() / "known_responses" / "msm2auth_10.json"
+    try:
+        records = json.loads(path.read_text(encoding="utf-8"))
+        for record in records if isinstance(records, list) else []:
+            if record.get("type") == 16:
+                quests = (record.get("sync_data") or {}).get("quests")
+                if isinstance(quests, dict):
+                    return json.loads(json.dumps(quests))
+    except (OSError, ValueError, TypeError):
+        pass
+    return None
 
 
 ALWAYS_ON_YEARS = 10
@@ -213,6 +235,8 @@ ISLAND_GRIDS = {
     95: [0, 1, 2, 3, 99, 4, 5, 6],
     96: [0, 1, 2, 3, 4, 5, 6, 7, 8],
 }
+
+
 _placeable_cache = None
 
 
@@ -226,7 +250,7 @@ def _placeable_map():
         )["entities"]
     except Exception:
         return {}
-    if not any(("placeable" in e for e in entries)):
+    if not any("placeable" in e for e in entries):
         return {}
     _placeable_cache = {e["id"]: e.get("placeable") for e in entries}
     return _placeable_cache
@@ -236,6 +260,17 @@ def repair_islands(save):
     changed = False
     placeable = _placeable_map()
     islands = ((save.get("sync_data") or {}).get("islands") or {}).get("islands") or []
+    starter = _starter_island()
+    starter_by_kind = {}
+    if isinstance(starter, dict) and starter.get("id") == 1:
+        for key in ("monsters", "structures"):
+            for entity in starter.get(key) or []:
+                if isinstance(entity, dict):
+                    starter_by_kind.setdefault(key, {}).setdefault(
+                        entity.get("databasae_id"), entity
+                    )
+    required_structures = (216, 226, 286)
+    required_monsters = (206, 281)
     for island in islands:
         if not isinstance(island, dict):
             continue
@@ -259,27 +294,48 @@ def repair_islands(save):
             if len(valid_entities) != len(entities):
                 island[key] = valid_entities
                 changed = True
-        if island.get("id") == 1 and isinstance(island.get("structures"), list):
-            if not any(
-                (
-                    isinstance(e, dict) and e.get("databasae_id") == CASTLE_ID
-                    for e in island["structures"]
-                )
+        if island.get("id") == 1:
+            for kind, required in (
+                ("structures", required_structures),
+                ("monsters", required_monsters),
             ):
-                instance_id = (
-                    max(save.get("instance_counter", 0) or 0, _max_instance_id(island))
-                    + 1
-                )
-                save["instance_counter"] = instance_id
-                inventory = (save.get("sync_data") or {}).get("inventory")
-                if isinstance(inventory, dict):
-                    inventory["instanceCounter"] = instance_id
-                island["structures"].append(_castle_entity(instance_id))
+                present = {
+                    e.get("databasae_id")
+                    for e in island.get(kind) or []
+                    if isinstance(e, dict)
+                }
+                for entity_id in required:
+                    if entity_id in present:
+                        continue
+                    template = starter_by_kind.get(kind, {}).get(entity_id)
+                    if template is None and entity_id == CASTLE_ID:
+                        instance_id = next_instance_id(save)
+                        entity = _castle_entity(instance_id)
+                    elif template is None:
+                        continue
+                    else:
+                        instance_id = next_instance_id(save)
+                        entity = json.loads(json.dumps(template))
+                        entity["instance_id"] = instance_id
+                        if kind == "monsters":
+                            entity["level"] = max(4, int(entity.get("level") or 1))
+                    island.setdefault(kind, []).append(entity)
+                    present.add(entity_id)
+                    changed = True
+
+            for monster in island.get("monsters") or []:
                 if (
-                    isinstance(island.get("grids"), list)
-                    and CASTLE_GRID not in island["grids"]
+                    isinstance(monster, dict)
+                    and monster.get("databasae_id") in required_monsters
                 ):
-                    island["grids"].append(CASTLE_GRID)
+                    if int(monster.get("level") or 1) < 4:
+                        monster["level"] = 4
+                        changed = True
+            if (
+                isinstance(island.get("grids"), list)
+                and CASTLE_GRID not in island["grids"]
+            ):
+                island["grids"].append(CASTLE_GRID)
                 changed = True
         valid = ISLAND_GRIDS.get(island.get("id"))
         if valid is None:
@@ -296,8 +352,8 @@ def repair_islands(save):
                 if (
                     isinstance(entity, dict)
                     and "grid_id" in entity
-                    and (entity["grid_id"] not in kept)
-                    and (fallback is not None)
+                    and entity["grid_id"] not in kept
+                    and fallback is not None
                 ):
                     entity["grid_id"] = fallback
                     changed = True
@@ -328,7 +384,7 @@ def _resolve_device_id(client_supplied):
 
 
 def _rand_id(n=12, alphabet=string.ascii_lowercase + string.digits):
-    return "".join((random.choice(alphabet) for _ in range(n)))
+    return "".join(random.choice(alphabet) for _ in range(n))
 
 
 CASTLE_ID = 286
@@ -391,11 +447,12 @@ def _fresh_save(device_id, bbb_device_id):
     account_id = _rand_id(10)
     user_game_id = _rand_id(10)
     friend_code = "".join(
-        (random.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(8))
+        random.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(8)
     )
     player_user = "".join(
-        (random.choice(string.ascii_uppercase + string.digits) for _ in range(8))
+        random.choice(string.ascii_uppercase + string.digits) for _ in range(8)
     )
+
     starter_island = {
         "id": 1,
         "grids": [3, 5],
@@ -425,7 +482,7 @@ def _fresh_save(device_id, bbb_device_id):
                 "favorite_lockout": {},
                 "cached_coins": 0,
                 "likes": [],
-            }
+            },
         ],
         "structures": [
             {
@@ -453,7 +510,7 @@ def _fresh_save(device_id, bbb_device_id):
                     "queue": [],
                 },
                 "level": 1,
-            }
+            },
         ],
         "decorations": [],
         "collection": {"contents": [], "timestamps": []},
@@ -462,10 +519,12 @@ def _fresh_save(device_id, bbb_device_id):
     if official is not None:
         starter_island = official
     elif not any(
-        (e.get("databasae_id") == CASTLE_ID for e in starter_island["structures"])
+        e.get("databasae_id") == CASTLE_ID for e in starter_island["structures"]
     ):
         starter_island["structures"].append(_castle_entity(3))
     counter = max(3, _max_instance_id(starter_island))
+
+    starter_quests = _starter_quest_data()
     return {
         "account_id": account_id,
         "username": _rand_id(12),
@@ -490,7 +549,8 @@ def _fresh_save(device_id, bbb_device_id):
                     starter_island,
                 ]
             },
-            "quests": {
+            "quests": starter_quests
+            or {
                 "questCounter": -1,
                 "questRNG": {
                     "s1": random.randint(1, 2**31 - 1),
@@ -596,7 +656,7 @@ def _fresh_save(device_id, bbb_device_id):
 
 
 def _save_path(device_id):
-    safe = "".join((c if c.isalnum() else "_" for c in device_id))
+    safe = "".join(c if c.isalnum() else "_" for c in device_id)
     return _saves_dir() / f"{safe}.json"
 
 
@@ -628,9 +688,23 @@ def find_save_by_token(token):
 
 
 def write_save(save):
-    _save_path(save["device_id"]).write_text(
-        json.dumps(save, indent=2), encoding="utf-8"
-    )
+    path = _save_path(save["device_id"])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = json.dumps(save, indent=2)
+
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        dir=path.parent,
+        prefix=path.name + ".",
+        suffix=".tmp",
+        delete=False,
+    ) as fh:
+        temp_path = Path(fh.name)
+        fh.write(payload)
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(temp_path, path)
 
 
 _save_lock = threading.RLock()
@@ -645,9 +719,9 @@ def _same(a, b):
     if isinstance(a, (int, float)) and isinstance(b, (int, float)):
         return float(a) == float(b)
     if isinstance(a, dict) and isinstance(b, dict):
-        return a.keys() == b.keys() and all((_same(a[k], b[k]) for k in a))
+        return a.keys() == b.keys() and all(_same(a[k], b[k]) for k in a)
     if isinstance(a, list) and isinstance(b, list):
-        return len(a) == len(b) and all((_same(x, y) for x, y in zip(a, b)))
+        return len(a) == len(b) and all(_same(x, y) for x, y in zip(a, b))
     return a == b
 
 
@@ -655,29 +729,27 @@ def _array_key(*arrays):
     items = [item for arr in arrays if isinstance(arr, list) for item in arr]
     if not items:
         return None
-    if all((isinstance(i, dict) and "instance_id" in i for i in items)):
-        return (lambda i: i.get("instance_id") if isinstance(i, dict) else None, True)
-    if all((isinstance(i, dict) and "id" in i for i in items)):
-        return (lambda i: i.get("id") if isinstance(i, dict) else None, False)
+    if all(isinstance(i, dict) and "instance_id" in i for i in items):
+        return (lambda i: i.get("instance_id") if isinstance(i, dict) else None), True
+    if all(isinstance(i, dict) and "id" in i for i in items):
+        return (lambda i: i.get("id") if isinstance(i, dict) else None), False
     if all(
-        (
-            isinstance(i, list)
-            and len(i) == 2
-            and isinstance(i[0], (int, float))
-            and (not isinstance(i[0], bool))
-            for i in items
-        )
+        isinstance(i, list)
+        and len(i) == 2
+        and isinstance(i[0], (int, float))
+        and not isinstance(i[0], bool)
+        for i in items
     ):
-        return (lambda i: i[0] if isinstance(i, list) and i else None, False)
+        return (lambda i: i[0] if isinstance(i, list) and i else None), False
     return None
 
 
 def _merge_array(mine, base, theirs, key, from_game):
     key_of, distinct_new = key
-    base_by = {key_of(i): i for i in base or [] if key_of(i) is not None}
+    base_by = {key_of(i): i for i in (base or []) if key_of(i) is not None}
     theirs_by = {key_of(i): i for i in theirs if key_of(i) is not None}
     mine_ids = set()
-    result, extra = ([], [])
+    result, extra = [], []
     for item in mine:
         item_id = key_of(item)
         if item_id is None:
@@ -689,7 +761,7 @@ def _merge_array(mine, base, theirs, key, from_game):
         if t is None:
             if b is None or not _same(item, b):
                 result.append(item)
-        elif b is None and distinct_new and (not _same(item, t)):
+        elif b is None and distinct_new and not _same(item, t):
             result.append(item)
             copy = json.loads(json.dumps(t))
             from_game.append(copy)
@@ -758,7 +830,7 @@ def _renumber_clashes(save, from_game):
         if len(group) < 2:
             continue
         keep = next((e for e in group if id(e) in game_ids), group[0])
-        clashes.extend((e for e in group if e is not keep))
+        clashes.extend(e for e in group if e is not keep)
     if not clashes:
         return
     counter = max([save.get("instance_counter") or 0] + list(groups))
@@ -878,6 +950,7 @@ def _cmd_entity_rename(save, cmd):
 
 
 def _cmd_entity_mute(save, cmd):
+
     entity = find_entity(save, cmd.get("entity"))
     if entity and "mute" in cmd:
         entity["muted"] = bool(cmd["mute"])
@@ -893,6 +966,7 @@ def _cmd_entity_favorite(save, cmd):
 
 
 def _cmd_entity_favorite_refresh(save, cmd):
+
     return []
 
 
@@ -901,6 +975,67 @@ def _cmd_entity_collect(save, cmd):
     if entity and entity.get("cached_coins"):
         inv_add(save, CURRENCY_COINS, entity["cached_coins"])
         entity["cached_coins"] = 0
+    return []
+
+
+def _cmd_entity_sell(save, cmd):
+    entity_id = cmd.get("entity", cmd.get("instance_id"))
+    for island in save["sync_data"]["islands"]["islands"]:
+        if not isinstance(island, dict):
+            continue
+        for key in ("monsters", "structures", "decorations"):
+            entities = island.get(key) or []
+            for index, entity in enumerate(entities):
+                if isinstance(entity, dict) and entity.get("instance_id") == entity_id:
+                    entities.pop(index)
+
+                    inv_add(save, CURRENCY_COINS, int(cmd.get("refund", 0) or 0))
+                    return []
+    return []
+
+
+def _cmd_tutorial_complete(save, cmd):
+    save["sync_data"].setdefault("player_info", {})["tutorial_complete"] = True
+    return []
+
+
+def _cmd_global_want_reset(save, cmd):
+    wants = (
+        save["sync_data"].setdefault("global_wants", {}).setdefault("global_wants", [])
+    )
+    for want in wants:
+        if isinstance(want, dict):
+            want["count"] = 0
+            want["reset"] = True
+    return []
+
+
+def _cmd_global_want_reward(save, cmd):
+    completed = (
+        save["sync_data"]
+        .setdefault("completed_global_wants", {})
+        .setdefault("completed_global_wants", [])
+    )
+    wants = (
+        save["sync_data"].setdefault("global_wants", {}).setdefault("global_wants", [])
+    )
+    index = cmd.get("index", cmd.get("want", 0))
+    want = next(
+        (
+            w
+            for w in wants
+            if isinstance(w, dict)
+            and (w.get("index") == index or w.get("instance") == index)
+        ),
+        None,
+    )
+    if want is not None and int(want.get("count") or 0) >= int(
+        want.get("required") or 0
+    ):
+        reward_id = int(want.get("reward_id") or CURRENCY_COINS)
+        inv_add(save, reward_id, int(want.get("reward_count") or 0))
+        completed.append(json.loads(json.dumps(want)))
+        wants.remove(want)
     return []
 
 
@@ -950,7 +1085,9 @@ def raise_monster_levels(save):
     for island in ((save.get("sync_data") or {}).get("islands") or {}).get(
         "islands"
     ) or []:
-        for monster in island.get("monsters") or [] if isinstance(island, dict) else []:
+        for monster in (
+            (island.get("monsters") or []) if isinstance(island, dict) else []
+        ):
             if isinstance(monster, dict) and (monster.get("level") or 0) < target:
                 monster["level"] = target
                 changed = True
@@ -958,6 +1095,7 @@ def raise_monster_levels(save):
 
 
 def _cmd_entity_buy(save, cmd):
+
     islands = save["sync_data"]["islands"]["islands"]
     island = next((i for i in islands if i.get("id") == cmd.get("island")), islands[-1])
     new_id = next_instance_id(save)
@@ -1036,10 +1174,14 @@ COMMAND_HANDLERS = {
     1110: _cmd_entity_favorite,
     1111: _cmd_entity_favorite_refresh,
     1113: _cmd_entity_collect,
+    1102: _cmd_entity_sell,
     1104: _cmd_structure_speedup,
     1100: _cmd_entity_buy,
     322: _cmd_tokens_collect,
     1133: _cmd_bonus_new_board,
+    605: _cmd_tutorial_complete,
+    1413: _cmd_global_want_reset,
+    1414: _cmd_global_want_reward,
 }
 
 
@@ -1133,30 +1275,27 @@ def handle_auth_login(device_id, bbb_device_id):
     write_save(save)
     set_session_device(save["device_id"])
     remember_client_state(save["device_id"], save["sync_data"])
-    return (
-        [
-            {
-                "type": 16,
-                "server": "",
-                "id": "",
-                "index": save["login_index"],
-                "prev_session": 0,
-                "prev_sequence": 0,
-                "date_created": int(time.time() * 1000),
-                "sync_data": save["sync_data"],
-            },
-            {"type": 1003, "coupon_list": coupons},
-            {"type": 1004, "server_text": server_text},
-            {
-                "type": 1005,
-                "last_updated_timestamp": int(time.time()),
-                "schedule_instances": schedule,
-                "next_schedule_refresh": int(time.time()) + 3600,
-            },
-            {"type": 104, "clock": int(time.time() * 1000)},
-        ],
-        save,
-    )
+    return [
+        {
+            "type": 16,
+            "server": "",
+            "id": "",
+            "index": save["login_index"],
+            "prev_session": 0,
+            "prev_sequence": 0,
+            "date_created": int(time.time() * 1000),
+            "sync_data": save["sync_data"],
+        },
+        {"type": 1003, "coupon_list": coupons},
+        {"type": 1004, "server_text": server_text},
+        {
+            "type": 1005,
+            "last_updated_timestamp": int(time.time()),
+            "schedule_instances": schedule,
+            "next_schedule_refresh": int(time.time()) + 3600,
+        },
+        {"type": 104, "clock": int(time.time() * 1000)},
+    ], save
 
 
 class DofHandler(BaseHTTPRequestHandler):
@@ -1183,7 +1322,11 @@ class DofHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "text/plain")
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
-        self.wfile.write(payload)
+        try:
+            self.wfile.write(payload)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+
+            logger.debug("Client disconnected before the plain response was sent")
 
     def _send(self, body_obj, log_note=""):
         payload = json.dumps(body_obj).encode("utf-8")
@@ -1191,7 +1334,10 @@ class DofHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
-        self.wfile.write(payload)
+        try:
+            self.wfile.write(payload)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+            logger.debug("Client disconnected before the JSON response was sent")
         logger.info("RESP %s %s", log_note, json.dumps(body_obj)[:300])
         try:
             record = {
@@ -1241,6 +1387,7 @@ class DofHandler(BaseHTTPRequestHandler):
                 )
         except Exception:
             pass
+
         if segment == "game_config":
             self._send(
                 {
@@ -1269,7 +1416,9 @@ class DofHandler(BaseHTTPRequestHandler):
                 }
             )
             return
+
         if segment == "existing_accounts":
+
             q = dict(parse_qs(body_text))
             device_id = _resolve_device_id((q.get("device_id") or [""])[0])
             try:
@@ -1295,12 +1444,13 @@ class DofHandler(BaseHTTPRequestHandler):
                     if (
                         u
                         and p
-                        and (u == save.get("username"))
-                        and (p == save.get("password"))
+                        and u == save.get("username")
+                        and p == save.get("password")
                     ):
                         matches.append({"u": save["username"], "t": "anon"})
             self._send({"ok": True, "accounts": json.dumps(matches)})
             return
+
         if segment == "anon_account":
             q = dict(parse_qs(body_text))
             device_id = _resolve_device_id((q.get("device_id") or [_rand_id(16)])[0])
@@ -1325,6 +1475,7 @@ class DofHandler(BaseHTTPRequestHandler):
                 f"account={save['account_id']}",
             )
             return
+
         if segment == "token":
             q = dict(parse_qs(body_text))
             username = (q.get("u") or [""])[0]
@@ -1359,6 +1510,7 @@ class DofHandler(BaseHTTPRequestHandler):
                 f"account={match['account_id']}",
             )
             return
+
         if segment == "msm2auth":
             data = self._decoded(body_text)
             if isinstance(data, list):
@@ -1376,12 +1528,13 @@ class DofHandler(BaseHTTPRequestHandler):
             else:
                 self._send([], f"unhandled msm2auth opcode={opcode}")
             return
+
         if segment == "msm2rh":
             token = self._bearer()
             data = self._decoded(body_text)
             with _save_lock:
                 save = find_save_by_token(token)
-                if save is None or not isinstance(data, list) or (not data):
+                if save is None or not isinstance(data, list) or not data:
                     self._send([])
                     return
                 set_session_device(save["device_id"])
@@ -1401,6 +1554,7 @@ class DofHandler(BaseHTTPRequestHandler):
             else:
                 self._send([], f"unhandled msm2rh request={request_type}")
             return
+
         self._send({"ok": True, "success": True}, "unmapped path")
 
     def do_GET(self):

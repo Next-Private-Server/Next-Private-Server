@@ -50,6 +50,7 @@ def _setting_list(key, default):
 
 
 def _synthesis_instability(genes):
+
     instability = 1
     for g in genes:
         instability *= get_gene_instability(g)
@@ -205,6 +206,7 @@ def start_synthesizing(username, params):
     combined = _normalized_genes(
         {"genes": _used_monster_genes(island, used_monster) + genes}
     )
+
     if _synthesis_instability(combined) > _synthesis_max_instability(structure):
         return {
             "success": False,
@@ -351,7 +353,7 @@ def finish_synthesizing(username, params):
         else (None, None)
     )
     entry = _find_synthesizing_entry(island, structure_id)
-    if entry is not None and (not entry.get("success")):
+    if entry is not None and not entry.get("success"):
         return collect_synthesizing_failure(username, params)
     return collect_synthesizing_success(username, params)
 

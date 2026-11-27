@@ -5,19 +5,23 @@ import tempfile
 import threading
 import time
 from pathlib import Path
+
 from msm_protocol import SFSLong
 import msm_toggles
 
 db_dir = None
 players_dir = None
+
 _db_cache = {}
 _user_file_locks = {}
 _user_file_locks_guard = threading.Lock()
 _mod_db_names = set()
+
 _UNCACHED_DB_NAMES = {"gs_timed_events"}
 
 
 def clear_db_cache():
+
     _db_cache.clear()
     _mod_db_names.clear()
 
@@ -31,7 +35,7 @@ def load_db_json(name):
         return _db_cache[name]
     if db_dir is None:
         raise RuntimeError("msm_store.db_dir not configured")
-    path = Path(db_dir) / f"{name}.json"
+    path = Path(db_dir) / f"{name }.json"
     if not path.exists():
         if name in _UNCACHED_DB_NAMES:
             return None
@@ -68,7 +72,7 @@ def _merge_db_value(existing, key, value):
             if (
                 id_key is not None
                 and isinstance(entry, dict)
-                and (entry.get(id_key) in existing_ids)
+                and entry.get(id_key) in existing_ids
             ):
                 continue
             target_list.append(entry)
@@ -89,6 +93,7 @@ def _merge_db_value(existing, key, value):
 
 
 def apply_mod_db_files(base_dir):
+
     root = Path(base_dir) / "mod_assets"
     if not root.is_dir():
         return
@@ -143,11 +148,13 @@ def _force_market_visible(items, id_key):
 
 
 def _patch_unlock_all_market(command, payload):
+
     if command.startswith("db_monster"):
         payload["monsters_data"] = _force_market_visible(
             payload.get("monsters_data"), "monster_id"
         )
     elif command.startswith("db_structure"):
+
         payload["structures_data"] = _force_market_visible(
             payload.get("structures_data"), "structure_id"
         )
@@ -162,6 +169,7 @@ def _patch_unlock_all_market(command, payload):
 
 def normalize_db_payload(command, payload):
     now_ms = SFSLong(int(time.time() * 1000))
+
     payload["server_time"] = now_ms
     payload.setdefault("last_updated", now_ms)
     if command.startswith("gs_"):
@@ -173,7 +181,7 @@ def normalize_db_payload(command, payload):
 def _player_file(username):
     if players_dir is None:
         raise RuntimeError("msm_store.players_dir not configured")
-    return Path(players_dir) / f"{username}.json"
+    return Path(players_dir) / f"{username }.json"
 
 
 def _lock_for_path(path):
@@ -192,13 +200,13 @@ def player_file_version(username):
         stat = path.stat()
     except OSError:
         return None
-    return (path, stat.st_ino, stat.st_mtime_ns, stat.st_size)
+    return path, stat.st_ino, stat.st_mtime_ns, stat.st_size
 
 
 def _atomic_write_json(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(
-        prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
+        prefix=f".{path .name }.", suffix=".tmp", dir=str(path.parent)
     )
     tmp_path = Path(tmp_name)
     try:
@@ -226,9 +234,10 @@ _FROZEN_CURRENCY_BASE_KEYS = (
     "speed_up_credit",
     "total_starpower_collected",
 )
+
 _FROZEN_CURRENCY_KEYS = frozenset(
     _FROZEN_CURRENCY_BASE_KEYS
-    + tuple((f"{key}_actual" for key in _FROZEN_CURRENCY_BASE_KEYS))
+    + tuple(f"{key }_actual" for key in _FROZEN_CURRENCY_BASE_KEYS)
 )
 
 
@@ -265,13 +274,9 @@ def _fallback_player_file(missing_path):
         p
         for p in folder.glob("*.json")
         if p.is_file()
-        and (
-            not any(
-                (
-                    mark in p.name.lower()
-                    for mark in (".bak", "backup", "previous", "template")
-                )
-            )
+        and not any(
+            mark in p.name.lower()
+            for mark in (".bak", "backup", "previous", "template")
         )
     ]
     if not candidates:
@@ -309,6 +314,7 @@ def _create_default_save(missing_path):
 
 def load_user_data(username):
     path = _player_file(username)
+
     if not path.exists():
         fallback = _fallback_player_file(path)
         if fallback is None:
@@ -327,6 +333,7 @@ def load_user_data(username):
             raise
     po = root.get("player_object")
     if isinstance(po, dict):
+
         for key in _FROZEN_CURRENCY_BASE_KEYS + ("minigame_tokens", "sticker_stars"):
             po.setdefault(key, po.get(f"{key}_actual", 0))
         best = max(

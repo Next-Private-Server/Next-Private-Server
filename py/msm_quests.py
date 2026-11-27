@@ -1,5 +1,6 @@
 import json
 import logging
+
 from msm_box import boxed_eggs, is_awakened_box_monster, is_box_monster_entity
 from msm_gamedata import (
     get_monster_definition,
@@ -17,6 +18,7 @@ from msm_rewards import _add_currency
 from msm_store import load_db_json, player_file_version
 
 logger = logging.getLogger("msm.quests")
+
 _cache = {}
 
 
@@ -42,10 +44,11 @@ def _catalog():
                 by_name[name] = qid
         _cache["defs"] = defs
         _cache["by_name"] = by_name
-    return (_cache["defs"], _cache["by_name"])
+    return _cache["defs"], _cache["by_name"]
 
 
 def _prereq_map(defs):
+
     parents = {}
     for qid, definition in defs.items():
         for nxt in definition.get("next") or []:
@@ -67,6 +70,7 @@ def _quest_state(player_object):
 
 
 def _quest_meta(player_object):
+
     meta = player_object.get("quest_meta")
     if not isinstance(meta, dict):
         meta = {}
@@ -75,6 +79,7 @@ def _quest_meta(player_object):
 
 
 def _is_complete(status_str):
+
     s = (status_str or "").strip()
     if s == "true":
         return True
@@ -85,7 +90,7 @@ def _is_complete(status_str):
     except (TypeError, ValueError):
         return False
     if isinstance(parsed, list) and parsed:
-        return all((bool(v) for v in parsed))
+        return all(bool(v) for v in parsed)
     return bool(parsed)
 
 
@@ -94,7 +99,7 @@ def _islands_matching(player_object, on_island):
         return list(player_object.get("islands") or [])
     return [
         isl
-        for isl in player_object.get("islands") or []
+        for isl in (player_object.get("islands") or [])
         if isl is not None and island_type_of(isl) == _safe_int(on_island)
     ]
 
@@ -127,7 +132,7 @@ def _monster_is_placed_and_ready(monster):
     from msm_box import is_box_monster_entity, is_awakened_box_monster
 
     definition = get_monster_definition(_safe_int(monster.get("monster")))
-    if is_box_monster_entity(definition) and (not is_awakened_box_monster(monster)):
+    if is_box_monster_entity(definition) and not is_awakened_box_monster(monster):
         return False
     return True
 
@@ -149,8 +154,8 @@ def _structure_ids(structure):
 def _goal_threshold(goal, key):
     raw = goal.get(key)
     if isinstance(raw, dict):
-        return (_safe_int(raw.get(key)), raw.get("eval") or ">=")
-    return (_safe_int(raw), goal.get("eval") or ">=")
+        return _safe_int(raw.get(key)), (raw.get("eval") or ">=")
+    return _safe_int(raw), (goal.get("eval") or ">=")
 
 
 def _goal_compare(value, operator, threshold):
@@ -213,7 +218,7 @@ def _titansoul_level_rows():
     if _titansoul_levels_cache is None:
         data = load_db_json("db_titansoul_levels") or {}
         rows = [
-            r for r in data.get("titansoul_level_data") or [] if isinstance(r, dict)
+            r for r in (data.get("titansoul_level_data") or []) if isinstance(r, dict)
         ]
         _titansoul_levels_cache = sorted(
             rows, key=lambda r: _safe_int(r.get("min_links"))
@@ -266,27 +271,29 @@ def _build_object_index(player_object):
             found |= _structure_ids(structure)
         everything |= found
         by_type.setdefault(island_type_of(isl), set()).update(found)
-    return (player_object, everything, by_type)
+    return player_object, everything, by_type
 
 
 def _goal_satisfied(player_object, goal):
     if not isinstance(goal, dict):
         return False
+
     if "friends" in goal and isinstance(goal.get("friends"), (int, float)):
         threshold = _safe_int(goal.get("friends"))
         count = len(player_object.get("nps_fake_friends") or [])
         return count >= threshold
+
     if "island" in goal and "on_island" not in goal:
         target = _safe_int(goal.get("island"))
         return any(
-            (
-                island_type_of(isl) == target
-                for isl in player_object.get("islands") or []
-                if isl is not None
-            )
+            island_type_of(isl) == target
+            for isl in (player_object.get("islands") or [])
+            if isl is not None
         )
+
     on_island = goal.get("on_island")
     islands = _islands_matching(player_object, on_island)
+
     if "object" in goal:
         wanted = _object_ids(goal.get("object"))
         if _OBJECT_INDEX is not None and _OBJECT_INDEX[0] is player_object:
@@ -308,6 +315,7 @@ def _goal_satisfied(player_object, goal):
                 if _structure_ids(structure) & wanted:
                     return True
         return False
+
     if "box_egg" in goal:
         wanted = _safe_int(goal.get("box_egg"))
         for isl in islands:
@@ -317,6 +325,7 @@ def _goal_satisfied(player_object, goal):
                 if wanted in boxed_eggs(monster):
                     return True
         return False
+
     if "activate_box" in goal:
         for isl in islands:
             for monster in isl.get("monsters") or []:
@@ -328,6 +337,7 @@ def _goal_satisfied(player_object, goal):
                 ):
                     return True
         return False
+
     if "monster_left" in goal and "monster_right" in goal:
         left_id = _safe_int(goal.get("monster_left"))
         right_id = _safe_int(goal.get("monster_right"))
@@ -341,11 +351,13 @@ def _goal_satisfied(player_object, goal):
                 ):
                     return True
         return False
+
     if "start_clubbox" in goal or "go_to_clubbox" in goal:
         return bool(
             player_object.get("clubboxes")
             or _safe_int(player_object.get("last_clubbox")) > 0
         )
+
     if "move_object" in goal:
         wanted = _object_ids(goal.get("move_object"))
         if _OBJECT_INDEX is not None and _OBJECT_INDEX[0] is player_object:
@@ -367,20 +379,23 @@ def _goal_satisfied(player_object, goal):
                 if _structure_ids(structure) & wanted:
                     return True
         return False
+
     for rarity in ("common", "rare", "epic"):
-        key = f"soul_link_{rarity}"
+        key = f"soul_link_{rarity }"
         if key in goal:
             threshold, operator = _goal_threshold(goal, key)
             for state in _titansoul_states(islands):
                 if _goal_compare(_soul_link_count(state, rarity), operator, threshold):
                     return True
             return False
+
     if "titansoul_song_part" in goal:
         threshold, operator = _goal_threshold(goal, "titansoul_song_part")
         for state in _titansoul_states(islands):
             if _goal_compare(_titansoul_song_parts(state), operator, threshold):
                 return True
         return False
+
     for key in list(goal):
         if not key.startswith("titansoul_reward_"):
             continue
@@ -389,6 +404,7 @@ def _goal_satisfied(player_object, goal):
             if _titansoul_has_reward(state, reward_type):
                 return True
         return False
+
     if "monster_level" in goal:
         threshold = _safe_int(goal.get("monster_level"))
         eval_op = goal.get("eval", ">=")
@@ -404,6 +420,7 @@ def _goal_satisfied(player_object, goal):
                 if eval_op == "==" and level == threshold:
                     return True
         return False
+
     return False
 
 
@@ -416,11 +433,11 @@ def _status_string(flags, completed):
 def _quest_progress(player_object, definition):
     goals = definition.get("goals") or []
     if not goals:
-        return ([], False)
+        return [], False
     flags = [_goal_satisfied(player_object, goal) for goal in goals]
     combine = (definition.get("type") or "AND").upper()
     completed = any(flags) if combine == "OR" else all(flags)
-    return (flags, completed)
+    return flags, completed
 
 
 _last_idle_save = None
@@ -457,6 +474,7 @@ def _advance_quests_indexed(username, root, player_object, defs):
     state = _quest_state(player_object)
     meta = _quest_meta(player_object)
     user_id = player_object.get("user_id") or player_object.get("user") or 0
+
     changed_results = []
     dirty = False
     for qid_str, entry in list(state.items()):
@@ -496,6 +514,7 @@ def _advance_quests_indexed(username, root, player_object, defs):
             changed_results.extend(
                 _unlocked_children(defs, parents, state, qid, user_id)
             )
+
     if not dirty:
         return []
     meta["event_id"] = _safe_int(meta.get("event_id")) + 1
@@ -520,13 +539,14 @@ def _new_record(definition, qid, seq_id, user_id, entry=None):
 
 
 def _unlocked_children(defs, parents, state, completed_qid, user_id):
+
     extra = []
     completed_def = defs.get(completed_qid)
     if not completed_def:
         return extra
     child_names = {
         nxt["quest"]
-        for nxt in completed_def.get("next") or []
+        for nxt in (completed_def.get("next") or [])
         if isinstance(nxt, dict) and nxt.get("quest")
     }
     if not child_names:
@@ -564,6 +584,7 @@ def _collect(username, root, player_object, defs, state, quest_id):
     entry = state.get(str(quest_id))
     if entry is None:
         entry = state.setdefault(str(quest_id), {"delivered": True})
+
     entry["completed"] = True
     if not _is_complete(entry.get("status")):
         entry["status"] = "true"
@@ -588,6 +609,7 @@ def _collect(username, root, player_object, defs, state, quest_id):
             changed_keys.add("xp")
         entry["collected"] = True
         save_player(username, root)
+
     actual_keys = {_QUEST_REWARD_ACTUAL_KEYS[k] for k in changed_keys}
     full_properties = {
         list(p.keys())[0]: p for p in create_player_properties(player_object)
@@ -595,7 +617,7 @@ def _collect(username, root, player_object, defs, state, quest_id):
     changed_properties = [
         full_properties[k] for k in actual_keys if k in full_properties
     ]
-    return ({"result": [{"collect": quest_id}]}, changed_properties)
+    return {"result": [{"collect": quest_id}]}, changed_properties
 
 
 def _report_status(
@@ -610,6 +632,7 @@ def _report_status(
     quest_id,
     status_param,
 ):
+
     status_str = (
         status_param if isinstance(status_param, str) else json.dumps(status_param)
     )
@@ -655,6 +678,7 @@ def _poll(username, root, player_object, defs, parents, state, meta, user_id):
         return _full_catalog(
             username, root, player_object, defs, parents, state, meta, user_id
         )
+
     result = []
     changed = False
     for qid, definition in defs.items():
@@ -663,9 +687,7 @@ def _poll(username, root, player_object, defs, parents, state, meta, user_id):
         name = definition.get("name")
         if name in gated:
             parent_ids = parents.get(name) or []
-            if not any(
-                (state.get(str(pid), {}).get("completed") for pid in parent_ids)
-            ):
+            if not any(state.get(str(pid), {}).get("completed") for pid in parent_ids):
                 continue
         entry = state.setdefault(str(qid), {"delivered": True})
         seq_id = len(state)
@@ -687,6 +709,7 @@ def gs_quest(username, params):
     state = _quest_state(player_object)
     meta = _quest_meta(player_object)
     user_id = player_object.get("user_id") or player_object.get("user") or 0
+
     quest_id = params.get("quest_id", params.get("id", params.get("quest_claim_id")))
     status_param = params.get("status")
     if quest_id is not None and status_param is not None:
@@ -702,6 +725,7 @@ def gs_quest(username, params):
             _safe_int(quest_id),
             status_param,
         )
+
     for collect_key in (
         "collect",
         "quest_claim_id",
@@ -721,6 +745,7 @@ def gs_quest(username, params):
                 state,
                 _safe_int(params.get(collect_key)),
             )
+
     batch = params.get("statuses") or params.get("updates") or params.get("quests")
     if isinstance(batch, list) and batch:
         result = []
@@ -747,6 +772,7 @@ def gs_quest(username, params):
             result.extend(last_response.get("result") or [])
         if result:
             return {"result": result, "event_id": meta.get("event_id", 0)}
+
     return _full_catalog(
         username, root, player_object, defs, parents, state, meta, user_id
     )

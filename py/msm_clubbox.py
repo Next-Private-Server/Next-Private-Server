@@ -2,6 +2,7 @@ import json
 import logging
 import random
 import time
+
 from msm_cardalbum import _grant_packs
 import msm_gamedata
 import msm_toggles
@@ -33,9 +34,12 @@ def _clubbox_open():
 
 
 logger = logging.getLogger("msm.clubbox")
+
 DEFAULT_ISLAND_UID = 1001
 DEFAULT_ACT_ID = 4
+
 _ACT_EVENT_WINDOW_MS = 1382400000
+
 CELESTIAL_VESSEL_ENTITY_IDS = (
     550,
     551,
@@ -64,8 +68,9 @@ _ALWAYS_OPEN_EVENT_END_DATE = 4102444800000
 
 
 def _current_act_event_start_date():
+
     now = int(time.time() * 1000)
-    return now - now % _ACT_EVENT_WINDOW_MS
+    return now - (now % _ACT_EVENT_WINDOW_MS)
 
 
 def _current_act_event_end_date():
@@ -73,10 +78,12 @@ def _current_act_event_end_date():
 
 
 LOOT_TYPE_CODES = {"BUFF": 14, "CLUBBOX_UNLOCK": 17}
+
 CARD_PACK_TYPE_CODE = 18
 COSTUME_TYPE_CODE = 13
 CURRENCY_TYPE_CODE = 16
 MONSTER_TYPE_CODE = 11
+
 CURRENCY_LOOT_KEYS = (
     "coins",
     "food",
@@ -87,6 +94,7 @@ CURRENCY_LOOT_KEYS = (
     "starpower",
     "clubbox_tokens",
 )
+
 _cache = {}
 
 
@@ -98,17 +106,20 @@ def _safe_int(value, default=0):
 
 
 def backfill_clubbox_unlock(player_object):
+
     if not player_object.get("clubbox_unlock"):
         player_object["clubbox_unlock"] = True
     _ensure_clubboxes(player_object)
+
     if _safe_int(player_object.get("last_clubbox")) <= 0:
         player_object["last_clubbox"] = _current_act_id(player_object)
 
 
 def _resolve_island_type_uid(player_object, island_type):
+
     candidates = [
         isl
-        for isl in player_object.get("islands") or []
+        for isl in (player_object.get("islands") or [])
         if isl is not None and _safe_int(island_type_of(isl)) == island_type
     ]
     if not candidates:
@@ -125,6 +136,7 @@ def _active_island_uid(player_object, params):
         value = params.get(key)
         if value:
             return _safe_int(value, DEFAULT_ISLAND_UID)
+
     island_id = params.get("island_id")
     if island_id:
         return _resolve_island_type_uid(player_object, _safe_int(island_id))
@@ -176,7 +188,7 @@ def _normalize_clubbox_data(data, act_id, player_object, tokens=None):
     else:
         data["island"] = SFSLong(DEFAULT_ISLAND_UID)
         data["started_at"] = SFSLong(_current_act_event_start_date())
-    if "props_active" in data and (not isinstance(data.get("props_active"), list)):
+    if "props_active" in data and not isinstance(data.get("props_active"), list):
         data["props_active"] = []
     return data
 
@@ -185,16 +197,18 @@ def _ensure_clubboxes(player_object):
     clubboxes = player_object.get("clubboxes")
     if not isinstance(clubboxes, list):
         clubboxes = []
-    if not any((box.get("act") == -1 for box in clubboxes if isinstance(box, dict))):
+    if not any(box.get("act") == -1 for box in clubboxes if isinstance(box, dict)):
         clubboxes.insert(0, _empty_clubbox())
+
     current_act = _current_act_id(player_object)
     for act_id in range(1, current_act + 1):
         if not any(
-            (box.get("act") == act_id for box in clubboxes if isinstance(box, dict))
+            box.get("act") == act_id for box in clubboxes if isinstance(box, dict)
         ):
             box = _empty_clubbox()
             box["act"] = act_id
             clubboxes.append(box)
+
     for box in clubboxes:
         if not isinstance(box, dict):
             continue
@@ -204,6 +218,7 @@ def _ensure_clubboxes(player_object):
             data = {}
             box["clubbox_data"] = data
         _normalize_clubbox_data(data, act_id, player_object)
+
     clubboxes.sort(key=lambda box: box.get("act", 0) if isinstance(box, dict) else 0)
     player_object["clubboxes"] = clubboxes
     return clubboxes
@@ -282,12 +297,13 @@ def _acts():
     if "acts" not in _cache:
         data = load_db_json("db_clubbox_acts") or {}
         _cache["acts"] = {
-            a["id"]: a for a in data.get("clubbox_act_data") or [] if "id" in a
+            a["id"]: a for a in (data.get("clubbox_act_data") or []) if "id" in a
         }
     return _cache["acts"]
 
 
 def _current_act_id(player_object=None):
+
     if player_object is not None:
         selected = _safe_int(player_object.get("last_clubbox"))
         if selected > 0 and selected in _acts():
@@ -301,6 +317,7 @@ def _current_act_id(player_object=None):
 
 
 def db_clubbox_acts(username, params):
+
     data = load_db_json("db_clubbox_acts") or {}
     data = json.loads(json.dumps(data))
     for act in data.get("clubbox_act_data") or []:
@@ -312,6 +329,7 @@ def db_clubbox_acts(username, params):
                 continue
             if isinstance(level.get("c"), list):
                 level["c"] = SFSIntArray(level["c"])
+
             if "z" in level:
                 level["z"] = (
                     float(level["z"])
@@ -329,8 +347,10 @@ def gs_timed_events(username, params):
     events = [
         e for e in events if str(e.get("event_type", "")) != "ClubboxAvailability"
     ]
+
     start_date = _current_act_event_start_date()
     if _clubbox_open():
+
         for candidate_act in range(1, act_id + 1):
             events.append(
                 {
@@ -349,6 +369,7 @@ def gs_timed_events(username, params):
                     "start_date": start_date,
                 }
             )
+
     events = [e for e in events if str(e.get("event_type", "")) != "EvolveAvailability"]
     for _offset, _entity_id in enumerate(CELESTIAL_VESSEL_ENTITY_IDS):
         events.append(
@@ -362,6 +383,7 @@ def gs_timed_events(username, params):
                 "start_date": 0,
             }
         )
+
     from msm_cardalbum import card_album_window
 
     album_start, album_end = card_album_window()
@@ -376,6 +398,7 @@ def gs_timed_events(username, params):
                     row.setdefault(
                         "label", "Sticker Book %s" % row.get("card_album_id")
                     )
+
     data["timed_event_list"] = events
     return normalize_db_payload("gs_timed_events", data)
 
@@ -398,7 +421,7 @@ def _costume_definition(costume_id):
 
 
 def _reward_track_level_groups(reward_track_id):
-    key = f"groups_{reward_track_id}"
+    key = f"groups_{reward_track_id }"
     if key not in _cache:
         data = load_db_json("db_reward_tracks") or {}
         by_level = {}
@@ -429,7 +452,7 @@ def _parse_loot_json(raw):
 
 
 def _reward_thresholds(reward_track_id):
-    key = f"thresholds_{reward_track_id}"
+    key = f"thresholds_{reward_track_id }"
     if key not in _cache:
         cumulative = 0
         rows = []
@@ -472,6 +495,7 @@ def _grant_free_monster_inventory(player_object, entity_id):
 
 
 def _clubbox_monster_reward_entry(entity_id):
+
     return {
         "amount": 1,
         "premium": False,
@@ -494,6 +518,7 @@ def _apply_and_format_loot(
     for key, value in loot_dict.items():
         if key in CURRENCY_LOOT_KEYS:
             amount = _safe_int(value)
+
             entry_id = 1 if key == "clubbox_tokens" else 0
             if key == "clubbox_tokens":
                 _set_clubbox_tokens(
@@ -511,9 +536,11 @@ def _apply_and_format_loot(
             )
         elif key.startswith("card_pack"):
             if "." in key:
+
                 pack_type = _safe_int(key.split(".", 1)[1], 1) or 1
                 amount = max(1, _safe_int(value, 1))
             else:
+
                 pack_type = max(1, _safe_int(value, 1))
                 amount = 1
             _grant_packs(player_object, amount, pack_type)
@@ -548,8 +575,9 @@ def _apply_and_format_loot(
                 }
             )
         elif key == "costume":
+
             granted_costume[0] = True
-            for costume_id in value if isinstance(value, list) else [value]:
+            for costume_id in (value if isinstance(value, list) else [value]):
                 entries.append(
                     {
                         "amount": 1,
@@ -566,6 +594,7 @@ def _apply_and_format_loot(
             if entity_id:
                 entries.append(_clubbox_monster_reward_entry(entity_id))
         elif key.startswith("structure."):
+
             structure_id = _safe_int(key.split(".", 1)[1])
             if structure_id:
                 unlocked_structures = player_object.setdefault(
@@ -583,6 +612,7 @@ def _apply_and_format_loot(
                 }
             )
         elif key == "sfs_object" and isinstance(value, dict):
+
             if str(value.get("type", "")).upper() == "MONSTER":
                 entity_id = _safe_int(value.get("id"))
                 if entity_id:
@@ -595,6 +625,7 @@ def _apply_and_format_loot(
 def set_last_act(username, params):
     root, player_object = load_player(username)
     raw = params.get("act_id", params.get("act"))
+
     resolved = _safe_int(raw)
     act_id = (
         resolved
@@ -619,6 +650,7 @@ def create_clubbox(username, params):
     root, player_object = load_player(username)
     act_id = _current_act_id(player_object)
     island_uid = _active_island_uid(player_object, params)
+
     tokens = _clubbox_tokens(player_object)
     _set_clubbox_tokens(player_object, tokens)
     clubboxes = _ensure_clubboxes(player_object)
@@ -627,14 +659,19 @@ def create_clubbox(username, params):
     if box is None:
         box = {"act": act_id, "clubbox_data": {}}
         clubboxes.append(box)
+
     box["clubbox_data"].setdefault("props_active", [])
     box["clubbox_data"].update(
-        {"island": SFSLong(island_uid), "clubbox_tokens": tokens}
+        {
+            "island": SFSLong(island_uid),
+            "clubbox_tokens": tokens,
+        }
     )
     _normalize_clubbox_data(box["clubbox_data"], act_id, player_object, tokens)
     player_object["last_clubbox"] = act_id
     player_object["clubbox_unlock"] = True
     save_player(username, root)
+
     result = {
         "success": True,
         "act_id": act_id,
@@ -662,7 +699,11 @@ def move_clubbox(username, params):
         {"diamonds_actual": _safe_int(player_object.get("diamonds"))},
         {"clubboxes": _sanitize_clubboxes_for_wire(clubboxes)},
     ]
-    return {"success": True, "island_uid": island_uid, "properties": properties}
+    return {
+        "success": True,
+        "island_uid": island_uid,
+        "properties": properties,
+    }
 
 
 def hype_game(username, params):
@@ -678,14 +719,18 @@ def hype_game(username, params):
         clubboxes = _ensure_clubboxes(player_object)
         box = _find_act_box(clubboxes, act_id)
     data = box.setdefault("clubbox_data", {})
+
     _normalize_clubbox_data(data, act_id, player_object)
+
     available_tokens = _clubbox_tokens(player_object)
     if available_tokens <= 0:
+
         result = {"success": False, "message": "Not enough clubbox tokens."}
         result["properties"] = create_player_properties(player_object)
         return result
     token_amount = max(1, _safe_int(params.get("token_amount"), 1))
     token_amount = min(token_amount, available_tokens)
+
     base_points = _roll_wheel(1, [20, 40, 80], [50, 37.5, 12.5])
     multiplier = _roll_wheel(2, [1, 3, 5], [50, 37.5, 12.5])
     points = base_points * token_amount
@@ -695,9 +740,11 @@ def hype_game(username, params):
     top_hype = max(_safe_int(data.get("top_hype")), hype)
     data["hype"] = hype
     data["top_hype"] = top_hype
+
     tokens = max(0, available_tokens - token_amount)
     _set_clubbox_tokens(player_object, tokens)
     _normalize_clubbox_data(data, act_id, player_object, tokens)
+
     act = _acts().get(act_id) or {}
     reward_track_id = (act.get("data") or {}).get("reward_track_id")
     loot_entries = []
@@ -717,7 +764,9 @@ def hype_game(username, params):
                     granted_inventory,
                 )
             )
+
     save_player(username, root)
+
     hype_event = {
         "updateTimedEvents": True,
         "act": act_id,

@@ -375,6 +375,7 @@ def _record_new_species(island, monster_type):
 
 
 def _apply_tune_up(monster, rarity):
+
     import msm_gamedata
 
     species_id = monster.get("monster", 0)

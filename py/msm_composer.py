@@ -1,13 +1,17 @@
 import logging
+
 from msm_playerdata import SFSLong, island_type_of, load_player, save_player
 from msm_protocol import SFSByteArray
 
 logger = logging.getLogger("msm.composer")
+
 COMPOSER_ISLAND_TYPE = 11
+
 TRACK_FORMAT = 2
 DEFAULT_TEMPO = 120
 DEFAULT_TIME_NUMERATOR = 4
 DEFAULT_TIME_DENOM = 4
+
 _FIRST_TRACK_ID = 100000000
 _MAX_TRACK_ID = 2147483000
 
@@ -108,7 +112,7 @@ def ensure_song(player_object, island):
 def _new_track(player_object, name=None, bintrack=None, track_format=TRACK_FORMAT):
     track = {
         "format": int(track_format or TRACK_FORMAT),
-        "bintrack": [int(n) & 255 for n in bintrack or []],
+        "bintrack": [int(n) & 0xFF for n in (bintrack or [])],
         "user": _owner_id(player_object),
         "user_track_id": _next_track_id(player_object),
     }
@@ -210,7 +214,7 @@ def wire_track(track):
         return track
     wired = {
         "format": int(track.get("format", TRACK_FORMAT) or TRACK_FORMAT),
-        "bintrack": SFSByteArray((int(n) & 255 for n in track.get("bintrack") or [])),
+        "bintrack": SFSByteArray(int(n) & 0xFF for n in track.get("bintrack") or []),
         "user": SFSLong(int(track.get("user", 0) or 0)),
         "user_track_id": SFSLong(int(track.get("user_track_id", 0) or 0)),
     }
@@ -267,14 +271,14 @@ def _requested_track_id(params):
 def _requested_bintrack(params):
     raw = params.get("bintrack")
     if isinstance(raw, (list, tuple, bytes, bytearray)):
-        return [int(n) & 255 for n in raw]
+        return [int(n) & 0xFF for n in raw]
     return []
 
 
 def _apply_time_signature(song, params):
     for key in ("tempo", "key_sig", "time_numerator", "time_denom"):
         value = params.get(key)
-        if isinstance(value, int) and (not isinstance(value, bool)):
+        if isinstance(value, int) and not isinstance(value, bool):
             song[key] = int(value)
 
 
@@ -292,6 +296,7 @@ def save_composer_track(username, params):
                 break
     if song is not None:
         _apply_time_signature(song, params)
+
     track_id = _requested_track_id(params)
     track = find_track(player_object, track_id)
     if track is None:
@@ -309,7 +314,7 @@ def save_composer_track(username, params):
     else:
         track["bintrack"] = _requested_bintrack(params)
         track_format = params.get("format")
-        if isinstance(track_format, int) and (not isinstance(track_format, bool)):
+        if isinstance(track_format, int) and not isinstance(track_format, bool):
             track["format"] = int(track_format)
     save_player(username, root)
     return {"success": True}

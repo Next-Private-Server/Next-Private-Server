@@ -87,6 +87,7 @@ def get_int(name, default=0, minimum=None, maximum=None):
 
 
 def is_time_window_active(enabled_key, hours_enabled_key, start_hour_key, end_hour_key):
+
     if not is_enabled(enabled_key):
         return False
     if not is_enabled(hours_enabled_key):
